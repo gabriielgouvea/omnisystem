@@ -16,3 +16,10 @@ venv/
 
 # Claude workspace
 .claude/
+
+# Arquivos locais / debug
+debug_*.py
+tracking_log.json
+tracking_index.json
+*.docx
+test_*.pdf
