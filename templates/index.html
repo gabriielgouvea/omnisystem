@@ -31,61 +31,107 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; margin: 0; padding: 0;
+    }
+
+    /* ── App shell ── */
+    .app-shell { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 215px; flex-shrink: 0;
+      background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 200;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      padding: 20px 18px 16px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .sidebar-logo-mark {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--accent); display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 900; font-size: 1rem; letter-spacing: -1px;
+    }
+    .sidebar-logo-text { font-size: 1rem; font-weight: 900; letter-spacing: 2px; color: var(--accent); }
+    .sidebar-logo-sub  { font-size: .63rem; color: var(--muted); font-weight: 500; }
+    .sidebar-nav { flex: 1; padding: 10px 8px 20px; }
+    .nav-group { margin-bottom: 2px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 9px 12px; border-radius: 9px;
+      border: 1px solid transparent; background: none;
+      color: var(--muted); font-size: .84rem; font-weight: 600;
+      cursor: pointer; text-align: left; transition: all .15s;
+      font-family: inherit;
+    }
+    .nav-item:hover { background: var(--bg); color: var(--text); }
+    .nav-item.active { background: var(--bg); color: var(--accent); border-color: var(--border); }
+    .nav-icon { font-size: .95rem; width: 18px; text-align: center; flex-shrink: 0; }
+    .nav-chevron { margin-left: auto; font-size: .65rem; transition: transform .2s; }
+    .nav-item.open .nav-chevron { transform: rotate(90deg); }
+    .nav-sub { padding-left: 18px; margin-top: 2px; display: none; }
+    .nav-sub.open { display: block; }
+    .nav-sub-item {
+      display: flex; align-items: center; gap: 9px;
+      width: 100%; padding: 7px 10px; border-radius: 7px;
+      border: none; background: none;
+      color: var(--muted); font-size: .8rem; font-weight: 600;
+      cursor: pointer; text-align: left; transition: all .15s;
+      font-family: inherit; margin-bottom: 1px;
+    }
+    .nav-sub-item:hover { background: var(--bg); color: var(--text); }
+    .nav-sub-item.active { color: var(--accent); font-weight: 700; }
+    .nav-sub-item.dev { opacity: .45; cursor: default; }
+    .nav-sub-logo { width: 18px; height: 18px; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+    .nav-sub-logo svg { display: block; width: 100%; height: 100%; }
+    .sidebar-sep { height: 1px; background: var(--border); margin: 8px 6px; }
+
+    /* ── Main content ── */
+    .main-content {
+      margin-left: 215px; flex: 1;
+      padding: 28px 20px 60px;
+      display: flex; flex-direction: column; align-items: center;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 32px 16px 80px;
     }
-
-    /* ── Header ── */
-    .header { text-align: center; margin-bottom: 22px; }
-    .header h1 { font-size: 1.75rem; font-weight: 900; letter-spacing: -1px; color: var(--text); }
-    .header p  { font-size: .8rem; color: var(--muted); margin-top: 3px; }
-
-    /* ── Marketplace tab nav ── */
-    .mp-nav {
-      display: flex; gap: 8px; margin-bottom: 28px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 14px; padding: 6px;
-    }
-    .mp-tab {
-      position: relative; display: flex; align-items: center; gap: 9px;
-      padding: 8px 16px 8px 10px; border-radius: 9px;
-      border: 1px solid transparent; cursor: pointer;
-      transition: background .15s, border-color .15s, opacity .15s;
-      user-select: none;
-    }
-    .mp-tab.active { background: var(--bg); border-color: var(--border2); box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-    .mp-tab.dev { opacity: .45; cursor: default; }
-    .mp-tab.dev:hover { opacity: .65; }
-    .mp-tab-logo { width: 28px; height: 28px; border-radius: 7px; overflow: hidden; flex-shrink: 0; }
-    .mp-tab-logo svg { display: block; width: 100%; height: 100%; }
-    .mp-tab-text { display: flex; flex-direction: column; line-height: 1; }
-    .mp-tab-name { font-size: .82rem; font-weight: 700; color: var(--text); }
-    .mp-tab.dev .mp-tab-name { color: var(--muted); }
-    .mp-tab-badge { font-size: .62rem; color: var(--muted); margin-top: 2px; font-weight: 500; }
-    .mp-tab.active .mp-tab-name::after { content: ' ●'; font-size: .5rem; color: var(--accent); vertical-align: middle; }
-    .mp-tab.dev .mp-tip {
-      display: none; position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
-      background: var(--text); color: #fff; font-size: .7rem; font-weight: 600;
-      padding: 4px 10px; border-radius: 6px; white-space: nowrap; pointer-events: none; z-index: 10;
-    }
-    .mp-tab.dev .mp-tip::before {
-      content: ''; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
-      border: 4px solid transparent; border-bottom-color: var(--text);
-    }
-    .mp-tab.dev:hover .mp-tip { display: block; }
 
     /* ── Pages ── */
-    #page-home, #page-shopee {
+    .page-section {
       width: 100%; display: flex; flex-direction: column; align-items: center;
+    }
+    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes {
+      display: none;
+    }
+    #page-dashboard.active, #page-separacao.active, #page-localizador.active,
+    #page-historico.active, #page-ajustes.active { display: flex; }
+
+    /* ── Separação sub-nav ── */
+    .sep-subnav {
+      width: 100%; max-width: 1200px; display: flex; gap: 6px; margin-bottom: 20px;
+    }
+    .sep-tab {
+      display: flex; align-items: center; gap: 7px;
+      padding: 8px 18px; border-radius: 9px;
+      border: 1px solid var(--border2); background: var(--surface);
+      color: var(--muted); font-size: .84rem; font-weight: 700;
+      cursor: pointer; transition: all .15s; font-family: inherit;
+    }
+    .sep-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .sep-tab.dev { opacity: .45; cursor: default; }
+    .sep-tab-logo { width: 20px; height: 20px; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+    .sep-tab-logo svg { display: block; width: 100%; height: 100%; }
+
+    /* ── Ajustes page ── */
+    .ajustes-section-title {
+      font-size: .7rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 1.2px; color: var(--muted); margin: 18px 0 8px;
+      width: 100%; max-width: 1200px;
     }
 
     /* ── Home subnav ── */
-    .home-subnav { width: 100%; max-width: 720px; display: flex; gap: 6px; margin-bottom: 18px; }
+    .home-subnav { width: 100%; max-width: 1200px; display: flex; gap: 6px; margin-bottom: 18px; }
     .home-tab {
       padding: 8px 20px; border-radius: 9px;
       border: 1px solid var(--border2); background: var(--surface);
@@ -100,7 +146,7 @@
 
     /* ── Metrics section separator ── */
     .metrics-section-header {
-      width: 100%; max-width: 720px;
+      width: 100%; max-width: 1200px;
       display: flex; align-items: center; gap: 12px;
       margin: 10px 0 6px;
     }
@@ -141,7 +187,7 @@
     }
     .store-chip.sel { background: rgba(108,95,255,.1); color: var(--accent); border-color: rgba(108,95,255,.35); }
     .store-chip:hover:not(.sel) { color: var(--text); }
-    .metrics-charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 720px; }
+    .metrics-charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 1200px; }
     @media (max-width: 520px) { .metrics-charts-row { grid-template-columns: 1fr; } }
 
     /* ── Holiday legend ── */
@@ -192,7 +238,7 @@
     .card {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 14px; padding: 22px;
-      width: 100%; max-width: 720px;
+      width: 100%; max-width: 1200px;
       margin-bottom: 14px;
       box-shadow: 0 1px 3px rgba(0,0,0,.04);
     }
@@ -228,6 +274,8 @@
 
     /* ── Classify ── */
     .unknown-item { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+    .unknown-item.dup-sku { border-color: #e8a000; background: rgba(232,160,0,.04); }
+    .sku-dup-warn { font-size: .72rem; font-weight: 700; color: #b87000; background: rgba(232,160,0,.12); border-radius: 5px; padding: 4px 8px; margin-bottom: 8px; display: inline-block; }
     .u-name { font-size: .9rem; font-weight: 600; color: var(--text); margin-bottom: 3px; word-break: break-word; }
     .u-sku  { font-size: .73rem; color: var(--muted); margin-bottom: 11px; }
     .u-sku span { font-family: monospace; background: var(--surface); border: 1px solid var(--border); padding: 1px 7px; border-radius: 4px; }
@@ -307,20 +355,35 @@
     .verify-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 13px; border-radius: 8px; font-size: .78rem; font-weight: 700; flex-shrink: 0; }
     .verify-badge.ok   { background: rgba(0,184,118,.08); color: var(--green); border: 1px solid rgba(0,184,118,.25); }
     .verify-badge.fail { background: rgba(224,62,62,.08);  color: var(--red);   border: 1px solid rgba(224,62,62,.25); }
-    .stat-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px,1fr)); gap: 10px; margin-bottom: 0; }
+    .stat-row { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-bottom: 0; }
+    .stat-hero-val { font-size: 4rem; font-weight: 900; color: var(--accent); line-height: 1; letter-spacing: -2px; }
+    .stat-hero-lbl { font-size: .65rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2.5px; color: var(--muted); margin-top: 2px; }
+    .stat-secondary { display: flex; gap: 18px; font-size: .72rem; color: var(--muted); flex-wrap: wrap; justify-content: center; }
+    .stat-secondary span { white-space: nowrap; }
+    /* legacy stat-box kept for ML */
     .stat-box { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
     .stat-box .sv { font-size: 1.9rem; font-weight: 900; color: var(--text); line-height: 1; margin-bottom: 4px; }
     .stat-box .sl { font-size: .7rem; color: var(--muted); }
-    .brand-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(185px,1fr)); gap: 10px; margin-bottom: 22px; }
+    .brand-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
     .brand-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 15px; position: relative; overflow: hidden; }
     .brand-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; }
     .brand-card.pura::before  { background: var(--pura); }
     .brand-card.turbo::before { background: var(--turbo); }
     .brand-card.dux::before   { background: var(--dux); }
+    .brand-card.roupa::before { background: #e91e8c; }
     .bc-name { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 9px; }
     .brand-card.pura  .bc-name { color: var(--pura); }
     .brand-card.turbo .bc-name { color: var(--turbo); }
     .brand-card.dux   .bc-name { color: var(--dux); }
+    .brand-card.roupa .bc-name { color: #e91e8c; }
+    .bc-orders-num { font-size: 2.4rem; font-weight: 900; line-height: 1; margin-bottom: 2px; color: var(--text); }
+    .brand-card.pura  .bc-orders-num { color: var(--pura); }
+    .brand-card.turbo .bc-orders-num { color: var(--turbo); }
+    .brand-card.dux   .bc-orders-num { color: var(--dux); }
+    .brand-card.roupa .bc-orders-num { color: #e91e8c; }
+    .bc-orders-lbl { font-size: .62rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 10px; }
+    .bc-units-row  { font-size: 1rem; font-weight: 700; color: var(--muted); border-top: 1px solid var(--border); padding-top: 7px; }
+    /* legacy — unused now */
     .bc-units     { font-size: 2.1rem; font-weight: 900; line-height: 1; color: var(--text); }
     .bc-units-lbl { font-size: .7rem; color: var(--muted); margin-bottom: 9px; }
     .bc-orders { font-size: .76rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 7px; }
@@ -372,6 +435,25 @@
     .vt-main { font-weight: 700; margin-bottom: 2px; }
     .vt-sub  { font-size: .76rem; color: var(--muted); }
 
+    /* ── Security alerts ── */
+    .sec-section { margin-bottom: 18px; }
+    .sec-section-title { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 10px; }
+    .sec-item { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+    .sec-item-head { font-size: .85rem; font-weight: 700; color: var(--text); margin-bottom: 4px; word-break: break-all; }
+    .sec-item-sub  { font-size: .75rem; color: var(--muted); margin-bottom: 10px; }
+    .sec-options   { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sec-opt { display: flex; align-items: center; gap: 5px; font-size: .78rem; color: var(--text);
+               padding: 5px 10px; border-radius: 7px; border: 1px solid var(--border2); cursor: pointer; background: var(--surface); }
+    .sec-opt input[type=radio] { accent-color: var(--accent); }
+    .sec-opt.selected { background: rgba(108,95,255,.08); border-color: var(--accent); }
+    .sec-cat-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .sec-cat-btn { padding: 4px 11px; border-radius: 6px; border: 1px solid var(--border2);
+                   font-size: .75rem; font-weight: 600; cursor: pointer; background: var(--bg); color: var(--text); }
+    .sec-cat-btn.sel-pura  { background: var(--pura);  color: #fff; border-color: var(--pura); }
+    .sec-cat-btn.sel-turbo { background: var(--turbo); color: #fff; border-color: var(--turbo); }
+    .sec-cat-btn.sel-dux   { background: var(--dux);   color: #fff; border-color: var(--dux); }
+    .sec-cat-btn.sel-roupa { background: var(--roupa); color: #fff; border-color: var(--roupa); }
+
     /* ── Lacrar card ── */
     .lacrar-card {
       background: linear-gradient(135deg, rgba(108,95,255,.05) 0%, rgba(0,184,118,.03) 100%);
@@ -379,7 +461,7 @@
     }
 
     /* ── Mappings ── */
-    .toggle-wrap { max-width: 720px; width: 100%; margin-bottom: 8px; }
+    .toggle-wrap { max-width: 1200px; width: 100%; margin-bottom: 8px; }
     .toggle-link { font-size: .76rem; color: var(--muted); cursor: pointer; border-bottom: 1px dashed var(--border2); padding-bottom: 1px; }
     .toggle-link:hover { color: var(--text); }
     #mappings-panel { display: none; }
@@ -405,7 +487,44 @@
     .del-store-btn { font-size:.68rem; padding:2px 8px; border-radius:5px; border:1px solid var(--red); color:var(--red); background:transparent; cursor:pointer; font-weight:700; }
     .del-store-btn:hover { background:var(--red); color:#fff; }
 
+    /* ── Dashboard grid rows ── */
+    .dash-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; max-width: 1200px; margin-bottom: 14px; align-items: start; }
+    .dash-row > .card { margin-bottom: 0; }
+    .dash-row.col-5050 { grid-template-columns: 1fr 1fr; }
+
+    /* ── KPI strip ── */
+    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 1200px; margin-bottom: 14px; }
+    .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0; }
+    .kpi-card.kpi-blue::before   { background: var(--accent); }
+    .kpi-card.kpi-green::before  { background: var(--green); }
+    .kpi-card.kpi-red::before    { background: var(--turbo); }
+    .kpi-card.kpi-orange::before { background: var(--var); }
+    .kpi-lbl { font-size: .6rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin-bottom: 8px; }
+    .kpi-val { font-size: 2.1rem; font-weight: 900; color: var(--text); line-height: 1; margin-bottom: 4px; }
+    .kpi-sub { font-size: .7rem; color: var(--muted); }
+
+    /* ── Power BI section labels ── */
+    .db-section { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 1200px; margin: 22px 0 10px; }
+    .db-section-line { flex: 1; height: 1px; background: var(--border2); }
+    .db-section-title { font-size: .62rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); white-space: nowrap; padding: 0 4px; }
+
+    /* ── Regions strip ── */
+    .regions-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; max-width: 1200px; margin-bottom: 14px; }
+    .region-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 13px 14px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+    .region-name { font-size: .6rem; font-weight: 900; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); margin-bottom: 6px; }
+    .region-val  { font-size: 1.6rem; font-weight: 900; color: var(--text); line-height: 1; }
+    .region-pct  { font-size: .65rem; color: var(--muted); margin-top: 3px; }
+
     /* ── Mobile responsive ── */
+    @media (max-width: 768px) {
+      .card, .home-subnav, .metrics-section-header, .toggle-wrap { max-width: 100%; }
+      #store-drilldown { max-width: 100% !important; }
+      .brand-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .dash-row { grid-template-columns: 1fr !important; }
+      .kpi-row  { grid-template-columns: repeat(2, 1fr) !important; }
+      .regions-strip { grid-template-columns: repeat(3, 1fr) !important; }
+    }
     @media (max-width: 520px) {
       body { padding: 16px 10px 60px; }
       .header h1 { font-size: 1.4rem; }
@@ -421,92 +540,144 @@
       .period-btn { padding: 5px 10px; font-size: .75rem; }
       .metrics-section-header { margin: 8px 0 4px; }
     }
+
+    /* ── PDF view button (classify card) ──────────────────────────────── */
+    .pdf-view-btn {
+      display:inline-flex; align-items:center; gap:3px;
+      background:none; border:1px solid var(--border2); border-radius:5px;
+      color:var(--muted); font-size:.68rem; font-weight:600; padding:2px 7px;
+      cursor:pointer; vertical-align:middle; margin-left:6px;
+      font-family:inherit; transition:all .15s; flex-shrink:0;
+    }
+    .pdf-view-btn:hover { border-color:var(--accent); color:var(--accent); background:rgba(108,95,255,.07); }
+
+    /* ── Validation bar ──────────────────────────────────────────────── */
+    .val-bar { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+    .val-chip {
+      display:inline-flex; align-items:center; gap:5px;
+      border:none; border-radius:20px; padding:5px 13px;
+      font-size:.72rem; font-weight:700; font-family:inherit;
+    }
+    .val-chip.ok  { background:rgba(39,174,96,.13); color:#1e8c4f; cursor:default; }
+    .val-chip.err { background:rgba(220,53,69,.11);  color:#c0392b; cursor:pointer; }
+    .val-chip.err:hover { background:rgba(220,53,69,.2); }
+    .val-chip.warn { background:rgba(230,160,0,.13); color:#b87000; cursor:pointer; }
+    .val-chip.warn:hover { background:rgba(230,160,0,.22); }
+
+    /* ── Security modal ──────────────────────────────────────────────── */
+    #sec-modal {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.48); z-index:9000;
+      align-items:center; justify-content:center;
+    }
+    #sec-modal.open { display:flex; }
+    #sec-modal-box {
+      background:var(--surface); border-radius:14px;
+      max-width:560px; width:92vw; max-height:82vh;
+      overflow-y:auto; padding:24px 24px 18px; position:relative;
+      box-shadow:0 8px 40px rgba(0,0,0,.22);
+    }
+    #sec-modal-close {
+      position:absolute; top:14px; right:16px;
+      background:none; border:none; font-size:1.3rem; color:var(--muted);
+      cursor:pointer; line-height:1;
+    }
+    #sec-modal-close:hover { color:var(--text); }
+    #sec-modal-title { font-weight:800; font-size:1rem; margin-bottom:14px; }
+    .smi-block { border:1px solid var(--border); border-radius:9px; padding:12px 14px; margin-bottom:10px; }
+    .smi-head  { font-weight:700; font-size:.82rem; color:var(--text); margin-bottom:3px; }
+    .smi-sub   { font-size:.74rem; color:var(--muted); margin-bottom:8px; }
+    .smi-opts  { display:flex; flex-wrap:wrap; gap:6px; }
+    .smi-opt   {
+      border:1.5px solid var(--border2); border-radius:7px;
+      background:var(--bg); color:var(--text);
+      padding:4px 12px; font-size:.73rem; font-weight:600; cursor:pointer;
+      font-family:inherit;
+    }
+    .smi-opt:hover  { border-color:var(--indigo); color:var(--indigo); }
+    .smi-opt.active { border-color:var(--indigo); background:var(--indigo); color:#fff; }
+    #sec-modal-footer { margin-top:14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    #sec-modal-save   { font-size:.82rem; }
+    #sec-modal-saved  { font-size:.78rem; color:var(--green); font-weight:700; display:none; }
   </style>
 </head>
 <body>
+<div class="app-shell">
 
-  <!-- Header -->
-  <div class="header">
-    <h1>OMNI</h1>
-    <p>Sistema de Operações</p>
-  </div>
-
-  <!-- Marketplace / top nav -->
-  <div class="mp-nav">
-
-    <!-- Home -->
-    <div class="mp-tab active" id="mp-home">
-      <div class="mp-tab-logo">
-        <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-          <rect width="28" height="28" rx="7" fill="#6c5fff"/>
-          <path d="M14 6L5 14h3v9h5v-6h2v6h5v-9h3L14 6z" fill="white"/>
-        </svg>
-      </div>
-      <div class="mp-tab-text"><span class="mp-tab-name">Home</span></div>
-    </div>
-
-    <!-- Shopee -->
-    <div class="mp-tab" id="mp-shopee">
-      <div class="mp-tab-logo">
-        <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-          <rect width="28" height="28" rx="7" fill="#EE4D2D"/>
-          <path d="M5.5 13h17l-2 10H7.5L5.5 13z" fill="white"/>
-          <path d="M9.5 13c0-2.49 2.01-4.5 4.5-4.5s4.5 2.01 4.5 4.5" fill="none" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9.5 19.5c1.2 1.8 2.8 2.5 4.5 2.5s3.3-.7 4.5-2.5" fill="none" stroke="#EE4D2D" stroke-width="1.3" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="mp-tab-text"><span class="mp-tab-name">Shopee</span></div>
-    </div>
-
-    <!-- Mercado Livre -->
-    <div class="mp-tab dev" id="mp-ml">
-      <div class="mp-tip">Em desenvolvimento</div>
-      <div class="mp-tab-logo">
-        <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-          <rect width="28" height="28" rx="7" fill="#FFE600"/>
-          <path d="M4 7h3l3 11h11l2.5-7.5H11" fill="none" stroke="#003087" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="13" cy="21" r="1.8" fill="#003087"/>
-          <circle cx="19" cy="21" r="1.8" fill="#003087"/>
-        </svg>
-      </div>
-      <div class="mp-tab-text">
-        <span class="mp-tab-name">Mercado Livre</span>
-        <span class="mp-tab-badge">Em desenvolvimento</span>
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">O</div>
+      <div>
+        <div class="sidebar-logo-text">OMNI</div>
+        <div class="sidebar-logo-sub">Sistema de Operações</div>
       </div>
     </div>
-
-    <!-- TikTok Shop -->
-    <div class="mp-tab dev" id="mp-tiktok">
-      <div class="mp-tip">Em desenvolvimento</div>
-      <div class="mp-tab-logo">
-        <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-          <rect width="28" height="28" rx="7" fill="#010101"/>
-          <g transform="translate(1,0.8)">
-            <ellipse cx="9.5" cy="20" rx="3.2" ry="2.2" transform="rotate(-18 9.5 20)" fill="#FE2C55" opacity=".85"/>
-            <rect x="12" y="7.5" width="1.9" height="13" rx="1" fill="#FE2C55" opacity=".85"/>
-            <path d="M13.9 7.5 C17.5 8.8 19 11.5 16.5 14.2" fill="none" stroke="#FE2C55" stroke-width="1.9" stroke-linecap="round" opacity=".85"/>
-          </g>
-          <g transform="translate(-1,-0.8)">
-            <ellipse cx="9.5" cy="20" rx="3.2" ry="2.2" transform="rotate(-18 9.5 20)" fill="#25F4EE" opacity=".85"/>
-            <rect x="12" y="7.5" width="1.9" height="13" rx="1" fill="#25F4EE" opacity=".85"/>
-            <path d="M13.9 7.5 C17.5 8.8 19 11.5 16.5 14.2" fill="none" stroke="#25F4EE" stroke-width="1.9" stroke-linecap="round" opacity=".85"/>
-          </g>
-          <ellipse cx="9.5" cy="20" rx="3.2" ry="2.2" transform="rotate(-18 9.5 20)" fill="white"/>
-          <rect x="12" y="7.5" width="1.9" height="13" rx="1" fill="white"/>
-          <path d="M13.9 7.5 C17.5 8.8 19 11.5 16.5 14.2" fill="none" stroke="white" stroke-width="1.9" stroke-linecap="round"/>
-        </svg>
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <button class="nav-item active" id="nav-dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </button>
       </div>
-      <div class="mp-tab-text">
-        <span class="mp-tab-name">TikTok Shop</span>
-        <span class="mp-tab-badge">Em desenvolvimento</span>
+      <div class="nav-group" style="margin-top:4px;">
+        <button class="nav-item" id="nav-separacao">
+          <span class="nav-icon">🏷</span> Separação de Etiquetas
+          <span class="nav-chevron">›</span>
+        </button>
+        <div class="nav-sub" id="nav-sub-separacao">
+          <button class="nav-sub-item" id="nav-shopee">
+            <div class="nav-sub-logo">
+              <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+                <rect width="28" height="28" rx="7" fill="#EE4D2D"/>
+                <path d="M5.5 13h17l-2 10H7.5L5.5 13z" fill="white"/>
+                <path d="M9.5 13c0-2.49 2.01-4.5 4.5-4.5s4.5 2.01 4.5 4.5" fill="none" stroke="white" stroke-width="1.9" stroke-linecap="round"/>
+              </svg>
+            </div>
+            Shopee
+          </button>
+          <button class="nav-sub-item" id="nav-ml">
+            <div class="nav-sub-logo">
+              <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+                <rect width="28" height="28" rx="7" fill="#FFE600"/>
+                <path d="M4 7h3l3 11h11l2.5-7.5H11" fill="none" stroke="#003087" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="13" cy="21" r="1.8" fill="#003087"/>
+                <circle cx="19" cy="21" r="1.8" fill="#003087"/>
+              </svg>
+            </div>
+            Mercado Livre
+          </button>
+          <button class="nav-sub-item dev" id="nav-tiktok">
+            <div class="nav-sub-logo">
+              <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+                <rect width="28" height="28" rx="7" fill="#010101"/>
+                <rect x="12" y="7.5" width="1.9" height="13" rx="1" fill="white"/>
+                <path d="M13.9 7.5 C17.5 8.8 19 11.5 16.5 14.2" fill="none" stroke="white" stroke-width="1.9" stroke-linecap="round"/>
+                <ellipse cx="9.5" cy="20" rx="3.2" ry="2.2" transform="rotate(-18 9.5 20)" fill="white"/>
+              </svg>
+            </div>
+            TikTok Shop
+          </button>
+        </div>
       </div>
-    </div>
+      <div class="sidebar-sep"></div>
+      <button class="nav-item" id="nav-localizador">
+        <span class="nav-icon">🔍</span> Localizador
+      </button>
+      <button class="nav-item" id="nav-historico">
+        <span class="nav-icon">📋</span> Histórico
+      </button>
+      <div class="sidebar-sep"></div>
+      <button class="nav-item" id="nav-ajustes">
+        <span class="nav-icon">⚙</span> Ajustes
+      </button>
+    </nav>
+  </aside>
 
-  </div><!-- /mp-nav -->
+  <!-- ── Main content ── -->
+  <main class="main-content">
 
-
-  <!-- ═══════════════════════════════════════════════════════════════ HOME PAGE -->
-  <div id="page-home" style="display:flex;flex-direction:column;align-items:center;">
+  <!-- ═══════════════ DASHBOARD PAGE ═══════════════ -->
+  <div id="page-dashboard" class="page-section active">
 
     <!-- Filter card -->
     <div class="card">
@@ -516,6 +687,7 @@
           <div class="filter-label">Período</div>
           <div class="period-btns" id="period-btns">
             <button class="period-btn" data-period="today">Hoje</button>
+            <button class="period-btn" data-period="yesterday">Ontem</button>
             <button class="period-btn active" data-period="7d">7 dias</button>
             <button class="period-btn" data-period="15d">15 dias</button>
             <button class="period-btn" data-period="30d">30 dias</button>
@@ -538,48 +710,55 @@
       </div>
     </div>
 
+    <!-- ══ KPIs ══ -->
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-lbl">Pedidos Totais</div>
+        <div class="kpi-val" id="m-sv-orders">—</div>
+        <div class="kpi-sub" id="m-kpi-orders-sub">&nbsp;</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-lbl">Unidades Totais</div>
+        <div class="kpi-val" id="m-sv-units">—</div>
+        <div class="kpi-sub">&nbsp;</div>
+      </div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-lbl">Lojas Ativas</div>
+        <div class="kpi-val" id="m-sv-stores">—</div>
+        <div class="kpi-sub">&nbsp;</div>
+      </div>
+      <div class="kpi-card kpi-orange">
+        <div class="kpi-lbl">Expedições</div>
+        <div class="kpi-val" id="m-sv-entries">—</div>
+        <div class="kpi-sub">&nbsp;</div>
+      </div>
+    </div>
+
     <!-- ══ SEÇÃO: LOJAS ══ -->
-    <div class="metrics-section-header"><span>Lojas</span></div>
+    <div class="db-section"><div class="db-section-line"></div><div class="db-section-title">Lojas</div><div class="db-section-line"></div></div>
 
-    <!-- Summary stats -->
-    <div class="card">
-      <div class="stat-row" id="metrics-stat-row">
-        <div class="stat-box"><div class="sv" id="m-sv-orders">—</div><div class="sl">pedidos totais</div></div>
-        <div class="stat-box"><div class="sv" id="m-sv-units">—</div><div class="sl">unidades totais</div></div>
-        <div class="stat-box"><div class="sv" id="m-sv-stores">—</div><div class="sl">lojas ativas</div></div>
-        <div class="stat-box"><div class="sv" id="m-sv-entries">—</div><div class="sl">expedições</div></div>
+    <div class="dash-row" id="lojas-row">
+      <!-- Lojas bar -->
+      <div class="card" id="chart-stores-card">
+        <div class="card-title">Pedidos por Loja</div>
+        <div style="position:relative;height:240px;" id="chart-stores-wrap">
+          <canvas id="chart-stores"></canvas>
+        </div>
       </div>
-    </div>
-
-    <!-- Lojas bar -->
-    <div class="card" id="chart-stores-card">
-      <div class="card-title">Pedidos por Loja</div>
-      <div style="position:relative;" id="chart-stores-wrap">
-        <canvas id="chart-stores"></canvas>
-      </div>
-    </div>
-
-    <!-- Daily orders bar -->
-    <div class="card" id="chart-daily-orders-card">
-      <div class="chart-title-row">
-        <div class="card-title">Pedidos por Dia</div>
-        <div class="holiday-legend"><span class="holiday-dot"></span> feriado</div>
-      </div>
-      <div style="position:relative;height:220px;">
-        <canvas id="chart-daily-orders"></canvas>
-      </div>
-    </div>
-
-    <!-- Daily stacked category -->
-    <div class="card" id="chart-daily-cat-card">
-      <div class="card-title">Unidades por Dia — por Categoria</div>
-      <div style="position:relative;height:220px;">
-        <canvas id="chart-daily-cat"></canvas>
+      <!-- Daily orders bar -->
+      <div class="card" id="chart-daily-orders-card">
+        <div class="chart-title-row">
+          <div class="card-title">Pedidos por Dia</div>
+          <div class="holiday-legend"><span class="holiday-dot"></span> feriado</div>
+        </div>
+        <div style="position:relative;height:240px;">
+          <canvas id="chart-daily-orders"></canvas>
+        </div>
       </div>
     </div>
 
     <!-- Store drill-down (1 store selected) -->
-    <div id="store-drilldown" style="display:none;width:100%;max-width:720px;">
+    <div id="store-drilldown" style="display:none;width:100%;max-width:1200px;">
       <div class="card drill-card">
         <div class="drill-header" id="drill-header">Detalhes: Loja</div>
         <div class="metrics-charts-row" style="margin-bottom:0;">
@@ -598,11 +777,11 @@
     </div>
 
     <!-- ══ SEÇÃO: PRODUTOS ══ -->
-    <div class="metrics-section-header"><span>Produtos</span></div>
+    <div class="db-section"><div class="db-section-line"></div><div class="db-section-title">Produtos</div><div class="db-section-line"></div></div>
 
     <!-- Top products -->
     <div class="card" id="chart-products-card">
-      <div class="card-title">Unidades por Produto</div>
+      <div class="card-title">Unidades por Linha de Produto</div>
       <div style="position:relative;" id="chart-products-wrap">
         <canvas id="chart-products"></canvas>
       </div>
@@ -612,11 +791,14 @@
     <div id="all-products-container"></div>
 
     <!-- ══ SEÇÃO: ESTADOS ══ -->
-    <div class="metrics-section-header"><span>Estados</span></div>
+    <div class="db-section"><div class="db-section-line"></div><div class="db-section-title">Estados &amp; Regiões</div><div class="db-section-line"></div></div>
+
+    <!-- Regions strip -->
+    <div class="regions-strip" id="regions-strip"></div>
 
     <div class="card" id="chart-states-card">
-      <div class="card-title">Pedidos por Estado (UF)</div>
-      <div style="position:relative;" id="chart-states-wrap">
+      <div class="card-title">Pedidos por Estado — passe o mouse para ver o nome completo</div>
+      <div style="position:relative;height:260px;" id="chart-states-wrap">
         <canvas id="chart-states"></canvas>
       </div>
       <div id="states-empty" style="display:none;text-align:center;padding:24px;font-size:.82rem;color:var(--muted);">
@@ -634,38 +816,59 @@
       </div>
     </div>
 
-    <!-- ══ SEÇÃO: HISTÓRICO ══ -->
-    <div class="metrics-section-header"><span>Histórico</span></div>
+  </div><!-- /page-dashboard -->
 
-    <!-- PDF export -->
-    <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:16px 22px;">
-      <div>
-        <div style="font-weight:700;font-size:.88rem;color:var(--text);">Relatório em PDF</div>
-        <div style="font-size:.74rem;color:var(--muted);margin-top:2px;">Exporta todas as métricas do período selecionado.</div>
-      </div>
-      <button class="btn btn-outline" id="export-pdf-btn" style="padding:8px 18px;font-size:.82rem;">⬇ Baixar PDF</button>
+
+  <!-- ═══════════════ SEPARAÇÃO PAGE ═══════════════ -->
+  <div id="page-separacao" class="page-section">
+
+    <!-- Sub-nav tabs -->
+    <div class="sep-subnav">
+      <button class="sep-tab active" id="sep-tab-shopee">
+        <div class="sep-tab-logo">
+          <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="7" fill="#EE4D2D"/>
+            <path d="M5.5 13h17l-2 10H7.5L5.5 13z" fill="white"/>
+            <path d="M9.5 13c0-2.49 2.01-4.5 4.5-4.5s4.5 2.01 4.5 4.5" fill="none" stroke="white" stroke-width="1.9" stroke-linecap="round"/>
+          </svg>
+        </div>
+        Shopee
+      </button>
+      <button class="sep-tab" id="sep-tab-ml">
+        <div class="sep-tab-logo">
+          <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="7" fill="#FFE600"/>
+            <path d="M4 7h3l3 11h11l2.5-7.5H11" fill="none" stroke="#003087" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="13" cy="21" r="1.8" fill="#003087"/>
+            <circle cx="19" cy="21" r="1.8" fill="#003087"/>
+          </svg>
+        </div>
+        Mercado Livre
+      </button>
+      <button class="sep-tab dev" id="sep-tab-tiktok">
+        <div class="sep-tab-logo">
+          <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="7" fill="#010101"/>
+            <rect x="12" y="7.5" width="1.9" height="13" rx="1" fill="white"/>
+            <path d="M13.9 7.5 C17.5 8.8 19 11.5 16.5 14.2" fill="none" stroke="white" stroke-width="1.9" stroke-linecap="round"/>
+            <ellipse cx="9.5" cy="20" rx="3.2" ry="2.2" transform="rotate(-18 9.5 20)" fill="white"/>
+          </svg>
+        </div>
+        TikTok Shop
+      </button>
     </div>
 
-    <!-- History entries -->
-    <div class="card" id="history-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div class="card-title" style="margin-bottom:0;">Expedições Registradas</div>
-        <button class="btn btn-outline" id="refresh-history-btn" style="padding:5px 14px;font-size:.78rem;">↻</button>
+    <!-- ─── Shopee wrapper ─── -->
+    <div id="sep-shopee" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+
+    <!-- SKU Duplicates info card -->
+    <div class="card" id="sku-dup-card" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;color:#b87000;">⚠ SKUs com títulos diferentes cadastrados</div>
+        <button class="btn btn-outline" id="sku-dup-close" style="padding:4px 12px;font-size:.75rem;">✕ Fechar</button>
       </div>
-      <div id="history-entries-list">
-        <div style="text-align:center;padding:20px;font-size:.82rem;color:var(--muted);">Carregando...</div>
-      </div>
-    </div>
-
-  </div><!-- /page-home -->
-
-
-  <!-- ════════════════════════════════════════════════════════════ SHOPEE PAGE -->
-  <div id="page-shopee" style="display:none;">
-
-    <!-- Shopee sub-nav -->
-    <div class="home-subnav">
-      <button class="home-tab active">🏷️ Separação de Etiquetas</button>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:14px;">Esses SKUs estão mapeados para produtos diferentes. Verifique se as categorias estão corretas.</p>
+      <div id="sku-dup-list"></div>
     </div>
 
     <!-- 1. Upload -->
@@ -679,11 +882,27 @@
       <input type="file" id="file-input" accept=".pdf" multiple />
       <div id="file-list"></div>
       <div id="status"></div>
+
+      <!-- Upload separado para etiquetas de Retirada -->
+      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;">
+        <div style="font-size:.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
+          PDFs de Retirada pelo Comprador
+          <span style="font-weight:500;font-size:.72rem;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:6px;">— etiquetas com layout diferente (COLETA)</span>
+        </div>
+        <div id="retirada-drop-zone" style="border:2px dashed var(--border2);border-radius:10px;padding:18px 16px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--bg);">
+          <div style="font-size:1.2rem;margin-bottom:4px;">📦</div>
+          <p style="font-size:.8rem;color:var(--muted);font-weight:600;margin:0;">Arraste PDFs de retirada aqui ou clique para selecionar</p>
+          <p style="font-size:.72rem;color:var(--muted);margin:2px 0 0;" id="retirada-file-count">Nenhum arquivo selecionado</p>
+        </div>
+        <input type="file" id="retirada-file-input" accept=".pdf" multiple style="display:none;" />
+        <div id="retirada-file-list" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
     </div>
 
     <!-- 2. Classificar -->
     <div class="card" id="classify-card" style="display:none;">
       <div class="card-title">2 — Classificar Produtos Novos</div>
+      <div id="classify-stores" style="font-size:.75rem;font-weight:700;color:var(--accent);margin-bottom:8px;"></div>
       <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">
         Esses produtos aparecem pela primeira vez. Classifique uma vez — o sistema lembra para sempre.
       </p>
@@ -697,6 +916,11 @@
       <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">
         Todos os produtos estão classificados. Clique para separar e unir as etiquetas.
       </p>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <span style="font-size:.75rem;font-weight:700;color:var(--muted);">Data da etiqueta:</span>
+        <input type="date" id="label-date"
+          style="background:var(--bg);border:1.5px solid var(--border2);color:var(--text);border-radius:7px;padding:5px 10px;font-size:.82rem;font-weight:600;" />
+      </div>
       <button class="btn btn-primary" id="process-btn">Separar Etiquetas</button>
     </div>
 
@@ -715,6 +939,10 @@
       <div class="brand-grid"   id="brand-grid"></div>
       <div class="section-label" style="margin-top:6px;">Distribuição por Separação</div>
       <div class="breakdown-rows" id="breakdown-rows"></div>
+      <div id="val-bar-wrap" style="display:none;margin-top:14px;">
+        <div class="section-label">Validações</div>
+        <div class="val-bar" id="val-bar"></div>
+      </div>
     </div>
 
     <!-- Results -->
@@ -730,6 +958,14 @@
     <div class="card" id="verify-section">
       <div class="card-title">Dupla Verificação</div>
       <div id="verify-detail"></div>
+    </div>
+
+    <!-- Security Alerts -->
+    <div class="card" id="security-card" style="display:none;">
+      <div class="card-title" style="color:var(--red);">⚠ Varredura de Segurança</div>
+      <div id="security-body"></div>
+      <button class="btn btn-primary" id="security-confirm-btn" style="margin-top:14px;">Confirmar Resoluções</button>
+      <div id="security-status" style="display:none;font-size:.82rem;color:var(--green);margin-top:8px;font-weight:600;">✓ Resoluções salvas</div>
     </div>
 
     <!-- Lacrar Expedição -->
@@ -749,20 +985,186 @@
         <button class="btn btn-primary" id="lacrar-btn">⚡ Lacrar Expedição</button>
       </div>
       <div id="lacrar-status" style="display:none;margin-top:12px;font-size:.82rem;color:var(--green);font-weight:600;">
-        ✓ Expedição lacrada! Acesse Home → Métricas para visualizar.
+        ✓ Expedição lacrada! Acesse Dashboard para visualizar as métricas.
       </div>
     </div>
 
-    <!-- Mappings -->
-    <div class="toggle-wrap">
+    </div><!-- /sep-shopee -->
+
+    <!-- ─── Mercado Livre wrapper ─── -->
+    <div id="sep-ml" style="width:100%;display:none;flex-direction:column;align-items:center;">
+
+    <!-- 1. Upload -->
+    <div class="card" id="ml-upload-card">
+      <div class="card-title">1 — Upload dos PDFs do Mercado Livre</div>
+      <div id="ml-drop-zone" style="border:2px dashed var(--border2);border-radius:10px;padding:40px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;">
+        <div style="font-size:2rem;margin-bottom:10px;">📄</div>
+        <p style="font-size:.95rem;font-weight:600;color:var(--text);">Arraste os PDFs aqui ou clique para selecionar</p>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:4px;">Selecione um ou mais arquivos de etiquetas Mercado Livre (.pdf)</p>
+      </div>
+      <input type="file" id="ml-file-input" accept=".pdf" multiple style="display:none;" />
+      <div id="ml-file-list" style="margin-top:12px;display:flex;flex-direction:column;gap:5px;"></div>
+      <div id="ml-status" style="font-size:.82rem;color:var(--muted);margin-top:10px;min-height:18px;"></div>
+    </div>
+
+    <!-- 2. Classificar -->
+    <div class="card" id="ml-classify-card" style="display:none;">
+      <div class="card-title">2 — Classificar Produtos Novos</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">
+        Esses produtos aparecem pela primeira vez. Classifique uma vez — o sistema lembra para sempre.
+      </p>
+      <div id="ml-unknown-list"></div>
+      <button class="btn btn-primary" id="ml-save-btn" style="margin-top:6px;" disabled>Salvar e Continuar</button>
+    </div>
+
+    <!-- 3. Processar -->
+    <div class="card" id="ml-process-card" style="display:none;">
+      <div class="card-title">3 — Processar</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">
+        Todos os produtos estão classificados. Clique para separar e unir as etiquetas.
+      </p>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <span style="font-size:.75rem;font-weight:700;color:var(--muted);">Data da etiqueta:</span>
+        <input type="date" id="ml-label-date"
+          style="background:var(--bg);border:1.5px solid var(--border2);color:var(--text);border-radius:7px;padding:5px 10px;font-size:.82rem;font-weight:600;" />
+      </div>
+      <button class="btn btn-primary" id="ml-process-btn">Separar Etiquetas ML</button>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="card" id="ml-dashboard" style="display:none;">
+      <div class="card-title">Dashboard</div>
+      <div class="dash-top">
+        <div>
+          <div class="dash-stores" id="ml-dash-stores"></div>
+          <div style="font-size:.73rem;color:var(--muted);margin-top:5px;" id="ml-dash-sub"></div>
+        </div>
+        <div class="verify-badge ok" id="ml-verify-badge" style="display:none;"></div>
+      </div>
+      <div class="stat-row" id="ml-stat-row" style="margin-bottom:20px;"></div>
+      <div class="section-label">Total de Produtos por Linha</div>
+      <div class="brand-grid" id="ml-brand-grid"></div>
+      <div class="section-label" style="margin-top:6px;">Distribuição por Separação</div>
+      <div class="breakdown-rows" id="ml-breakdown-rows"></div>
+      <div id="ml-val-bar-wrap" style="display:none;margin-top:14px;">
+        <div class="section-label">Validações</div>
+        <div class="val-bar" id="ml-val-bar"></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card" id="ml-results-section" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:0;">Arquivos Gerados</div>
+        <button class="btn btn-outline" id="ml-download-all-btn" style="padding:8px 18px;font-size:.82rem;">⬇ Baixar Tudo</button>
+      </div>
+      <div id="ml-brand-rows-container"></div>
+    </div>
+
+    <!-- Verify -->
+    <div class="card" id="ml-verify-section" style="display:none;">
+      <div class="card-title">Dupla Verificação</div>
+      <div id="ml-verify-detail"></div>
+    </div>
+
+    <!-- Security Alerts ML -->
+    <div class="card" id="ml-security-card" style="display:none;">
+      <div class="card-title" style="color:var(--red);">⚠ Varredura de Segurança</div>
+      <div id="ml-security-body"></div>
+      <button class="btn btn-primary" id="ml-security-confirm-btn" style="margin-top:14px;">Confirmar Resoluções</button>
+      <div id="ml-security-status" style="display:none;font-size:.82rem;color:var(--green);margin-top:8px;font-weight:600;">✓ Resoluções salvas</div>
+    </div>
+
+    <!-- Lacrar -->
+    <div class="card lacrar-card" id="ml-lacrar-card" style="display:none;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-weight:700;font-size:.95rem;color:var(--text);">Lacrar no histórico de métricas?</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px;">
+            Registra esta expedição do Mercado Livre para acompanhar tendências.
+          </div>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:.75rem;font-weight:700;color:var(--muted);">Data da expedição:</span>
+            <input type="date" id="ml-lacrar-date"
+              style="background:var(--bg);border:1.5px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.82rem;font-weight:600;" />
+          </div>
+        </div>
+        <button class="btn btn-primary" id="ml-lacrar-btn">⚡ Lacrar Expedição ML</button>
+      </div>
+      <div id="ml-lacrar-status" style="display:none;margin-top:12px;font-size:.82rem;color:var(--green);font-weight:600;">
+        ✓ Expedição lacrada! Acesse Dashboard para visualizar as métricas.
+      </div>
+    </div>
+
+    </div><!-- /sep-ml -->
+
+    <!-- ─── TikTok placeholder ─── -->
+    <div id="sep-tiktok" style="width:100%;display:none;flex-direction:column;align-items:center;">
+      <div class="card" style="text-align:center;padding:48px 24px;width:100%;max-width:1200px;">
+        <div style="font-size:2.4rem;margin-bottom:14px;">🚧</div>
+        <div style="font-weight:700;font-size:1rem;color:var(--text);margin-bottom:7px;">Em desenvolvimento</div>
+        <div style="font-size:.8rem;color:var(--muted);">Integração com TikTok Shop em breve.</div>
+      </div>
+    </div><!-- /sep-tiktok -->
+
+  </div><!-- /page-separacao -->
+
+
+  <!-- ═══════════════ LOCALIZADOR PAGE ═══════════════ -->
+  <div id="page-localizador" class="page-section">
+    <div class="card" id="locator-card" style="width:100%;max-width:1200px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:6px;">
+        <div class="card-title" style="margin-bottom:0;">Localizador de Pedidos</div>
+        <span style="font-size:.72rem;color:var(--muted);">Cole os códigos BR e pressione Buscar</span>
+      </div>
+      <textarea id="locator-input" placeholder="BR012345678901&#10;BR987654321012&#10;..." rows="4"
+        style="width:100%;box-sizing:border-box;border:1.5px solid var(--border2);border-radius:8px;padding:10px 12px;font-size:.82rem;font-family:monospace;background:var(--bg);color:var(--text);resize:vertical;margin-top:8px;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" id="locator-search-btn" style="font-size:.82rem;padding:7px 20px;">Buscar</button>
+        <button class="btn btn-outline" id="locator-download-all-btn" style="font-size:.82rem;padding:7px 20px;display:none;">⬇ Baixar todos em 1 PDF</button>
+      </div>
+      <div id="locator-results" style="margin-top:14px;"></div>
+    </div>
+  </div><!-- /page-localizador -->
+
+
+  <!-- ═══════════════ HISTÓRICO PAGE ═══════════════ -->
+  <div id="page-historico" class="page-section">
+    <!-- PDF export -->
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:16px 22px;width:100%;max-width:1200px;">
+      <div>
+        <div style="font-weight:700;font-size:.88rem;color:var(--text);">Relatório em PDF</div>
+        <div style="font-size:.74rem;color:var(--muted);margin-top:2px;">Exporta todas as métricas do período selecionado.</div>
+      </div>
+      <button class="btn btn-outline" id="export-pdf-btn" style="padding:8px 18px;font-size:.82rem;">⬇ Baixar PDF</button>
+    </div>
+    <!-- History entries -->
+    <div class="card" id="history-card" style="width:100%;max-width:1200px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="card-title" style="margin-bottom:0;">Expedições Registradas</div>
+        <button class="btn btn-outline" id="refresh-history-btn" style="padding:5px 14px;font-size:.78rem;">↻</button>
+      </div>
+      <div id="history-entries-list">
+        <div style="text-align:center;padding:20px;font-size:.82rem;color:var(--muted);">Carregando...</div>
+      </div>
+    </div>
+  </div><!-- /page-historico -->
+
+
+  <!-- ═══════════════ AJUSTES PAGE ═══════════════ -->
+  <div id="page-ajustes" class="page-section">
+    <div class="ajustes-section-title">Mapeamentos de Produtos</div>
+    <div class="toggle-wrap" style="width:100%;max-width:1200px;">
       <a class="toggle-link" id="toggle-mappings">Ver mapeamentos salvos</a>
     </div>
-    <div class="card" id="mappings-panel">
+    <div class="card" id="mappings-panel" style="width:100%;max-width:1200px;">
       <div class="card-title">Mapeamentos Salvos</div>
       <div id="mappings-list"></div>
     </div>
+  </div><!-- /page-ajustes -->
 
-  </div><!-- /page-shopee -->
+  </main>
+</div><!-- /app-shell -->
 
 
   <!-- Loading overlay (global) -->
@@ -776,20 +1178,47 @@
     <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
   </div>
 
+<!-- ── PDF Page Preview Modal ──────────────────────────────────────── -->
+<div id="pdf-page-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9500;align-items:center;justify-content:center;">
+  <div style="background:var(--surface);border-radius:14px;padding:18px;max-width:92vw;max-height:92vh;overflow:auto;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+    <button id="pdf-page-modal-close" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;color:var(--muted);cursor:pointer;line-height:1;">✕</button>
+    <div id="pdf-page-label" style="font-size:.72rem;color:var(--muted);margin-bottom:10px;padding-right:28px;"></div>
+    <img id="pdf-page-img" style="max-width:100%;height:auto;border-radius:6px;display:block;" alt="PDF page" />
+  </div>
+</div>
+
+<!-- ── Security Modal ──────────────────────────────────────────────── -->
+<div id="sec-modal">
+  <div id="sec-modal-box">
+    <button id="sec-modal-close">✕</button>
+    <div id="sec-modal-title"></div>
+    <div id="sec-modal-body"></div>
+    <div id="sec-modal-footer">
+      <button class="btn btn-primary" id="sec-modal-save">Salvar resoluções</button>
+      <span id="sec-modal-saved">✓ Salvo</span>
+    </div>
+  </div>
+</div>
+
 <script>
 Chart.register(ChartDataLabels);
 
 const UPLOAD_STEPS = [
-  { label: "Enviando PDFs...",           sub: "Transferindo arquivos para o servidor" },
-  { label: "Lendo etiquetas...",         sub: "Extraindo dados do checklist de cada página" },
-  { label: "Verificando produtos...",    sub: "Comparando com mapeamentos salvos" },
+  { label: "Mandando os PDFs...",          sub: "Segura aí, já chego..." },
+  { label: "Lendo as etiquetas...",        sub: "Olhando cada página com lupa..." },
+  { label: "Verificando produtos...",      sub: "Comparando com o que eu já sei..." },
+  { label: "Conferindo os SKUs...",        sub: "Tudo checado, tudo certo..." },
+  { label: "Quase lá...",                  sub: "Só mais um segundo, prometo." },
 ];
 const PROCESS_STEPS = [
-  { label: "Separando por categoria...", sub: "Analisando cada etiqueta" },
-  { label: "Agrupando pedidos...",       sub: "Calculando unidades totais" },
-  { label: "Unindo os PDFs...",          sub: "Mesclando páginas de todas as lojas" },
-  { label: "Dupla verificação...",       sub: "Conferindo contagem de páginas" },
-  { label: "Ajustes finais...",          sub: "Quase pronto" },
+  { label: "Separando por categoria...",   sub: "Pura com pura, Turbo com Turbo..." },
+  { label: "Contando os potes...",         sub: "1, 2, 3... aguenta aí..." },
+  { label: "Agrupando os pedidos...",      sub: "Juntando tudo direitinho..." },
+  { label: "Unindo os PDFs...",            sub: "Colando página por página..." },
+  { label: "Dupla verificação...",         sub: "Conferindo de novo, só pra garantir..." },
+  { label: "Ajustes finais...",            sub: "Quase pronto, juro!" },
+  { label: "Tá ficando lindo...",          sub: "Pode confiar, tô quase terminando." },
+  { label: "Pronto em 3, 2, 1...",        sub: "Pode ir buscando o café." },
 ];
 
 const BRAND_ROWS = [
@@ -805,6 +1234,7 @@ const CAT_CHART_COLORS = { pura:"#00a86b", turbo:"#d63a3a", dux:"#2b7ed4", roupa
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let currentFiles     = [];
+let retiradaFiles    = [];
 let pendingKeys      = {};
 let selectedCats     = {};
 let selectedKits     = {};
@@ -813,6 +1243,7 @@ let loadingTimer     = null;
 let downloadedSet    = new Set();
 let allOutputFiles   = [];
 let currentProcessData = null;
+let currentHistoryIdx  = null;
 
 let currentMetricsPeriod = "7d";
 let selectedStores       = [];
@@ -833,21 +1264,153 @@ function showToast(msg, color) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-function showPage(page) {
-  const home   = document.getElementById("page-home");
-  const shopee = document.getElementById("page-shopee");
-  home.style.display   = page === "home"   ? "flex" : "none";
-  shopee.style.display = page === "shopee" ? "flex" : "none";
-  document.getElementById("mp-home").classList.toggle("active",   page === "home");
-  document.getElementById("mp-shopee").classList.toggle("active", page === "shopee");
-  if (page === "home") { loadAllMetrics(); loadHistoryEntries(); }
-}
-document.getElementById("mp-home").addEventListener("click",   () => showPage("home"));
-document.getElementById("mp-shopee").addEventListener("click", () => showPage("shopee"));
+const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-ajustes"];
+const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-ajustes"];
 
-["mp-ml","mp-tiktok"].forEach(id => {
-  document.getElementById(id).addEventListener("click", () => showToast("Em desenvolvimento 🚧"));
+function showPage(page) {
+  PAGES.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("active", id === page);
+  });
+  NAV_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle("active", id === "nav-" + page.replace("page-",""));
+  });
+  if (page === "page-dashboard")  { loadAllMetrics(); }
+  if (page === "page-historico")  { loadHistoryEntries(); }
+}
+
+function showSepTab(tab) {
+  ["shopee","ml","tiktok"].forEach(t => {
+    const wrap = document.getElementById("sep-" + t);
+    const btn  = document.getElementById("sep-tab-" + t);
+    const navBtn = document.getElementById("nav-" + t);
+    const show = t === tab;
+    if (wrap) { wrap.style.display = show ? "flex" : "none"; if (show) wrap.style.flexDirection = "column"; }
+    if (btn)  btn.classList.toggle("active", show);
+    if (navBtn) navBtn.classList.toggle("active", show);
+  });
+}
+
+document.getElementById("nav-dashboard").addEventListener("click", () => showPage("page-dashboard"));
+document.getElementById("nav-localizador").addEventListener("click", () => showPage("page-localizador"));
+document.getElementById("nav-historico").addEventListener("click", () => showPage("page-historico"));
+document.getElementById("nav-ajustes").addEventListener("click", () => showPage("page-ajustes"));
+
+document.getElementById("nav-separacao").addEventListener("click", () => {
+  const sub = document.getElementById("nav-sub-separacao");
+  const btn = document.getElementById("nav-separacao");
+  const isOpen = sub.classList.contains("open");
+  if (!isOpen) {
+    sub.classList.add("open");
+    btn.classList.add("open");
+    showPage("page-separacao");
+    showSepTab("shopee");
+  } else {
+    sub.classList.remove("open");
+    btn.classList.remove("open");
+  }
 });
+
+document.getElementById("nav-shopee").addEventListener("click", () => {
+  showPage("page-separacao");
+  showSepTab("shopee");
+});
+document.getElementById("nav-ml").addEventListener("click", () => {
+  showPage("page-separacao");
+  showSepTab("ml");
+});
+document.getElementById("nav-tiktok").addEventListener("click", () => {
+  showToast("Em desenvolvimento 🚧");
+});
+
+document.getElementById("sep-tab-shopee").addEventListener("click", () => showSepTab("shopee"));
+document.getElementById("sep-tab-ml").addEventListener("click",     () => showSepTab("ml"));
+document.getElementById("sep-tab-tiktok").addEventListener("click", () => showToast("Em desenvolvimento 🚧"));
+
+const dupReclassify = {};  // key -> {categoria, kit_size}
+
+async function loadSkuDuplicates(skuStores) {
+  const card = document.getElementById("sku-dup-card");
+  const list = document.getElementById("sku-dup-list");
+  try {
+    const data = await (await fetch("/mappings/sku-duplicates")).json();
+    // Only show SKUs that have NEW unmapped title variants in this batch
+    const entries = Object.entries(data).filter(([sku]) => skuStores && skuStores[sku]);
+    if (!entries.length) { card.style.display = "none"; return; }
+    list.innerHTML = "";
+    Object.assign(dupReclassify, {});
+    const CATS = ["pura","turbo","dux","roupa"];
+    const catColor = {pura:"var(--pura)",turbo:"var(--turbo)",dux:"var(--dux)",roupa:"var(--roupa)"};
+
+    entries.forEach(([sku, items]) => {
+      const block = document.createElement("div");
+      block.style.cssText = "background:var(--bg);border:1px solid #e8a000;border-radius:9px;padding:11px 13px;margin-bottom:8px;";
+      const stores = (skuStores && skuStores[sku]) ? skuStores[sku] : [];
+      const storeHtml = stores.length
+        ? `<span style="margin-left:8px;">${stores.map(s=>`<span style="font-weight:700;color:#b87000;font-size:.72rem;">${esc(s.toUpperCase().replace(/[^A-Z0-9 ]/gi,""))}</span>`).join(" &nbsp;·&nbsp; ")}</span>`
+        : "";
+      block.innerHTML = `<div style="font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:9px;">SKU: ${esc(sku)}${storeHtml}</div>`;
+      items.forEach(it => {
+        const sid = safeId(it.key);
+        dupReclassify[it.key] = { categoria: it.categoria, kit_size: it.kit_size };
+        const row = document.createElement("div");
+        row.style.cssText = "margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border);";
+        const kitOptions = [1,2,3,4,5,6].map(n =>
+          `<option value="${n}" ${n===it.kit_size?"selected":""}>${n === 1 ? "1 unidade" : `Kit ${n}`}</option>`
+        ).join("");
+        row.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="background:${catColor[it.categoria]||"var(--muted)"};color:#fff;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:4px;text-transform:uppercase;" id="dupcat-badge-${sid}">${esc(it.categoria)}</span>
+            <span style="font-weight:600;font-size:.82rem;flex:1;">${esc(it.titulo)}</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;" id="dupcat-row-${sid}">
+            ${CATS.map(c => `<button class="cat-btn ${c===it.categoria?`sel-${c}`:""}
+              " data-key="${esc(it.key)}" data-cat="${c}" style="font-size:.72rem;padding:3px 10px;">${c.charAt(0).toUpperCase()+c.slice(1)}</button>`).join("")}
+            <select id="dupkit-${sid}" style="font-size:.75rem;padding:3px 7px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--text);margin-left:4px;">
+              ${kitOptions}
+            </select>
+          </div>`;
+        block.appendChild(row);
+        row.querySelectorAll(".cat-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const k = btn.dataset.key, c = btn.dataset.cat;
+            dupReclassify[k].categoria = c;
+            row.querySelectorAll(".cat-btn").forEach(b => b.className = b.className.replace(/\bsel-\w+/g,"").trim());
+            btn.classList.add(`sel-${c}`);
+            const badge = document.getElementById(`dupcat-badge-${safeId(k)}`);
+            if (badge) { badge.textContent = c; badge.style.background = catColor[c]||"var(--muted)"; }
+          });
+        });
+        const kitSel = document.getElementById(`dupkit-${sid}`);
+        if (kitSel) kitSel.addEventListener("change", () => {
+          dupReclassify[it.key].kit_size = parseInt(kitSel.value);
+        });
+      });
+      list.appendChild(block);
+    });
+    // Save button
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "btn btn-primary";
+    saveBtn.style.cssText = "margin-top:6px;font-size:.82rem;";
+    saveBtn.textContent = "Salvar classificações";
+    saveBtn.addEventListener("click", async () => {
+      saveBtn.disabled = true; saveBtn.textContent = "Salvando...";
+      const toSave = {};
+      Object.entries(dupReclassify).forEach(([k, v]) => { toSave[k] = { categoria: v.categoria, kit_size: v.kit_size }; });
+      await fetch("/save-mappings", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ mappings: toSave }) });
+      saveBtn.textContent = "✓ Salvo";
+      showToast("Classificações salvas!", "var(--green)");
+    });
+    list.appendChild(saveBtn);
+    card.style.display = "block";
+  } catch(e) { card.style.display = "none"; }
+}
+
+document.getElementById("sku-dup-close").addEventListener("click", () => {
+  document.getElementById("sku-dup-card").style.display = "none";
+});
+
 
 
 // ── Loading ───────────────────────────────────────────────────────────────────
@@ -857,18 +1420,22 @@ function showLoading(steps) {
   const sub  = document.getElementById("step-sub");
   const fill = document.getElementById("progress-fill");
   ov.classList.add("active");
+  fill.style.width = "0%";
   let idx = 0;
+  let progress = 0;
   function show() {
-    const s = steps[Math.min(idx, steps.length - 1)];
+    const s = steps[idx % steps.length];
     lbl.classList.remove("visible"); sub.classList.remove("visible");
     setTimeout(() => {
       lbl.textContent = s.label; sub.textContent = s.sub;
       lbl.classList.add("visible"); sub.classList.add("visible");
-    }, 120);
-    fill.style.width = Math.round((idx / (steps.length - 1)) * 100) + "%";
+    }, 100);
+    // Progress bar advances but never hits 100% until done
+    progress = Math.min(progress + (90 / steps.length), 88);
+    fill.style.width = Math.round(progress) + "%";
   }
   show();
-  loadingTimer = setInterval(() => { idx = Math.min(idx+1, steps.length-1); show(); }, 900);
+  loadingTimer = setInterval(() => { idx++; show(); }, 1400);
 }
 function hideLoading() {
   clearInterval(loadingTimer);
@@ -887,6 +1454,18 @@ dropZone.addEventListener("drop", e => {
   if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
 });
 fileInput.addEventListener("change", () => { if (fileInput.files.length) uploadFiles(fileInput.files); });
+
+// ── Retirada drop zone ─────────────────────────────────────────────────────────
+const retiradaDropZone  = document.getElementById("retirada-drop-zone");
+const retiradaFileInput = document.getElementById("retirada-file-input");
+retiradaDropZone.addEventListener("click",     () => retiradaFileInput.click());
+retiradaDropZone.addEventListener("dragover",  e  => { e.preventDefault(); retiradaDropZone.classList.add("drag-over"); });
+retiradaDropZone.addEventListener("dragleave", () => retiradaDropZone.classList.remove("drag-over"));
+retiradaDropZone.addEventListener("drop", e => {
+  e.preventDefault(); retiradaDropZone.classList.remove("drag-over");
+  if (e.dataTransfer.files.length) uploadRetiradaFiles(e.dataTransfer.files);
+});
+retiradaFileInput.addEventListener("change", () => { if (retiradaFileInput.files.length) uploadRetiradaFiles(retiradaFileInput.files); });
 
 // ── Upload ────────────────────────────────────────────────────────────────────
 function renderFileList(files) {
@@ -939,13 +1518,58 @@ async function uploadFiles(fileList) {
     const n = currentFiles.length;
     setStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
     const nextStep = () => {
-      if (data.unknown.length > 0) showClassify(data.unknown);
+      if (data.has_batch_sku_dups) loadSkuDuplicates(data.sku_stores || {});
+      else document.getElementById("sku-dup-card").style.display = "none";
+      if (data.unknown.length > 0) showClassify(data.unknown, data.store_names || []);
       else document.getElementById("process-card").style.display = "block";
     };
     const warnings = data.format_warnings || {};
     if (Object.keys(warnings).length > 0) showFormatWarningModal(warnings, nextStep);
     else nextStep();
   } catch (e) { hideLoading(); setStatus("Erro ao enviar: " + e.message, "error"); }
+}
+
+async function uploadRetiradaFiles(fileList) {
+  retiradaFiles = []; setStatus("");
+  const countEl  = document.getElementById("retirada-file-count");
+  const listEl   = document.getElementById("retirada-file-list");
+  listEl.innerHTML = "";
+  countEl.textContent = "Enviando...";
+  // Mostra badges de "Enviando…" para cada arquivo
+  Array.from(fileList).forEach(f => {
+    if (!f.name.toLowerCase().endsWith(".pdf")) return;
+    const row = document.createElement("div");
+    row.className = "file-row"; row.id = "rfr-" + safeId(f.name);
+    row.innerHTML = `<span>📄</span><span class="fr-name">${esc(f.name)}</span><span class="fr-badge pending">Enviando…</span>`;
+    listEl.appendChild(row);
+  });
+  const form = new FormData();
+  Array.from(fileList).forEach(f => form.append("pdfs", f));
+  try {
+    const res  = await fetch("/upload?retirada=1", { method: "POST", body: form });
+    const data = await res.json();
+    if (data.error) { countEl.textContent = "Erro: " + data.error; listEl.innerHTML = ""; return; }
+    retiradaFiles = data.filenames || [];
+    const n = retiradaFiles.length;
+    countEl.textContent = n > 0
+      ? `✓ ${n} PDF${n > 1 ? "s" : ""} de retirada enviado${n > 1 ? "s" : ""}`
+      : "Nenhum arquivo reconhecido";
+    // Atualiza badges
+    Array.from(fileList).forEach(f => {
+      const row = document.getElementById("rfr-" + safeId(f.name));
+      if (!row) return;
+      const b = row.querySelector(".fr-badge");
+      if (retiradaFiles.includes(f.name)) { b.className = "fr-badge ok"; b.textContent = "✓ Enviado"; }
+      else { b.className = "fr-badge error"; b.textContent = "Ignorado"; }
+    });
+    if (n > 0) {
+      // Avança o fluxo — format_warnings ignorados aqui (layout diferente é esperado)
+      if (data.has_batch_sku_dups) loadSkuDuplicates(data.sku_stores || {});
+      else document.getElementById("sku-dup-card").style.display = "none";
+      if ((data.unknown || []).length > 0) showClassify(data.unknown, data.store_names || []);
+      else document.getElementById("process-card").style.display = "block";
+    }
+  } catch (e) { countEl.textContent = "Erro: " + e.message; }
 }
 
 // ── Classify ──────────────────────────────────────────────────────────────────
@@ -958,19 +1582,44 @@ function isAllClassified() {
   });
 }
 
-function showClassify(unknowns) {
+function showClassify(unknowns, storeNames) {
   document.getElementById("classify-card").style.display = "block";
   const list = document.getElementById("unknown-list");
   list.innerHTML = "";
   selectedCats = {}; selectedKits = {}; selectedNewBrand = {}; pendingKeys = {};
 
-  unknowns.forEach(u => {
+  // Show store names in the card header
+  const storeEl = document.getElementById("classify-stores");
+  if (storeEl) {
+    storeEl.textContent = storeNames && storeNames.length
+      ? "Loja" + (storeNames.length > 1 ? "s" : "") + ": " + storeNames.join(", ")
+      : "";
+  }
+
+  // Detect SKUs that appear with multiple different titles in this batch
+  const skuCount = {};
+  unknowns.forEach(u => { skuCount[u.sku] = (skuCount[u.sku] || 0) + 1; });
+
+  // Sort: duplicate-SKU items first (grouped by SKU), then others
+  const sorted = [...unknowns].sort((a, b) => {
+    const da = skuCount[a.sku] > 1, db = skuCount[b.sku] > 1;
+    if (da !== db) return da ? -1 : 1;
+    if (da && db) return a.sku.localeCompare(b.sku);
+    return 0;
+  });
+
+  sorted.forEach(u => {
     const key = u.key; pendingKeys[key] = u;
     const sid = safeId(key);
+    const isDup = skuCount[u.sku] > 1;
     const div = document.createElement("div");
-    div.className = "unknown-item";
+    div.className = "unknown-item" + (isDup ? " dup-sku" : "");
     div.innerHTML = `
-      <div class="u-name">${esc(u.produto)}</div>
+      ${isDup ? `<span class="sku-dup-warn">⚠ SKU duplicado — mesmo SKU, título diferente. Classifique cada um separadamente.</span>` : ""}
+      <div class="u-name">
+        ${esc(u.produto)}
+        ${u.file ? `<button class="pdf-view-btn" title="Ver no PDF" onclick="showPdfPage('${esc(u.file)}',${u.page||1})">👁 ver</button>` : ""}
+      </div>
       <div class="u-sku">SKU: <span>${esc(u.sku)}</span></div>
       <div class="cat-row" id="cats-${sid}">
         <button class="cat-btn" data-key="${esc(key)}" data-cat="pura">Pura</button>
@@ -1042,13 +1691,14 @@ document.getElementById("save-btn").addEventListener("click", async () => {
   const newBrands = {};
   for (const [key] of Object.entries(pendingKeys)) {
     const cat = selectedCats[key]; if (!cat) continue;
+    const titulo = (pendingKeys[key] || {}).produto || "";
     if (cat === "__new__") {
       const nb = selectedNewBrand[key] || {};
       if (!nb.slug) continue;
       newBrands[nb.slug] = nb.display || nb.slug;
-      toSave[key] = { categoria: nb.slug, kit_size: selectedKits[key] || 1 };
+      toSave[key] = { categoria: nb.slug, kit_size: selectedKits[key] || 1, titulo };
     } else {
-      toSave[key] = { categoria: cat, kit_size: cat === "roupa" ? 1 : (selectedKits[key] || 1) };
+      toSave[key] = { categoria: cat, kit_size: cat === "roupa" ? 1 : (selectedKits[key] || 1), titulo };
     }
   }
   for (const [slug, display] of Object.entries(newBrands)) {
@@ -1064,6 +1714,7 @@ document.getElementById("save-btn").addEventListener("click", async () => {
   if ((await res.json()).ok) {
     document.getElementById("classify-card").style.display = "none";
     document.getElementById("process-card").style.display  = "block";
+    document.getElementById("label-date").value = new Date().toISOString().split("T")[0];
   }
 });
 
@@ -1075,14 +1726,18 @@ document.getElementById("process-btn").addEventListener("click", async () => {
   try {
     const res  = await fetch("/process", {
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ filenames: currentFiles })
+      body: JSON.stringify({
+        filenames:          currentFiles,
+        retirada_filenames: retiradaFiles,
+        label_date:         document.getElementById("label-date").value || new Date().toISOString().split("T")[0]
+      })
     });
     const data = await res.json();
     hideLoading();
     if (data.error) {
       setStatus(data.error, "error");
       btn.disabled = false; btn.innerHTML = "Separar Etiquetas";
-      if (data.unknown) showClassify(data.unknown);
+      if (data.unknown) showClassify(data.unknown, []);
       return;
     }
     document.getElementById("process-card").style.display = "none";
@@ -1090,6 +1745,7 @@ document.getElementById("process-btn").addEventListener("click", async () => {
     renderDashboard(data);
     renderResults(data);
     renderVerify(data);
+    renderSecurityAlerts(data);
     document.getElementById("lacrar-card").style.display = "block";
     document.getElementById("lacrar-date").value = new Date().toISOString().split("T")[0];
   } catch(e) {
@@ -1107,12 +1763,15 @@ document.getElementById("lacrar-btn").addEventListener("click", async () => {
     const res = await fetch("/history/add", {
       method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        date:               document.getElementById("lacrar-date").value || new Date().toISOString().split("T")[0],
-        store_items:        currentProcessData.stats.store_items || {},
-        store_label_counts: currentProcessData.stats.store_label_counts || {},
-        label_pages:        currentProcessData.stats.label_pages,
-        breakdown:          currentProcessData.stats.breakdown,
-        state_counts:       currentProcessData.stats.state_counts || {},
+        date:                document.getElementById("lacrar-date").value || new Date().toISOString().split("T")[0],
+        store_items:         currentProcessData.stats.store_items || {},
+        store_label_counts:  currentProcessData.stats.store_label_counts || {},
+        label_pages:         currentProcessData.stats.label_pages,
+        breakdown:           currentProcessData.stats.breakdown,
+        output_page_counts:  currentProcessData.stats.output_page_counts || {},
+        state_counts:        currentProcessData.stats.state_counts || {},
+        tracking_numbers:    currentProcessData.stats.tracking_numbers || [],
+        tracking_data:       currentProcessData.stats.tracking_data    || {},
       })
     });
     if ((await res.json()).ok) {
@@ -1125,6 +1784,176 @@ document.getElementById("lacrar-btn").addEventListener("click", async () => {
     setStatus("Erro ao lacrar: " + e.message, "error");
   }
 });
+
+// ── Security / Validation ─────────────────────────────────────────────────────
+let securityTrackingChoices = {};
+let securitySkuChoices      = {};
+
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+const secModal      = document.getElementById("sec-modal");
+const secModalBox   = document.getElementById("sec-modal-box");
+const secModalTitle = document.getElementById("sec-modal-title");
+const secModalBody  = document.getElementById("sec-modal-body");
+const secModalSave  = document.getElementById("sec-modal-save");
+const secModalSaved = document.getElementById("sec-modal-saved");
+
+function openSecModal(title, bodyFn, saveFn) {
+  secModalTitle.textContent = title;
+  secModalBody.innerHTML = "";
+  secModalSaved.style.display = "none";
+  secModalSave.disabled = false;
+  secModalSave.style.display = saveFn ? "" : "none";
+  bodyFn(secModalBody);
+  secModalSave.onclick = saveFn || null;
+  secModal.classList.add("open");
+}
+function closeSecModal() { secModal.classList.remove("open"); }
+document.getElementById("sec-modal-close").addEventListener("click", closeSecModal);
+secModal.addEventListener("click", e => { if (e.target === secModal) closeSecModal(); });
+
+// ── Render validation bar + populate modal content ────────────────────────────
+function renderSecurityAlerts(data, prefix) {
+  prefix = prefix || "";
+  const pfx    = prefix ? prefix + "-" : "";
+  const alerts = data.security_alerts || {};
+  const tc     = alerts.tracking_conflicts || [];
+  const sc     = alerts.sku_conflicts      || [];
+  const stats  = data.stats || {};
+  const verif  = stats.verification || null;
+
+  securityTrackingChoices = {};
+  securitySkuChoices      = {};
+
+  // Initialise choices
+  tc.forEach(c => { securityTrackingChoices[c.tracking] = "keep_both"; });
+  sc.forEach(c => { securitySkuChoices[c.sku] = { categoria: c.categoria_atual, kit_size: c.kit_size, titulo_encontrado: c.titulo_encontrado }; });
+
+  // ── Build chips ──────────────────────────────────────────────────────────
+  const barWrap = document.getElementById(pfx + "val-bar-wrap");
+  const bar     = document.getElementById(pfx + "val-bar");
+  if (!bar) return;
+  bar.innerHTML = "";
+
+  // 1. Contagem de etiquetas
+  if (verif) {
+    const chip = document.createElement("button");
+    chip.className = "val-chip " + (verif.ok ? "ok" : "err");
+    chip.textContent = verif.ok
+      ? `✓ Contagem correta (${verif.label_pages} etiquetas)`
+      : `⚠ Contagem diverge — ${verif.label_pages} etiquetas, ${verif.output_total} geradas`;
+    if (!verif.ok) chip.addEventListener("click", () => openSecModal(
+      "Divergência de contagem",
+      el => { el.innerHTML = `<div class="smi-block"><div class="smi-head">O que aconteceu?</div>
+        <div class="smi-sub">${verif.label_pages} etiquetas detectadas, mas ${verif.output_total} páginas geradas nos PDFs.<br>
+        Verifique se algum produto ficou sem categoria ou se um arquivo corrompido foi incluído.</div></div>`; },
+      null
+    ));
+    bar.appendChild(chip);
+  }
+
+  // 2. Etiquetas repetidas (tracking)
+  {
+    const chip = document.createElement("button");
+    chip.className = "val-chip " + (tc.length ? "err" : "ok");
+    chip.textContent = tc.length
+      ? `⚠ ${tc.length} etiqueta${tc.length>1?"s":""} repetida${tc.length>1?"s":""}`
+      : "✓ Sem etiquetas repetidas";
+    if (tc.length) chip.addEventListener("click", () => openSecModal(
+      `Etiquetas já registradas (${tc.length})`,
+      el => {
+        tc.forEach(c => {
+          const d = c.previous_date ? new Date(c.previous_date).toLocaleDateString("pt-BR") : "?";
+          const block = document.createElement("div");
+          block.className = "smi-block";
+          block.innerHTML = `
+            <div class="smi-head">${esc(c.tracking)}</div>
+            <div class="smi-sub">Registrada em <b>${esc(d)}</b> · ${esc(c.filename)}, pág. ${c.page}</div>
+            <div class="smi-opts" id="smi-tr-${safeId(c.tracking)}">
+              <button class="smi-opt active" data-val="keep_both">Manter ambas</button>
+              <button class="smi-opt" data-val="delete_previous">Excluir anterior</button>
+              <button class="smi-opt" data-val="ignore_today">Ignorar hoje</button>
+            </div>`;
+          el.appendChild(block);
+          block.querySelectorAll(".smi-opt").forEach(btn => {
+            btn.addEventListener("click", () => {
+              block.querySelectorAll(".smi-opt").forEach(b => b.classList.remove("active"));
+              btn.classList.add("active");
+              securityTrackingChoices[c.tracking] = btn.dataset.val;
+            });
+          });
+        });
+      },
+      async () => {
+        secModalSave.disabled = true;
+        await fetch("/security-resolve", {
+          method: "POST", headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ tracking_actions: securityTrackingChoices, sku_actions: [] })
+        });
+        secModalSaved.style.display = "inline";
+        setTimeout(closeSecModal, 900);
+      }
+    ));
+    bar.appendChild(chip);
+  }
+
+  // 3. Conflito de SKU+Título
+  {
+    const chip = document.createElement("button");
+    chip.className = "val-chip " + (sc.length ? "warn" : "ok");
+    chip.textContent = sc.length
+      ? `⚠ ${sc.length} conflito${sc.length>1?"s":""} de SKU`
+      : "✓ SKUs sem conflito";
+    if (sc.length) chip.addEventListener("click", () => openSecModal(
+      `Conflito de SKU + Título (${sc.length})`,
+      el => {
+        const CATS = ["pura","turbo","dux","roupa"];
+        sc.forEach(c => {
+          const block = document.createElement("div");
+          block.className = "smi-block";
+          block.innerHTML = `
+            <div class="smi-head">SKU: ${esc(c.sku)}</div>
+            <div class="smi-sub">
+              Salvo como: <b>${esc(c.titulo_salvo)}</b> <span style="opacity:.6;">(${esc(c.categoria_atual)})</span><br>
+              Encontrado: <b>${esc(c.titulo_encontrado)}</b>
+            </div>
+            <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px;">Categoria para o título encontrado:</div>
+            <div class="smi-opts" id="smi-sk-${safeId(c.sku)}">
+              ${CATS.map(cat => `<button class="smi-opt" data-cat="${cat}">${cat.charAt(0).toUpperCase()+cat.slice(1)}</button>`).join("")}
+              <button class="smi-opt active" data-cat="__keep__">Manter atual</button>
+            </div>`;
+          el.appendChild(block);
+          block.querySelectorAll(".smi-opt").forEach(btn => {
+            btn.addEventListener("click", () => {
+              block.querySelectorAll(".smi-opt").forEach(b => b.classList.remove("active"));
+              btn.classList.add("active");
+              const cat = btn.dataset.cat;
+              securitySkuChoices[c.sku].categoria = cat === "__keep__" ? c.categoria_atual : cat;
+            });
+          });
+        });
+      },
+      async () => {
+        secModalSave.disabled = true;
+        const skuActions = Object.entries(securitySkuChoices).map(([sku, v]) => ({
+          sku, categoria: v.categoria, kit_size: v.kit_size, titulo_encontrado: v.titulo_encontrado
+        }));
+        await fetch("/security-resolve", {
+          method: "POST", headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ tracking_actions: {}, sku_actions: skuActions })
+        });
+        secModalSaved.style.display = "inline";
+        setTimeout(closeSecModal, 900);
+      }
+    ));
+    bar.appendChild(chip);
+  }
+
+  barWrap.style.display = "block";
+
+  // Hide old verbose security card
+  const card = document.getElementById(pfx + "security-card");
+  if (card) card.style.display = "none";
+}
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 function renderDashboard(data) {
@@ -1141,34 +1970,48 @@ function renderDashboard(data) {
   document.getElementById("dash-sub").textContent =
     `${n} PDF${n>1?"s":""} processado${n>1?"s":""} · ${new Date().toLocaleTimeString("pt-BR")}`;
   const badge = document.getElementById("verify-badge");
-  badge.style.display = "inline-flex";
-  badge.className   = "verify-badge " + (s.verification.ok ? "ok" : "fail");
-  badge.textContent = s.verification.ok ? "✓ Verificado" : "⚠ Divergência";
+  if (s.verification) {
+    badge.style.display = "inline-flex";
+    badge.className   = "verify-badge " + (s.verification.ok ? "ok" : "fail");
+    badge.textContent = s.verification.ok ? "✓ Verificado" : "⚠ Divergência";
+  } else {
+    badge.style.display = "none";
+  }
   const statRow = document.getElementById("stat-row");
-  statRow.innerHTML = "";
-  [
-    { val: s.total_pages, lbl: "páginas totais" },
-    { val: s.label_pages, lbl: "etiquetas" },
-    { val: s.blank_pages + s.sem_checklist, lbl: "em branco" },
-    { val: Object.keys(s.breakdown).length, lbl: "grupos gerados" },
-  ].forEach(st => {
-    const box = document.createElement("div");
-    box.className = "stat-box";
-    box.innerHTML = `<div class="sv">${st.val}</div><div class="sl">${st.lbl}</div>`;
-    statRow.appendChild(box);
-  });
+  statRow.innerHTML = `
+    <div class="stat-hero-val">${s.label_pages}</div>
+    <div class="stat-hero-lbl">pedidos</div>
+    <div class="stat-secondary">
+      <span>${Object.keys(s.breakdown).length} grupos gerados</span>
+      <span>·</span>
+      <span>${s.total_pages} páginas</span>
+      <span>·</span>
+      <span>${s.blank_pages + s.sem_checklist} em branco</span>
+    </div>`;
   const brandGrid = document.getElementById("brand-grid");
   brandGrid.innerHTML = "";
+  let variacoesOrders = 0;
   (s.brand_summary || []).forEach(b => {
+    if (b.brand === "variacoes") { variacoesOrders += b.orders; return; }
     const card = document.createElement("div");
     card.className = `brand-card ${b.brand}`;
     card.innerHTML = `
       <div class="bc-name">${esc(b.display)}</div>
-      <div class="bc-units">${b.units}</div>
-      <div class="bc-units-lbl">potes no total</div>
-      <div class="bc-orders"><strong>${b.orders}</strong> pedido${b.orders!==1?"s":""}</div>`;
+      <div class="bc-orders-num">${b.orders}</div>
+      <div class="bc-orders-lbl">pedido${b.orders!==1?"s":""}</div>
+      <div class="bc-units-row">${b.brand === "roupa" ? `${b.units} peças` : `${b.units} potes`}</div>`;
     brandGrid.appendChild(card);
   });
+  const existingVarNote = brandGrid.parentNode.querySelector(".variacoes-alert");
+  if (existingVarNote) existingVarNote.remove();
+  if (variacoesOrders > 0) {
+    const note = document.createElement("div");
+    note.className = "variacoes-alert";
+    note.style.cssText = "margin-top:8px;padding:6px 12px;background:rgba(212,122,0,.06);border-left:3px solid var(--var);border-radius:4px;font-size:.73rem;color:#a06000;";
+    note.textContent = `⚠ ${variacoesOrders} pedido${variacoesOrders!==1?"s":""} com variação de categoria — verifique os arquivos gerados.`;
+    brandGrid.after(note);
+  }
+
   const brRows   = document.getElementById("breakdown-rows");
   brRows.innerHTML = "";
   const maxCount = Math.max(...Object.values(s.breakdown), 1);
@@ -1196,7 +2039,8 @@ function renderDashboard(data) {
 }
 
 // ── Results ───────────────────────────────────────────────────────────────────
-function renderResults(data) {
+function renderResults(data, historyIdx = null) {
+  currentHistoryIdx = historyIdx;
   const s = data.stats;
   document.getElementById("results-section").style.display = "block";
   const container = document.getElementById("brand-rows-container");
@@ -1234,7 +2078,9 @@ function renderResults(data) {
       card.className = "dl-card";
       const dlBtn = document.createElement("a");
       dlBtn.className = "dl-btn";
-      dlBtn.href      = "/download/" + encodeURIComponent(filename);
+      dlBtn.href      = currentHistoryIdx !== null
+        ? `/history/download/${currentHistoryIdx}/${encodeURIComponent(filename)}`
+        : "/download/" + encodeURIComponent(filename);
       dlBtn.download  = filename;
       dlBtn.textContent = "Baixar PDF";
       dlBtn.addEventListener("click", () => {
@@ -1254,18 +2100,26 @@ function renderResults(data) {
 function renderVerify(data) {
   document.getElementById("verify-section").style.display = "block";
   const v = data.stats.verification, ok = v.ok;
-  document.getElementById("verify-detail").innerHTML = `
-    <div class="verify-detail ${ok?"ok":"fail"}">
-      <div class="verify-icon">${ok?"✅":"⚠️"}</div>
-      <div class="verify-text">
-        <div class="vt-main">${esc(ok
-          ? `Tudo certo — ${v.label_pages} etiquetas no PDF, ${v.output_total} páginas geradas`
-          : `Divergência — ${v.label_pages} etiquetas, mas ${v.output_total} páginas geradas`)}</div>
-        <div class="vt-sub">${esc(ok
-          ? "Todas as etiquetas foram separadas corretamente."
-          : "Algumas etiquetas podem não ter sido geradas. Verifique os arquivos.")}</div>
-      </div>
-    </div>`;
+  const isHistory = data.stats.is_history_reopen;
+  document.getElementById("verify-detail").innerHTML = isHistory
+    ? `<div class="verify-detail ok">
+        <div class="verify-icon">📋</div>
+        <div class="verify-text">
+          <div class="vt-main">Expedição do histórico — ${v.label_pages} etiquetas registradas</div>
+          <div class="vt-sub">Verificação baseada nos dados salvos. Os PDFs em disco podem ser de outra expedição.</div>
+        </div>
+       </div>`
+    : `<div class="verify-detail ${ok?"ok":"fail"}">
+        <div class="verify-icon">${ok?"✅":"⚠️"}</div>
+        <div class="verify-text">
+          <div class="vt-main">${esc(ok
+            ? `Tudo certo — ${v.label_pages} etiquetas no PDF, ${v.output_total} páginas geradas`
+            : `Divergência — ${v.label_pages} etiquetas, mas ${v.output_total} páginas geradas`)}</div>
+          <div class="vt-sub">${esc(ok
+            ? "Todas as etiquetas foram separadas corretamente."
+            : "Algumas etiquetas podem não ter sido geradas. Verifique os arquivos.")}</div>
+        </div>
+       </div>`;
 }
 
 // ── Download All ──────────────────────────────────────────────────────────────
@@ -1274,7 +2128,10 @@ document.getElementById("download-all-btn").addEventListener("click", async () =
   const orig = btn.textContent;
   btn.disabled = true; btn.textContent = "Preparando ZIP...";
   try {
-    const resp = await fetch("/download-all", {
+    const dlUrl = currentHistoryIdx !== null
+      ? `/history/download-all/${currentHistoryIdx}`
+      : "/download-all";
+    const resp = await fetch(dlUrl, {
       method: "POST", headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ filenames: allOutputFiles })
     });
@@ -1343,14 +2200,18 @@ function renderLojaTab() {
   document.getElementById("m-sv-units").textContent   = data.summary.total_units;
   document.getElementById("m-sv-stores").textContent  = Object.keys(data.store_totals).length;
   document.getElementById("m-sv-entries").textContent = data.total_entries;
+  const subEl = document.getElementById("m-kpi-orders-sub");
+  if (subEl) subEl.textContent = "";
 
   updateStoreFilter(data.all_stores);
 
-  document.getElementById("metrics-empty").style.display            = isEmpty ? "block" : "none";
-  document.getElementById("chart-stores-card").style.display        = isEmpty ? "none"  : "block";
-  document.getElementById("chart-products-card").style.display      = isEmpty ? "none"  : "block";
-  document.getElementById("chart-daily-orders-card").style.display  = isEmpty ? "none"  : "block";
-  document.getElementById("chart-daily-cat-card").style.display     = isEmpty ? "none"  : "block";
+  document.getElementById("metrics-empty").style.display           = isEmpty ? "block" : "none";
+  document.getElementById("lojas-row").style.display               = isEmpty ? "none"  : "grid";
+  document.getElementById("chart-stores-card").style.display       = isEmpty ? "none"  : "block";
+  document.getElementById("chart-daily-orders-card").style.display = isEmpty ? "none"  : "block";
+  document.getElementById("chart-products-card").style.display     = isEmpty ? "none"  : "block";
+  document.getElementById("chart-states-card").style.display       = isEmpty ? "none"  : "block";
+  document.getElementById("kpi-row").style.display                 = isEmpty ? "none"  : "grid";
 
   if (isEmpty) {
     Object.values(metricsCharts).forEach(c => { try { c.destroy(); } catch(_) {} });
@@ -1363,11 +2224,20 @@ function renderLojaTab() {
 
   renderStoreChart(data.store_totals);
   renderDailyOrdersChart(days);
-  renderDailyCategoryChart(days);
   renderDrilldown();
   renderProductChart(data.top_products);
   renderStateChart(stateData?.state_totals || {});
 }
+
+// ── Store display names ────────────────────────────────────────────────────────
+const STORE_DISPLAY = {
+  "Aplhavita":      "ALPHAVITTA",
+  "Dex Fitt":       "DEX",
+  "EVO Fitnes":     "EVO",
+  "Essenza_Natural":"ESSENZA",
+  "REPZILLA":       "REPZILLA",
+};
+function storeLabel(s) { return STORE_DISPLAY[s] || s.toUpperCase(); }
 
 // ── Store filter ──────────────────────────────────────────────────────────────
 function updateStoreFilter(allStores) {
@@ -1389,7 +2259,7 @@ function updateStoreFilter(allStores) {
   allStores.forEach(store => {
     const chip = document.createElement("div");
     chip.className = "store-chip" + (selectedStores.includes(store) ? " sel" : "");
-    chip.textContent = store;
+    chip.textContent = storeLabel(store);
     chip.addEventListener("click", () => {
       if (selectedStores.includes(store)) selectedStores = selectedStores.filter(s => s !== store);
       else selectedStores.push(store);
@@ -1658,11 +2528,10 @@ async function loadAllProductsSection() {
   try {
     const brandsRes = await fetch("/brands");
     const brands    = await brandsRes.json();
-    const stdOrder  = ["pura", "turbo", "dux"];
+    const stdOrder  = ["pura", "turbo", "dux", "roupa"];
     const cats = [
-      ...stdOrder.filter(k => brands[k]),
+      ...stdOrder.filter(k => k === "roupa" || brands[k]),
       ...Object.keys(brands).filter(k => !stdOrder.includes(k)),
-      "roupa",
     ];
     const results = await Promise.all(cats.map(cat =>
       fetch("/history/product-metrics", {
@@ -1762,8 +2631,9 @@ document.getElementById("export-pdf-btn").addEventListener("click", async () => 
   const btn = document.getElementById("export-pdf-btn");
   btn.disabled = true; btn.textContent = "Gerando...";
   try {
-    const periodLabels = { today:"Hoje", "7d":"Últimos 7 dias", "15d":"Últimos 15 dias",
-                           "30d":"Últimos 30 dias", all:"Todo o período", custom:"Personalizado" };
+    const periodLabels = { today:"Hoje", yesterday:"Ontem", "7d":"Últimos 7 dias",
+                           "15d":"Últimos 15 dias", "30d":"Últimos 30 dias",
+                           all:"Todo o período", custom:"Personalizado" };
     let periodLabel = periodLabels[currentMetricsPeriod] || currentMetricsPeriod;
     if (currentMetricsPeriod === "custom") {
       const f = document.getElementById("from-date").value;
@@ -1792,6 +2662,126 @@ document.getElementById("export-pdf-btn").addEventListener("click", async () => 
   } catch(e) { alert("Erro ao gerar PDF: " + e.message); }
   finally { btn.disabled = false; btn.textContent = "⬇ Baixar PDF"; }
 });
+
+// ── Order Locator ─────────────────────────────────────────────────────────────
+(function() {
+  const CAT_LABEL = { pura:"Pura", turbo:"Turbo", dux:"DUX", roupa:"Roupas", variacoes:"Variações" };
+  let locatorFoundNumbers = [];
+
+  function parseNumbers(raw) {
+    return [...new Set(
+      raw.split(/[\s,;]+/)
+         .map(s => s.trim().toUpperCase())
+         .filter(s => /^BR[A-Z0-9]{8,}/.test(s))
+    )];
+  }
+
+  document.getElementById("locator-search-btn").addEventListener("click", async () => {
+    const btn    = document.getElementById("locator-search-btn");
+    const raw    = document.getElementById("locator-input").value;
+    const nums   = parseNumbers(raw);
+    const res_el = document.getElementById("locator-results");
+    const dlAll  = document.getElementById("locator-download-all-btn");
+    if (!nums.length) { res_el.innerHTML = '<p style="font-size:.82rem;color:var(--muted);">Nenhum código BR detectado.</p>'; return; }
+    btn.disabled = true; btn.textContent = "Buscando...";
+    res_el.innerHTML = "";
+    dlAll.style.display = "none";
+    locatorFoundNumbers = [];
+    try {
+      const { found, not_found } = await (await fetch("/order-locator", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ numbers: nums })
+      })).json();
+
+      // Found results
+      Object.entries(found).forEach(([tn, info]) => {
+        locatorFoundNumbers.push(tn);
+        const [y,m,d] = (info.date || "").split("-");
+        const dateFmt = y ? `${d}/${m}/${y}` : "—";
+        const items   = info.items || [];
+        const prodHtml = items.map(it => {
+          const cat   = CAT_LABEL[it.categoria] || it.categoria;
+          const units = it.quantidade * (it.kit_size || 1);
+          return `<div style="font-size:.75rem;margin-top:3px;">
+            <span style="font-weight:700;">${esc(it.produto.substring(0,60))}</span>
+            <span style="color:var(--muted);"> — ${it.quantidade} pedido${it.quantidade>1?"s":""} · ${units} pote${units>1?"s":""} · ${esc(cat)}</span>
+          </div>`;
+        }).join("") || '<div style="font-size:.74rem;color:var(--muted);">Produto não registrado</div>';
+
+        const card = document.createElement("div");
+        card.style.cssText = "border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;";
+        card.innerHTML = `
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+              <span style="font-weight:800;font-size:.82rem;font-family:monospace;color:var(--indigo);">${esc(tn)}</span>
+              <span style="font-size:.7rem;background:rgba(39,174,96,.13);color:#1e8c4f;border-radius:12px;padding:2px 8px;font-weight:700;">✓ Encontrado</span>
+              <span style="font-size:.7rem;color:var(--muted);">${esc(info.store || "")} · ${dateFmt}</span>
+            </div>
+            ${prodHtml}
+          </div>
+          ${info.src_available
+            ? `<a class="btn btn-outline" href="/order-locator/download" style="font-size:.72rem;padding:4px 12px;flex-shrink:0;text-decoration:none;" data-tn="${esc(tn)}">⬇ PDF</a>`
+            : `<span style="font-size:.7rem;color:var(--muted);flex-shrink:0;">PDF indisponível</span>`}`;
+        res_el.appendChild(card);
+
+        if (info.src_available) {
+          card.querySelector("a[data-tn]").addEventListener("click", async e => {
+            e.preventDefault();
+            const a = e.currentTarget;
+            a.textContent = "..."; a.style.pointerEvents = "none";
+            const resp = await fetch("/order-locator/download", {
+              method: "POST", headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({ numbers: [tn] })
+            });
+            const blob = await resp.blob();
+            const url  = URL.createObjectURL(blob);
+            Object.assign(document.createElement("a"), { href: url, download: `${tn}.pdf` }).click();
+            URL.revokeObjectURL(url);
+            a.textContent = "✓ Baixado"; a.style.color = "var(--green)";
+          });
+        }
+      });
+
+      // Not found
+      not_found.forEach(tn => {
+        const card = document.createElement("div");
+        card.style.cssText = "border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;";
+        card.innerHTML = `
+          <span style="font-weight:800;font-size:.82rem;font-family:monospace;color:var(--muted);">${esc(tn)}</span>
+          <span style="font-size:.7rem;background:rgba(220,53,69,.1);color:#c0392b;border-radius:12px;padding:2px 8px;font-weight:700;">Não encontrado</span>
+          <span style="font-size:.72rem;color:var(--muted);">Pedido ainda não passou pelo OMNI</span>`;
+        res_el.appendChild(card);
+      });
+
+      if (locatorFoundNumbers.length > 1) dlAll.style.display = "";
+      if (!Object.keys(found).length && !not_found.length)
+        res_el.innerHTML = '<p style="font-size:.82rem;color:var(--muted);">Nenhum resultado.</p>';
+    } catch(e) {
+      res_el.innerHTML = `<p style="font-size:.82rem;color:var(--red);">Erro: ${esc(e.message)}</p>`;
+    } finally { btn.disabled = false; btn.textContent = "Buscar"; }
+  });
+
+  document.getElementById("locator-download-all-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("locator-download-all-btn");
+    btn.disabled = true; btn.textContent = "Gerando PDF...";
+    try {
+      const resp = await fetch("/order-locator/download", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ numbers: locatorFoundNumbers })
+      });
+      if (!resp.ok) { showToast("Nenhum PDF disponível no disco", "var(--red)"); return; }
+      const blob = await resp.blob();
+      const url  = URL.createObjectURL(blob);
+      const today = new Date().toLocaleDateString("pt-BR").replace(/\//g,".");
+      Object.assign(document.createElement("a"), { href: url, download: `pedidos_${today}.pdf` }).click();
+      URL.revokeObjectURL(url);
+      btn.textContent = "✓ PDF baixado"; btn.style.background = "var(--green)"; btn.style.color = "#fff";
+    } catch(e) {
+      showToast("Erro: " + e.message, "var(--red)");
+      btn.disabled = false; btn.textContent = "⬇ Baixar todos em 1 PDF";
+    }
+  });
+})();
 
 // ── History management ────────────────────────────────────────────────────────
 async function loadHistoryEntries() {
@@ -1828,6 +2818,7 @@ async function loadHistoryEntries() {
           <div class="hist-stores">${storeListHtml}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0;">
+          <button class="view-pdfs-btn btn btn-outline" style="padding:3px 10px;font-size:.7rem;" data-idx="${entry.index}">📄 Ver PDFs</button>
           <button class="toggle-stores-btn btn btn-outline" style="padding:3px 10px;font-size:.7rem;">▼ Lojas</button>
           <button class="del-btn btn" style="padding:3px 10px;font-size:.7rem;background:var(--red);color:#fff;border-color:var(--red);" data-idx="${entry.index}">Excluir Tudo</button>
         </div>`;
@@ -1864,6 +2855,35 @@ async function loadHistoryEntries() {
           await loadHistoryEntries();
           loadAllMetrics();
         });
+      });
+
+      row.querySelector(".view-pdfs-btn").addEventListener("click", async function() {
+        const idx = parseInt(this.dataset.idx);
+        const btn = this;
+        btn.disabled = true; btn.textContent = "Abrindo...";
+        try {
+          const res  = await fetch(`/history/reopen/${idx}`);
+          const data = await res.json();
+          if (data.error) { showToast("Erro: " + data.error, "var(--red)"); return; }
+          if (!data.files_on_disk) {
+            showToast("PDFs desta expedição não estão mais no disco.", "var(--red)");
+            return;
+          }
+          showPage("page-separacao");
+          showSepTab("shopee");
+          resetUI();
+          renderDashboard(data);
+          // Override subtitle to show the historical date
+          const [y,m,d] = data.date.split("-");
+          document.getElementById("dash-sub").textContent = `Expedição de ${d}/${m}/${y} · ${data.output_files.length} arquivo${data.output_files.length!==1?"s":""}`;
+          renderResults(data, idx);
+          renderVerify(data);
+          window.scrollTo(0, 0);
+        } catch(e) {
+          showToast("Erro ao abrir PDFs: " + e.message, "var(--red)");
+        } finally {
+          btn.disabled = false; btn.textContent = "📄 Ver PDFs";
+        }
       });
     });
   } catch(e) { list.innerHTML = '<p style="font-size:.8rem;color:var(--red);">Erro ao carregar histórico.</p>'; }
@@ -1921,7 +2941,7 @@ function setStatus(msg, type = "") {
   const el = document.getElementById("status"); el.textContent = msg; el.className = type;
 }
 function resetUI() {
-  ["classify-card","process-card","dashboard","results-section","verify-section","lacrar-card"]
+  ["sku-dup-card","classify-card","process-card","dashboard","results-section","verify-section","security-card","lacrar-card"]
     .forEach(id => document.getElementById(id).style.display = "none");
   ["brand-rows-container","breakdown-rows","brand-grid","stat-row"]
     .forEach(id => document.getElementById(id).innerHTML = "");
@@ -1931,8 +2951,13 @@ function resetUI() {
   const lb = document.getElementById("lacrar-btn");
   lb.disabled = false; lb.innerHTML = "⚡ Lacrar Expedição"; lb.style.display = "";
   allOutputFiles   = [];
+  retiradaFiles    = [];
   selectedNewBrand = {};
   currentProcessData = null;
+  currentHistoryIdx  = null;
+  document.getElementById("retirada-file-count").textContent = "Nenhum arquivo selecionado";
+  document.getElementById("retirada-file-list").innerHTML = "";
+  retiradaFileInput.value = "";
   const dlBtn = document.getElementById("download-all-btn");
   dlBtn.disabled = false; dlBtn.textContent = "⬇ Baixar Tudo";
   dlBtn.classList.add("btn-outline");
@@ -1941,14 +2966,72 @@ function resetUI() {
 function esc(s) {
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
+
+function showPdfPage(filename, page) {
+  const modal = document.getElementById("pdf-page-modal");
+  const img   = document.getElementById("pdf-page-img");
+  const lbl   = document.getElementById("pdf-page-label");
+  img.src = `/pdf-page/${encodeURIComponent(filename)}/${page}`;
+  lbl.textContent = `${filename} — Página ${page}`;
+  modal.style.display = "flex";
+}
+document.getElementById("pdf-page-modal-close").addEventListener("click", () => {
+  document.getElementById("pdf-page-modal").style.display = "none";
+  document.getElementById("pdf-page-img").src = "";
+});
+document.getElementById("pdf-page-modal").addEventListener("click", (e) => {
+  if (e.target === e.currentTarget) {
+    e.currentTarget.style.display = "none";
+    document.getElementById("pdf-page-img").src = "";
+  }
+});
 function safeId(s) { return s.replace(/[^a-zA-Z0-9]/g, "_"); }
 function unitLabel(cat) { return cat === "roupa" ? "peças" : "potes"; }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-showPage("home");
+showPage("page-dashboard");
+document.getElementById("label-date").value = new Date().toISOString().split("T")[0];
 
 // ── Chart: Pedidos por Estado (UF) ────────────────────────────────────────────
+const UF_NAMES = {
+  AC:"Acre", AL:"Alagoas", AP:"Amapá", AM:"Amazonas", BA:"Bahia", CE:"Ceará",
+  DF:"Distrito Federal", ES:"Espírito Santo", GO:"Goiás", MA:"Maranhão",
+  MT:"Mato Grosso", MS:"Mato Grosso do Sul", MG:"Minas Gerais", PA:"Pará",
+  PB:"Paraíba", PR:"Paraná", PE:"Pernambuco", PI:"Piauí", RJ:"Rio de Janeiro",
+  RN:"Rio Grande do Norte", RS:"Rio Grande do Sul", RO:"Rondônia", RR:"Roraima",
+  SC:"Santa Catarina", SP:"São Paulo", SE:"Sergipe", TO:"Tocantins"
+};
+const BR_REGIONS = {
+  Norte:        ["AM","RR","AP","PA","TO","RO","AC"],
+  Nordeste:     ["MA","PI","CE","RN","PB","PE","AL","SE","BA"],
+  "Centro-Oeste":["MT","MS","GO","DF"],
+  Sudeste:      ["MG","ES","RJ","SP"],
+  Sul:          ["PR","SC","RS"],
+};
+
+function renderRegionsStrip(stateTotals) {
+  const strip = document.getElementById("regions-strip");
+  if (!strip) return;
+  const total = Object.values(stateTotals || {}).reduce((s, v) => s + v, 0);
+  if (!total) { strip.innerHTML = ""; return; }
+  const regionColors = { Norte: "#2b7ed4", Nordeste: "#d63a3a", "Centro-Oeste": "#d47a00", Sudeste: "#6c5fff", Sul: "#00b876" };
+  const regionEntries = Object.entries(BR_REGIONS).map(([name, ufs]) => {
+    const count = ufs.reduce((s, uf) => s + (stateTotals[uf] || 0), 0);
+    const pct   = total > 0 ? Math.round(count / total * 100) : 0;
+    const color = regionColors[name] || "#888";
+    return { name, count, pct, color };
+  }).sort((a, b) => b.count - a.count);
+  strip.innerHTML = regionEntries.map(({ name, count, pct, color }) =>
+    `<div class="region-card" style="border-top:3px solid ${color};">
+      <div class="region-name">${name}</div>
+      <div class="region-val" style="color:${color};">${count}</div>
+      <div class="region-pct">${pct}% dos pedidos</div>
+    </div>`
+  ).join("");
+}
+
 function renderStateChart(stateTotals) {
+  renderRegionsStrip(stateTotals);
   const canvas  = document.getElementById("chart-states");
   const emptyEl = document.getElementById("states-empty");
   const entries = Object.entries(stateTotals || {}).sort((a, b) => b[1] - a[1]);
@@ -1958,8 +3041,6 @@ function renderStateChart(stateTotals) {
   if (metricsCharts.states) { metricsCharts.states.destroy(); delete metricsCharts.states; }
   if (!hasData) return;
 
-  const wrap = document.getElementById("chart-states-wrap");
-  wrap.style.height = Math.max(150, entries.length * 44) + "px";
   const ctx = canvas.getContext("2d");
   metricsCharts.states = new Chart(ctx, {
     type: "bar",
@@ -1968,30 +3049,524 @@ function renderStateChart(stateTotals) {
       datasets: [{
         label: "Pedidos",
         data: entries.map(([, v]) => v),
-        backgroundColor: entries.map((_, i) => CHART_PALETTE[i % CHART_PALETTE.length]),
-        borderRadius: 6, borderSkipped: false,
+        backgroundColor: entries.map(([uf]) => {
+          for (const [, ufs] of Object.entries(BR_REGIONS)) {
+            if (ufs.includes(uf)) {
+              const colors = { Norte:"#2b7ed4", Nordeste:"#d63a3a", "Centro-Oeste":"#d47a00", Sudeste:"#6c5fff", Sul:"#00b876" };
+              const name = Object.keys(BR_REGIONS).find(k => BR_REGIONS[k].includes(uf));
+              return (colors[name] || "#888") + "cc";
+            }
+          }
+          return "#888";
+        }),
+        borderRadius: 5, borderSkipped: false,
+        maxBarThickness: 42,
       }]
     },
     options: {
-      indexAxis: "y",
       responsive: true, maintainAspectRatio: false,
-      layout: { padding: { right: 44 } },
+      layout: { padding: { top: 24 } },
       plugins: {
         legend: { display: false },
         datalabels: {
-          anchor: "end", align: "right",
-          color: "#1a1a2e", font: { weight: "800", size: 14 },
+          anchor: "end", align: "top",
+          color: "#1a1a2e", font: { weight: "800", size: 11 },
           formatter: v => v,
         },
-        tooltip: { callbacks: { label: item => ` ${item.parsed.x} pedido${item.parsed.x !== 1 ? "s" : ""}` } }
+        tooltip: {
+          callbacks: {
+            title: items => {
+              const uf = items[0]?.label || "";
+              return UF_NAMES[uf] ? `${UF_NAMES[uf]} (${uf})` : uf;
+            },
+            label: item => ` ${item.parsed.y} pedido${item.parsed.y !== 1 ? "s" : ""}`
+          }
+        }
       },
       scales: {
-        x: { display: false },
-        y: { grid: { display: false }, ticks: { font: { size: 12, weight: "600" }, color: "#1a1a2e" } }
+        y: { display: false, beginAtZero: true },
+        x: { grid: { display: false }, ticks: { font: { size: 11, weight: "700" }, color: "#1a1a2e", maxRotation: 0 } }
       }
     }
   });
 }
+
+// ══════════════════════════════════════════════════════════ MERCADO LIVRE
+
+// ── ML State ──────────────────────────────────────────────────────────────────
+let mlCurrentFiles       = [];
+let mlPendingKeys        = {};
+let mlSelectedCats       = {};
+let mlSelectedKits       = {};
+let mlSelectedNewBrand   = {};
+let mlAllOutputFiles     = [];
+let mlCurrentProcessData = null;
+let mlDownloadedSet      = new Set();
+
+// ── ML Drop zone ──────────────────────────────────────────────────────────────
+const mlDropZone  = document.getElementById("ml-drop-zone");
+const mlFileInput = document.getElementById("ml-file-input");
+mlDropZone.addEventListener("click",     () => mlFileInput.click());
+mlDropZone.addEventListener("dragover",  e  => {
+  e.preventDefault();
+  mlDropZone.style.borderColor = "var(--accent)";
+  mlDropZone.style.background  = "rgba(108,95,255,.04)";
+});
+mlDropZone.addEventListener("dragleave", () => {
+  mlDropZone.style.borderColor = "";
+  mlDropZone.style.background  = "";
+});
+mlDropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  mlDropZone.style.borderColor = "";
+  mlDropZone.style.background  = "";
+  if (e.dataTransfer.files.length) mlUploadFiles(e.dataTransfer.files);
+});
+mlFileInput.addEventListener("change", () => { if (mlFileInput.files.length) mlUploadFiles(mlFileInput.files); });
+
+// ── ML Helpers ────────────────────────────────────────────────────────────────
+function mlSetStatus(msg, type = "") {
+  const el = document.getElementById("ml-status");
+  el.textContent = msg; el.className = type;
+}
+function mlResetUI() {
+  ["ml-classify-card","ml-process-card","ml-dashboard","ml-results-section","ml-verify-section","ml-security-card","ml-lacrar-card"]
+    .forEach(id => document.getElementById(id).style.display = "none");
+  ["ml-brand-rows-container","ml-breakdown-rows","ml-brand-grid","ml-stat-row"]
+    .forEach(id => document.getElementById(id).innerHTML = "");
+  document.getElementById("ml-verify-badge").style.display = "none";
+  document.getElementById("ml-file-list").innerHTML = "";
+  document.getElementById("ml-lacrar-status").style.display = "none";
+  const lb = document.getElementById("ml-lacrar-btn");
+  lb.disabled = false; lb.innerHTML = "⚡ Lacrar Expedição ML"; lb.style.display = "";
+  mlAllOutputFiles    = [];
+  mlSelectedNewBrand  = {};
+  mlCurrentProcessData = null;
+  const dlBtn = document.getElementById("ml-download-all-btn");
+  dlBtn.disabled = false; dlBtn.textContent = "⬇ Baixar Tudo";
+  dlBtn.classList.add("btn-outline");
+  dlBtn.style.background = ""; dlBtn.style.color = ""; dlBtn.style.borderColor = "";
+}
+function mlRenderFileList(files) {
+  const list = document.getElementById("ml-file-list");
+  list.innerHTML = "";
+  Array.from(files).forEach(f => {
+    const row = document.createElement("div");
+    row.className = "file-row"; row.id = "ml-fr-" + safeId(f.name);
+    row.innerHTML = `<span>📄</span><span class="fr-name">${esc(f.name)}</span><span class="fr-badge pending">Enviando…</span>`;
+    list.appendChild(row);
+  });
+}
+function mlUpdateFileBadge(name, cls, text) {
+  const row = document.getElementById("ml-fr-" + safeId(name));
+  if (!row) return;
+  const b = row.querySelector(".fr-badge");
+  b.className = `fr-badge ${cls}`; b.textContent = text;
+}
+function mlParsePdfKey(key) {
+  return parsePdfKey(key.replace(/^ml_/, ""));
+}
+
+// ── ML Upload ─────────────────────────────────────────────────────────────────
+async function mlUploadFiles(fileList) {
+  mlResetUI(); mlCurrentFiles = []; mlSetStatus("");
+  mlRenderFileList(fileList);
+  const form = new FormData();
+  Array.from(fileList).forEach(f => form.append("pdfs", f));
+  showLoading(UPLOAD_STEPS);
+  try {
+    const res  = await fetch("/ml/upload", { method: "POST", body: form });
+    const data = await res.json();
+    hideLoading();
+    if (data.error) { mlSetStatus(data.error, "error"); return; }
+    mlCurrentFiles = data.filenames;
+    Array.from(fileList).forEach(f => {
+      mlUpdateFileBadge(f.name,
+        mlCurrentFiles.includes(f.name) ? "ok"      : "error",
+        mlCurrentFiles.includes(f.name) ? "✓ Enviado" : "Ignorado");
+    });
+    const n = mlCurrentFiles.length;
+    mlSetStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
+    if (data.unknown.length > 0) mlShowClassify(data.unknown);
+    else document.getElementById("ml-process-card").style.display = "block";
+  } catch (e) { hideLoading(); mlSetStatus("Erro ao enviar: " + e.message, "error"); }
+}
+
+// ── ML Classify ───────────────────────────────────────────────────────────────
+function mlIsAllClassified() {
+  return Object.keys(mlPendingKeys).every(k => {
+    const cat = mlSelectedCats[k];
+    if (!cat) return false;
+    if (cat === "__new__") return (mlSelectedNewBrand[k]?.slug || "").length > 0;
+    return true;
+  });
+}
+function mlShowClassify(unknowns) {
+  document.getElementById("ml-classify-card").style.display = "block";
+  const list = document.getElementById("ml-unknown-list");
+  list.innerHTML = "";
+  mlSelectedCats = {}; mlSelectedKits = {}; mlSelectedNewBrand = {}; mlPendingKeys = {};
+
+  const skuCount = {};
+  unknowns.forEach(u => { skuCount[u.sku] = (skuCount[u.sku] || 0) + 1; });
+
+  unknowns.forEach(u => {
+    const key = u.key; mlPendingKeys[key] = u;
+    const sid = safeId(key);
+    const isDup = skuCount[u.sku] > 1;
+    const div = document.createElement("div");
+    div.className = "unknown-item" + (isDup ? " dup-sku" : "");
+    div.innerHTML = `
+      ${isDup ? `<span class="sku-dup-warn">⚠ SKU duplicado — mesmo SKU, título diferente. Classifique cada um separadamente.</span>` : ""}
+      <div class="u-name">
+        ${esc(u.produto)}
+        ${u.file ? `<button class="pdf-view-btn" title="Ver no PDF" onclick="showPdfPage('${esc(u.file)}',${u.page||1})">👁 ver</button>` : ""}
+      </div>
+      <div class="u-sku">SKU: <span>${esc(u.sku)}</span></div>
+      <div class="cat-row" id="ml-cats-${sid}">
+        <button class="cat-btn" data-key="${esc(key)}" data-cat="pura">Pura</button>
+        <button class="cat-btn" data-key="${esc(key)}" data-cat="turbo">Turbo</button>
+        <button class="cat-btn" data-key="${esc(key)}" data-cat="dux">DUX</button>
+        <button class="cat-btn" data-key="${esc(key)}" data-cat="roupa">Roupa</button>
+        <button class="cat-btn" data-key="${esc(key)}" data-cat="__new__">+ Novo Produto</button>
+      </div>
+      <div class="new-prod-wrap" id="ml-newprod-${sid}" style="display:none;">
+        <div class="new-prod-label">Nome do novo produto</div>
+        <div class="new-prod-row">
+          <input type="text" class="new-prod-input" id="ml-npinput-${sid}" data-key="${esc(key)}" placeholder="Ex: C4 Beta Pump" />
+          <span class="slug-preview" id="ml-npslug-${sid}"></span>
+        </div>
+      </div>
+      <div class="kit-row" id="ml-kit-${sid}" style="display:none;">
+        <label>Kit size:</label>
+        <select id="ml-ksel-${sid}" data-key="${esc(key)}">
+          <option value="1">1 unidade</option>
+          <option value="2">Kit 2</option>
+          <option value="3">Kit 3</option>
+          <option value="4">Kit 4</option>
+          <option value="5">Kit 5</option>
+          <option value="6">Kit 6</option>
+        </select>
+      </div>`;
+    list.appendChild(div);
+  });
+  list.querySelectorAll(".cat-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.key, cat = btn.dataset.cat;
+      mlSelectedCats[key] = cat;
+      list.querySelectorAll(`.cat-btn[data-key="${CSS.escape(key)}"]`)
+          .forEach(b => b.className = "cat-btn");
+      const sid2    = safeId(key);
+      const kitRow  = document.getElementById(`ml-kit-${sid2}`);
+      const newWrap = document.getElementById(`ml-newprod-${sid2}`);
+      if (cat === "__new__") {
+        btn.classList.add("sel-new");
+        if (newWrap) newWrap.style.display = "block";
+        kitRow.style.display = "flex";
+      } else {
+        btn.classList.add(`sel-${cat}`);
+        if (newWrap) newWrap.style.display = "none";
+        kitRow.style.display = cat === "roupa" ? "none" : "flex";
+        if (cat === "roupa") mlSelectedKits[key] = 1;
+      }
+      document.getElementById("ml-save-btn").disabled = !mlIsAllClassified();
+    });
+  });
+  list.querySelectorAll("select[id^='ml-ksel-']").forEach(sel => {
+    sel.addEventListener("change", () => { mlSelectedKits[sel.dataset.key] = parseInt(sel.value); });
+  });
+  list.querySelectorAll(".new-prod-input").forEach(input => {
+    input.addEventListener("input", () => {
+      const key     = input.dataset.key;
+      const slug    = input.value.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const preview = document.getElementById(`ml-npslug-${safeId(key)}`);
+      if (preview) preview.textContent = slug ? `→ ${slug}` : "";
+      mlSelectedNewBrand[key] = { slug, display: input.value.trim() };
+      document.getElementById("ml-save-btn").disabled = !mlIsAllClassified();
+    });
+  });
+}
+document.getElementById("ml-save-btn").addEventListener("click", async () => {
+  const toSave = {}, newBrands = {};
+  for (const [key] of Object.entries(mlPendingKeys)) {
+    const cat = mlSelectedCats[key]; if (!cat) continue;
+    const titulo = (mlPendingKeys[key] || {}).produto || "";
+    if (cat === "__new__") {
+      const nb = mlSelectedNewBrand[key] || {};
+      if (!nb.slug) continue;
+      newBrands[nb.slug] = nb.display || nb.slug;
+      toSave[key] = { categoria: nb.slug, kit_size: mlSelectedKits[key] || 1, titulo };
+    } else {
+      toSave[key] = { categoria: cat, kit_size: cat === "roupa" ? 1 : (mlSelectedKits[key] || 1), titulo };
+    }
+  }
+  for (const [slug, display] of Object.entries(newBrands)) {
+    await fetch("/brands/save", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ slug, display })
+    });
+  }
+  const res = await fetch("/save-mappings", {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ mappings: toSave })
+  });
+  if ((await res.json()).ok) {
+    document.getElementById("ml-classify-card").style.display = "none";
+    document.getElementById("ml-process-card").style.display  = "block";
+    document.getElementById("ml-label-date").value = new Date().toISOString().split("T")[0];
+  }
+});
+
+// ── ML Process ────────────────────────────────────────────────────────────────
+document.getElementById("ml-process-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("ml-process-btn");
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Processando...';
+  showLoading(PROCESS_STEPS);
+  try {
+    const res  = await fetch("/ml/process", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        filenames:  mlCurrentFiles,
+        label_date: document.getElementById("ml-label-date").value || new Date().toISOString().split("T")[0]
+      })
+    });
+    const data = await res.json();
+    hideLoading();
+    if (data.error) {
+      mlSetStatus(data.error, "error");
+      btn.disabled = false; btn.innerHTML = "Separar Etiquetas ML";
+      if (data.unknown) mlShowClassify(data.unknown);
+      return;
+    }
+    document.getElementById("ml-process-card").style.display = "none";
+    mlCurrentProcessData = data;
+    mlRenderDashboard(data);
+    mlRenderResults(data);
+    mlRenderVerify(data);
+    renderSecurityAlerts(data, "ml");
+    document.getElementById("ml-lacrar-card").style.display = "block";
+    document.getElementById("ml-lacrar-date").value = new Date().toISOString().split("T")[0];
+  } catch(e) {
+    hideLoading(); mlSetStatus("Erro: " + e.message, "error");
+    btn.disabled = false; btn.innerHTML = "Separar Etiquetas ML";
+  }
+});
+
+// ── ML Lacrar ─────────────────────────────────────────────────────────────────
+document.getElementById("ml-lacrar-btn").addEventListener("click", async () => {
+  if (!mlCurrentProcessData) return;
+  const btn = document.getElementById("ml-lacrar-btn");
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Lacrando...';
+  try {
+    const res = await fetch("/history/add", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        date:                document.getElementById("ml-lacrar-date").value || new Date().toISOString().split("T")[0],
+        store_items:         mlCurrentProcessData.stats.store_items || {},
+        store_label_counts:  mlCurrentProcessData.stats.store_label_counts || {},
+        label_pages:         mlCurrentProcessData.stats.label_pages,
+        breakdown:           mlCurrentProcessData.stats.breakdown,
+        output_page_counts:  mlCurrentProcessData.stats.output_page_counts || {},
+        state_counts:        mlCurrentProcessData.stats.state_counts || {},
+        tracking_numbers:    mlCurrentProcessData.stats.tracking_numbers || [],
+        tracking_data:       mlCurrentProcessData.stats.tracking_data    || {},
+      })
+    });
+    if ((await res.json()).ok) {
+      document.getElementById("ml-lacrar-status").style.display = "block";
+      btn.style.display = "none";
+      showToast("Expedição ML lacrada!", "var(--green)");
+    }
+  } catch(e) {
+    btn.disabled = false; btn.innerHTML = "⚡ Lacrar Expedição ML";
+    mlSetStatus("Erro ao lacrar: " + e.message, "error");
+  }
+});
+
+// ── ML Dashboard ──────────────────────────────────────────────────────────────
+function mlRenderDashboard(data) {
+  const s = data.stats;
+  document.getElementById("ml-dashboard").style.display = "block";
+  const storesEl = document.getElementById("ml-dash-stores");
+  storesEl.innerHTML = "";
+  (s.store_names || []).forEach(name => {
+    const tag = document.createElement("div");
+    tag.className = "store-tag"; tag.textContent = name;
+    storesEl.appendChild(tag);
+  });
+  const n = mlCurrentFiles.length;
+  document.getElementById("ml-dash-sub").textContent =
+    `${n} PDF${n>1?"s":""} processado${n>1?"s":""} · ${new Date().toLocaleTimeString("pt-BR")}`;
+  const badge = document.getElementById("ml-verify-badge");
+  if (s.verification) {
+    badge.style.display = "inline-flex";
+    badge.className   = "verify-badge " + (s.verification.ok ? "ok" : "fail");
+    badge.textContent = s.verification.ok ? "✓ Verificado" : "⚠ Divergência";
+  } else {
+    badge.style.display = "none";
+  }
+  const statRow = document.getElementById("ml-stat-row");
+  statRow.innerHTML = `
+    <div class="stat-hero-val">${s.label_pages}</div>
+    <div class="stat-hero-lbl">pedidos</div>
+    <div class="stat-secondary">
+      <span>${Object.keys(s.breakdown).length} grupos gerados</span>
+      <span>·</span>
+      <span>${s.total_pages} páginas</span>
+      <span>·</span>
+      <span>${s.sem_checklist} sem produto</span>
+    </div>`;
+  const brandGrid = document.getElementById("ml-brand-grid");
+  brandGrid.innerHTML = "";
+  let mlVarOrders = 0;
+  (s.brand_summary || []).forEach(b => {
+    if (b.brand === "variacoes") { mlVarOrders += b.orders; return; }
+    const card = document.createElement("div");
+    card.className = `brand-card ${b.brand}`;
+    card.innerHTML = `
+      <div class="bc-name">${esc(b.display)}</div>
+      <div class="bc-orders-num">${b.orders}</div>
+      <div class="bc-orders-lbl">pedido${b.orders!==1?"s":""}</div>
+      <div class="bc-units-row">${b.brand === "roupa" ? `${b.units} peças` : `${b.units} potes`}</div>`;
+    brandGrid.appendChild(card);
+  });
+  const mlExistingVarNote = brandGrid.parentNode.querySelector(".variacoes-alert");
+  if (mlExistingVarNote) mlExistingVarNote.remove();
+  if (mlVarOrders > 0) {
+    const note = document.createElement("div");
+    note.className = "variacoes-alert";
+    note.style.cssText = "margin-top:8px;padding:6px 12px;background:rgba(212,122,0,.06);border-left:3px solid var(--var);border-radius:4px;font-size:.73rem;color:#a06000;";
+    note.textContent = `⚠ ${mlVarOrders} pedido${mlVarOrders!==1?"s":""} com variação de categoria — verifique os arquivos gerados.`;
+    brandGrid.after(note);
+  }
+
+  const brRows   = document.getElementById("ml-breakdown-rows");
+  brRows.innerHTML = "";
+  const maxCount = Math.max(...Object.values(s.breakdown), 1);
+  const catOrder = { pura:0, turbo:1, dux:2, roupa:3, variacoes:4 };
+  Object.entries(s.breakdown)
+    .sort((a, b) => {
+      const [cA,uA] = mlParsePdfKey(a[0]), [cB,uB] = mlParsePdfKey(b[0]);
+      const oA = catOrder[cA]??9, oB = catOrder[cB]??9;
+      return oA!==oB ? oA-oB : (uA??0)-(uB??0);
+    })
+    .forEach(([key, count]) => {
+      const [cat] = mlParsePdfKey(key);
+      const pct   = Math.round((count / maxCount) * 100);
+      const row   = document.createElement("div");
+      row.className = "br-row";
+      row.innerHTML = `
+        <div class="br-label">${esc(key)}</div>
+        <div class="br-bar-wrap"><div class="br-bar ${CAT_COLOR[cat]||"other"}" style="width:0%" data-pct="${pct}"></div></div>
+        <div class="br-count">${count} pedido${count!==1?"s":""}</div>`;
+      brRows.appendChild(row);
+    });
+  requestAnimationFrame(() => {
+    document.querySelectorAll("#ml-breakdown-rows .br-bar")
+      .forEach(b => { b.style.width = b.dataset.pct + "%"; });
+  });
+}
+
+// ── ML Results ────────────────────────────────────────────────────────────────
+function mlRenderResults(data) {
+  const s = data.stats;
+  document.getElementById("ml-results-section").style.display = "block";
+  const container = document.getElementById("ml-brand-rows-container");
+  container.innerHTML = "";
+  mlDownloadedSet  = new Set();
+  mlAllOutputFiles = data.output_files.filter(f => f !== "ml_sem_produto.pdf");
+  const counts = s.output_page_counts;
+  const groups = {};
+  data.output_files.forEach(f => {
+    const key   = f.replace(".pdf", "");
+    const pages = counts[f] || 0;
+    const [cat, units] = mlParsePdfKey(key);
+    const gk = (cat === "roupa" || key === "ml_roupas") ? "roupas"
+             : (cat === "variacoes" || key === "ml_variacoes") ? "variacoes"
+             : (key === "ml_sem_produto") ? "sem_checklist"
+             : cat;
+    groups[gk] = groups[gk] || [];
+    groups[gk].push({ filename: f, pages, unitCount: units || 0 });
+  });
+  const rowOrder = ["pura","turbo","dux","roupas","variacoes","sem_checklist"];
+  Object.keys(groups).forEach(k => { if (!rowOrder.includes(k)) rowOrder.push(k); });
+  rowOrder.forEach(gk => {
+    const files = groups[gk]; if (!files?.length) return;
+    files.sort((a, b) => a.unitCount - b.unitCount);
+    const cfg   = BRAND_ROWS.find(r => r.key === gk) || { label: gk.toUpperCase(), cls: "lbl-other" };
+    const rowEl = document.createElement("div");
+    rowEl.className = "brand-row";
+    const labelEl = document.createElement("div");
+    labelEl.className = `brand-row-label ${cfg.cls}`;
+    labelEl.textContent = cfg.label;
+    rowEl.appendChild(labelEl);
+    const grid = document.createElement("div");
+    grid.className = "dl-grid";
+    files.forEach(({ filename, pages }) => {
+      const card  = document.createElement("div");
+      card.className = "dl-card";
+      const dlBtn = document.createElement("a");
+      dlBtn.className   = "dl-btn";
+      dlBtn.href        = "/download/" + encodeURIComponent(filename);
+      dlBtn.download    = filename;
+      dlBtn.textContent = "Baixar PDF";
+      dlBtn.addEventListener("click", () => {
+        mlDownloadedSet.add(filename);
+        setTimeout(() => { dlBtn.classList.add("downloaded"); dlBtn.textContent = "Baixado"; }, 300);
+      });
+      card.innerHTML = `<div class="dc-name">${esc(filename)}</div><div class="dc-pages">${pages} página${pages!==1?"s":""}</div>`;
+      card.appendChild(dlBtn);
+      grid.appendChild(card);
+    });
+    rowEl.appendChild(grid);
+    container.appendChild(rowEl);
+  });
+}
+
+// ── ML Verify ─────────────────────────────────────────────────────────────────
+function mlRenderVerify(data) {
+  document.getElementById("ml-verify-section").style.display = "block";
+  const v = data.stats.verification, ok = v.ok;
+  document.getElementById("ml-verify-detail").innerHTML = `
+    <div class="verify-detail ${ok?"ok":"fail"}">
+      <div class="verify-icon">${ok?"✅":"⚠️"}</div>
+      <div class="verify-text">
+        <div class="vt-main">${esc(ok
+          ? `Tudo certo — ${v.label_pages} etiquetas no PDF, ${v.output_total} páginas geradas`
+          : `Divergência — ${v.label_pages} etiquetas, mas ${v.output_total} páginas geradas`)}</div>
+        <div class="vt-sub">${esc(ok
+          ? "Todas as etiquetas foram separadas corretamente."
+          : "Algumas etiquetas podem não ter sido geradas. Verifique os arquivos.")}</div>
+      </div>
+    </div>`;
+}
+
+// ── ML Download All ───────────────────────────────────────────────────────────
+document.getElementById("ml-download-all-btn").addEventListener("click", async () => {
+  const btn  = document.getElementById("ml-download-all-btn");
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = "Preparando ZIP...";
+  try {
+    const resp = await fetch("/ml/download-all", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ filenames: mlAllOutputFiles })
+    });
+    if (!resp.ok) throw new Error("Servidor retornou erro");
+    const blob = await resp.blob();
+    const cd   = resp.headers.get("Content-Disposition") || "";
+    const nm   = cd.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    const zipName = nm ? nm[1].replace(/['"]/g, "") : "ml_etiquetas.zip";
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a"); a.href = url; a.download = zipName; a.click();
+    URL.revokeObjectURL(url);
+    btn.textContent = "✓ ZIP Baixado";
+    btn.classList.remove("btn-outline");
+    btn.style.background = "var(--green)"; btn.style.color = "#fff"; btn.style.borderColor = "var(--green)";
+  } catch(e) {
+    btn.disabled = false; btn.textContent = orig;
+    mlSetStatus("Erro ao baixar ZIP: " + e.message, "error");
+  }
+});
 </script>
 </body>
 

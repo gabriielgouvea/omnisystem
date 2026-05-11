@@ -1,230 +1,520 @@
 {
-  "DXULT019": {
+  "7891238092652|kit 2 creatina black skull turbo 300g em pó para treino": {
+    "categoria": "turbo",
+    "kit_size": 2,
+    "titulo": "Kit 2 Creatina Black Skull Turbo 300g em Pó para Treino"
+  },
+  "DXULT003|creatina monohidratada dux nutrition 100 pura original academia hipertrofia": {
+    "categoria": "dux",
+    "kit_size": 1,
+    "titulo": "Creatina Monohidratada DUX Nutrition 100% Pura Original Academia – Hipertrofia"
+  },
+  "DXOLT04|it 2 creatina dux 300g original 100 monohidratada pura para hipertrofia ganho de massa": {
+    "categoria": "dux",
+    "kit_size": 2,
+    "titulo": "it 2 Creatina DUX 300g Original 100% Monohidratada Pura Para Hipertrofia Ganho de Massa"
+  },
+  "BLCK12|creatina monohidratada black skull 100 pura 300g em pó para treino": {
+    "categoria": "pura",
+    "kit_size": 1,
+    "titulo": "Creatina Monohidratada Black Skull 100% Pura 300g em Pó para Treino"
+  },
+  "7892223223310|kit 2 creatina monohidratada black skull 100 pura em pó para treino": {
+    "categoria": "pura",
+    "kit_size": 2,
+    "titulo": "Kit 2 Creatina Monohidratada Black Skull 100% Pura em Pó para Treino"
+  },
+  "BLCK13|creatina black skull turbo 300g em pó para treino": {
+    "categoria": "turbo",
+    "kit_size": 1,
+    "titulo": "Creatina Black Skull Turbo 300g em Pó para Treino"
+  },
+  "DXOLT03|kit c2 creatina dux 300g cada original monohidratada pura resultado rápido": {
+    "categoria": "dux",
+    "kit_size": 2,
+    "titulo": "Kit c/2 Creatina DUX 300g (cada) Original Monohidratada Pura Resultado Rápido"
+  },
+  "DXULT019|creatina monohidratada dux nutrition 100 pura original hipertrofia academia fitness": {
     "categoria": "dux",
     "kit_size": 1
   },
-  "DXOLT03": {
+  "7894131213315|kit 2x creatina monohidratada dux nutrition 300g cada 100 pura": {
     "categoria": "dux",
+    "kit_size": 2,
+    "titulo": "Kit 2x Creatina Monohidratada DUX Nutrition 300g cada – 100% Pura"
+  },
+  "PURBCL2|creatina turbo black skull 300g suplemento em pó": {
+    "categoria": "turbo",
+    "kit_size": 1,
+    "titulo": "Creatina Turbo Black Skull 300g – Suplemento em Pó"
+  },
+  "DX01202615|kit 2 dux creatina monohidratada 300g força e potência muscular": {
+    "categoria": "dux",
+    "kit_size": 2,
+    "titulo": "Kit 2 Dux Creatina Monohidratada 300g Força e Potência Muscular"
+  },
+  "KT7TURBLK|kit turbo creatine 2 und alta performance e resultado": {
+    "categoria": "turbo",
+    "kit_size": 2,
+    "titulo": "Kit Turbo Creatine 2 und - Alta Performance e Resultado"
+  },
+  "DX01202613|dux creatina monohidratada 300g força e potência muscular": {
+    "categoria": "dux",
+    "kit_size": 1,
+    "titulo": "Dux Creatina Monohidratada 300g Força e Potência Muscular"
+  },
+  "TRTRTYYRT5|kit 2 creatina black skull 300g monohidratada pura para força e performance": {
+    "categoria": "pura",
+    "kit_size": 2,
+    "titulo": "Kit 2 Creatina Black Skull 300g – Monohidratada Pura para Força e Performance"
+  },
+  "007777777FD|black skull creatine turbo 300g work hard": {
+    "categoria": "turbo",
+    "kit_size": 1,
+    "titulo": "Black Skull Creatine Turbo 300g - Work Hard"
+  },
+  "BLCK14|creatina monohidratada black skull turbo 300g": {
+    "categoria": "turbo",
+    "kit_size": 1,
+    "titulo": "Creatina Monohidratada Black Skull Turbo 300g"
+  },
+  "DXULT009|creatina monohidratada dux nutrition 100 pura original ganho de massa muscular força": {
+    "categoria": "dux",
+    "kit_size": 1,
+    "titulo": "Creatina Monohidratada DUX Nutrition 100% Pura Original – Ganho de Massa Muscular Força"
+  },
+  "546765567876|creatina 300g 100 pura black skull monohidratada": {
+    "categoria": "pura",
+    "kit_size": 1
+  },
+  "776765TRY775|kit com 2 creatinas monohidratadas black skull turbo 300g": {
+    "categoria": "turbo",
+    "kit_size": 2,
+    "titulo": "Kit com 2 Creatinas Monohidratadas Black Skull Turbo 300g"
+  },
+  "121576567776|kit com 2 creatinas monohidratadas dux nutrition": {
+    "categoria": "dux",
+    "kit_size": 2,
+    "titulo": "Kit com 2 Creatinas Monohidratadas DUX Nutrition"
+  },
+  "DXOLT02|dux kit 2 potes 300g original alta pureza mais força energia e ganho de massa": {
+    "categoria": "dux",
+    "kit_size": 2,
+    "titulo": "DUX Kit 2 Potes 300g Original Alta Pureza Mais Força Energia e Ganho de Massa"
+  },
+  "ORGNPUR|creatina blackskull 100 pura monohydrate original zero sódio alta performance na academia": {
+    "categoria": "pura",
+    "kit_size": 1,
+    "titulo": "Creatina Blackskull 100% Pura Monohydrate Original – Zero Sódio | Alta Performance na Academia"
+  },
+  "MAXTTN2M|kit com 2 creatinas monohidratadas 100 puras dux nutrition zero sódio": {
+    "categoria": "dux",
+    "kit_size": 2,
+    "titulo": "Kit com 2 Creatinas Monohidratadas 100% Puras DUX Nutrition Zero Sódio"
+  },
+  "ORGNPURTUR|creatine turbo black skull monohidratada 300g": {
+    "categoria": "turbo",
+    "kit_size": 1,
+    "titulo": "Creatine Turbo Black Skull Monohidratada 300g"
+  },
+  "7898708731219|kit 2 unidade creatine turbo black skull 300g": {
+    "categoria": "turbo",
     "kit_size": 2
   },
-  "PURBCL2": {
-    "categoria": "turbo",
-    "kit_size": 1
+  "SUPLEEVO15|conjunto fitness feminino top e calça alta elasticidade": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Top e Calça – Alta Elasticidade"
   },
-  "7898708731219": {
+  "BCVC4|kit 3 camisetas dry fit masculinas vyra tecido leve e respirável": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisetas Dry Fit Masculinas VYRA – Tecido Leve e Respirável"
+  },
+  "7898708731219|kit com 2 creatinas black skull monohidratadas 100 puras zero sódio": {
     "categoria": "pura",
     "kit_size": 2
   },
-  "7894131213315": {
-    "categoria": "dux",
-    "kit_size": 2
-  },
-  "BBNBFNNBNBV": {
-    "categoria": "turbo",
-    "kit_size": 2
-  },
-  "CVBC30": {
+  "VCXBCN3|conjunto feminino top e calça fitness confortável e não transparente": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
   },
-  "CVBC3": {
+  "KIT2BLACK|kit 2 creatina monohidratada evo 300g em pó kit 2 creatina monohidratada black skull 100 pura em pó para treino": {
+    "categoria": "variaes",
+    "kit_size": 4,
+    "titulo": "Kit 2 Creatina Monohidratada EVO 300g em Pó ↳ Kit 2 Creatina Monohidratada Black Skull 100% Pura em Pó para Treino"
+  },
+  "LKJ1C3|kit 3 camisas masculinas dry fit vyra para academia confortáveis e respiráveis": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisas Masculinas Dry Fit VYRA para Academia – Confortáveis e Respiráveis"
   },
-  "TRTRTYYRT5": {
+  "LKJ1C4|kit 3 camisas masculinas dry fit vyra para academia confortáveis e respiráveis": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisas Masculinas Dry Fit VYRA para Academia – Confortáveis e Respiráveis"
+  },
+  "FITNESCNJ12|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "CVBC29|conjunto academia feminino top legging suplex uv50 treino fitness": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
+  },
+  "TRTRTYYRT6|kit com 3x creatina monohidratada black skull 300g energia resistência e alto rendimento": {
+    "categoria": "pura",
+    "kit_size": 3,
+    "titulo": "Kit com 3x Creatina Monohidratada Black Skull 300g – Energia, Resistência e Alto Rendimento"
+  },
+  "ESSC3|conjunto fitness feminino premium top calça em poliamida conforto e modelagem perfeita": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Premium – Top + Calça em Poliamida Conforto e Modelagem Perfeita"
+  },
+  "ESSC15|conjunto fitness feminino premium top calça em poliamida conforto e modelagem perfeita": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Premium – Top + Calça em Poliamida Conforto e Modelagem Perfeita"
+  },
+  "546765567876|kit com 2 creatinas monohidratadas black skull": {
     "categoria": "pura",
     "kit_size": 2
   },
-  "DX01202613": {
-    "categoria": "dux",
-    "kit_size": 1
-  },
-  "TRTRTYYRT6": {
-    "categoria": "pura",
-    "kit_size": 3
-  },
-  "007777777FD": {
-    "categoria": "turbo",
-    "kit_size": 1
-  },
-  "MAXTTN2M": {
-    "categoria": "dux",
-    "kit_size": 2
-  },
-  "ORGNPUR": {
-    "categoria": "pura",
-    "kit_size": 1
-  },
-  "DXULT001": {
-    "categoria": "dux",
-    "kit_size": 1
-  },
-  "ORGNPURTUR": {
-    "categoria": "turbo",
-    "kit_size": 1
-  },
-  "ORGDUX01": {
-    "categoria": "dux",
-    "kit_size": 2
-  },
-  "7891238092652": {
-    "categoria": "turbo",
-    "kit_size": 2
-  },
-  "DXULT003": {
-    "categoria": "dux",
-    "kit_size": 1
-  },
-  "KT3TURBLK": {
-    "categoria": "dux",
-    "kit_size": 2
-  },
-  "BLCK12": {
-    "categoria": "pura",
-    "kit_size": 1
-  },
-  "BLCK13": {
-    "categoria": "turbo",
-    "kit_size": 1
-  },
-  "SUPLEEVO3": {
+  "BRMDA4|bermuda masculina sr dry fit leve e de secagem rápida": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Bermuda Masculina SR Dry Fit – Leve e de Secagem Rápida"
   },
-  "SUPLEEVO7": {
+  "SUPLEEVO20|conjunto fitness feminino top e calça alta elasticidade": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Top e Calça – Alta Elasticidade"
   },
-  "SUPLEEVO11": {
+  "SUPLEEVO1|conjunto fitness feminino top e calça alta elasticidade": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Top e Calça – Alta Elasticidade"
   },
-  "FITNESCNJ15": {
-    "categoria": "roupa",
-    "kit_size": 1
-  },
-  "7892223223310": {
+  "7898708731219|kit 2x creatina monohidratada black skull 300g cada 100 pura": {
     "categoria": "pura",
     "kit_size": 2
   },
-  "FITNESCNJ1": {
+  "7898708731219|kit 2x creatina monohidratada evo 300g cada 100 pura": {
     "categoria": "roupa",
-    "kit_size": 1
-  },
-  "VCXBCN2": {
-    "categoria": "roupa",
-    "kit_size": 1
-  },
-  "FITNESCNJ8": {
-    "categoria": "roupa",
-    "kit_size": 1
-  },
-  "VCXBCN15": {
-    "categoria": "roupa",
-    "kit_size": 1
-  },
-  "BLCK14": {
-    "categoria": "turbo",
-    "kit_size": 1
-  },
-  "776765TRY775": {
-    "categoria": "turbo",
     "kit_size": 2
   },
-  "DXULT009": {
+  "BRMDA10|bermuda masculina sr dry fit leve e de secagem rápida": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Bermuda Masculina SR Dry Fit – Leve e de Secagem Rápida"
+  },
+  "CVBC1|conjunto academia feminino top legging suplex uv50 treino fitness": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
+  },
+  "CVBC18|conjunto academia feminino top legging suplex": {
+    "categoria": "roupa",
+    "kit_size": 1
+  },
+  "CVBC32|conjunto academia feminino top legging suplex uv50 treino fitness": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
+  },
+  "CVBC22|conjunto academia feminino top legging suplex uv50 treino fitness": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
+  },
+  "DXULT019|creatina monohidratada dux nutrition 100 pura": {
     "categoria": "dux",
     "kit_size": 1
   },
-  "121576567776": {
-    "categoria": "dux",
-    "kit_size": 2
+  "CVBC19|conjunto academia feminino top legging suplex uv50 treino fitness": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
   },
-  "546765567876": {
+  "CVBC27|conjunto academia feminino top legging suplex uv50 treino fitness": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
+  },
+  "KT3TURBLK|kit 2 creatina monohidratada dux nutrition 100 pura em pó para treino": {
+    "categoria": "dux",
+    "kit_size": 2,
+    "titulo": "Kit 2 Creatina Monohidratada DUX Nutrition 100% Pura em Pó para Treino"
+  },
+  "FITNESCNJ9|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "FITNESCNJ10|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "ESSC16|conjunto fitness feminino premium top calça em poliamida conforto e modelagem perfeita": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Premium – Top + Calça em Poliamida Conforto e Modelagem Perfeita"
+  },
+  "DUXNTR0N|dux human health creatina 100 monohidratada sem sabor 300g": {
+    "categoria": "dux",
+    "kit_size": 1,
+    "titulo": "Dux Human Health Creatina 100% Monohidratada Sem Sabor 300g"
+  },
+  "DUXNTR3N|kit 2 creatina monohidratada 300g qualidade dux human health sabor neutro": {
+    "categoria": "dux",
+    "kit_size": 2,
+    "titulo": "Kit 2 Creatina Monohidratada 300g Qualidade Dux Human Health Sabor Neutro"
+  },
+  "7898708731431|suplemento em pó black skull creatine turbo sem sabor 300g": {
+    "categoria": "turbo",
+    "kit_size": 1,
+    "titulo": "Suplemento Em Pó Black Skull Creatine Turbo Sem Sabor 300g"
+  },
+  "DUXNTR7N|kit 3x creatina dux monohidratada de 300g pura 100 sabor neutro": {
+    "categoria": "dux",
+    "kit_size": 3,
+    "titulo": "Kit 3x Creatina Dux Monohidratada De 300g Pura 100% Sabor Neutro"
+  },
+  "7896278900134|c4 caffeine free 220g new millen pré treino sem cafieína sabor laranja": {
+    "categoria": "c4freecafena",
+    "kit_size": 1,
+    "titulo": "C4 Caffeine Free 220g - New Millen (pré Treino Sem Cafieína) Sabor Laranja"
+  },
+  "CVDA13|kit com 3 camisas masculinas dryfit vyra para academia confortáveis": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Kit com 3 Camisas Masculinas Dry-Fit VYRA para Academia – Confortáveis"
+  },
+  "CVDA12|kit com 3 camisas masculinas dryfit vyra para academia confortáveis": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Kit com 3 Camisas Masculinas Dry-Fit VYRA para Academia – Confortáveis"
+  },
+  "TPSHR3|conjunto fitness academia top e short academia premium branco lisa g": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Academia Top E Short Academia Premium Branco Lisa G"
+  },
+  "TPSHR1|conjunto fitness academia top e short academia premium branco lisa p": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Academia Top E Short Academia Premium Branco Lisa P"
+  },
+  "NNVA4|conjunto esportivo top e calça feminino suplex academia preto lisa gg": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Esportivo Top E Calça Feminino Suplex Academia Preto Lisa Gg"
+  },
+  "FITNESCNJ7|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1
+  },
+  "FITNESCNJ7|conjunto feminino top e calça fitness confortável e não": {
+    "categoria": "roupa",
+    "kit_size": 1
+  },
+  "VXBBCV1|kit 3 camisas masculinas dry fit vyra para academia confortáveis e respiráveis": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisas Masculinas Dry Fit VYRA para Academia – Confortáveis e Respiráveis"
+  },
+  "FITNESCNJ16|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "FITNESCNJ14|conjunto feminino top e calça fitness confortável e não": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não"
+  },
+  "VXBBCV2|kit 3 camisas masculinas dry fit vyra para academia confortáveis e respiráveis": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisas Masculinas Dry Fit VYRA para Academia – Confortáveis e Respiráveis"
+  },
+  "FITNESCNJ15|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "FITNESCNJ8|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "VCXBCN2|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "VCXBCN12|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "VCXBCN15|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "BRMDA7|bermuda masculina sr dry fit leve e de secagem rápida": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Bermuda Masculina SR Dry Fit – Leve e de Secagem Rápida"
+  },
+  "BCVC2|kit 3 camisetas dry fit masculinas vyra tecido leve e respirável": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisetas Dry Fit Masculinas VYRA – Tecido Leve e Respirável"
+  },
+  "CVBC18|conjunto academia feminino top legging suplex uv50 treino fitness": {
+    "categoria": "roupa",
+    "kit_size": 1
+  },
+  "CVBC3|conjunto academia feminino top legging suplex uv50 treino fitness": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
+  },
+  "PURBCL1|creatina monohidratada black skull 300g 100 pura": {
     "categoria": "pura",
-    "kit_size": 2
+    "kit_size": 1,
+    "titulo": "Creatina Monohidratada Black Skull 300g – 100% Pura"
   },
-  "ESSC19": {
+  "VXBBCV8|kit 3 camisetas masculinas dry fit vyra tecido leve respirável": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisetas Masculinas Dry Fit VYRA – Tecido Leve Respirável"
   },
-  "DXOLT02": {
-    "categoria": "dux",
-    "kit_size": 2
-  },
-  "CVBC28": {
+  "CVBC7|conjunto academia feminino top legging suplex uv50 treino fitness": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
   },
-  "CVBC10": {
+  "CVBC23|conjunto academia feminino top legging suplex uv50 treino fitness": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
   },
-  "CVBC1": {
+  "CVBC4|conjunto academia feminino top legging suplex uv50 treino fitness": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
   },
-  "DX01202615": {
-    "categoria": "dux",
-    "kit_size": 2
-  },
-  "FITNESCNJ7": {
+  "CVBC15|conjunto academia feminino top legging suplex uv50 treino fitness": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
   },
-  "FITNESCNJ10": {
+  "VVCAC1|kit 3 camisetas masculinas dry fit vyra tecido leve respirável": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisetas Masculinas Dry Fit VYRA – Tecido Leve Respirável"
   },
-  "DXOLT04": {
-    "categoria": "dux",
-    "kit_size": 2
-  },
-  "FITNESCNJ16": {
+  "CVBC31|conjunto academia feminino top legging suplex uv50 treino fitness": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
   },
-  "FITNESCNJ4": {
+  "VVCAC3|kit 3 camisetas masculinas dry fit vyra tecido leve respirável": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisetas Masculinas Dry Fit VYRA – Tecido Leve Respirável"
   },
-  "FITNESCNJ14": {
+  "VXBBCV7|kit 3 camisetas masculinas dry fit vyra tecido leve respirável": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisetas Masculinas Dry Fit VYRA – Tecido Leve Respirável"
   },
-  "CVBC4": {
+  "CVBC28|conjunto academia feminino top legging suplex uv50 treino fitness": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
   },
-  "VXBBCV8": {
+  "CXVA3|bermuda masculina air flow sr fitness leve e respirável para treino": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Bermuda Masculina Air Flow SR – Fitness Leve e Respirável para Treino"
   },
-  "CVBC17": {
+  "VXCFSD2|kit 3 camisetas dry fit masculinas vyra tecido leve e respirável": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisetas Dry Fit Masculinas VYRA – Tecido Leve e Respirável"
   },
-  "CVBC18": {
+  "SUPLEEVO10|conjunto fitness feminino top e calça alta elasticidade": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Top e Calça – Alta Elasticidade"
   },
-  "SUPLEEVO5": {
+  "ESSC2|conjunto fitness feminino premium top calça em poliamida conforto e modelagem perfeita": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Premium – Top + Calça em Poliamida Conforto e Modelagem Perfeita"
   },
-  "ESSC3": {
+  "VFDHF2|kit com 3 camisas masculinas dryfit vyra para academia confortáveis": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Kit com 3 Camisas Masculinas Dry-Fit VYRA para Academia – Confortáveis"
   },
-  "ESSC17": {
+  "ESSC7|conjunto fitness feminino premium top calça em poliamida conforto e modelagem perfeita": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Premium – Top + Calça em Poliamida Conforto e Modelagem Perfeita"
   },
-  "RETMBR7": {
-    "categoria": "roupa",
-    "kit_size": 1
+  "7892223223310|kit 2 creatina monohidratada black": {
+    "categoria": "pura",
+    "kit_size": 2,
+    "titulo": "Kit 2 Creatina Monohidratada Black"
   },
-  "ESSC16": {
+  "CVBC21|conjunto academia feminino top legging suplex uv50 treino fitness": {
     "categoria": "roupa",
-    "kit_size": 1
+    "kit_size": 1,
+    "titulo": "Conjunto Academia Feminino Top + Legging Suplex UV50+ Treino Fitness"
+  },
+  "VCXBCN7|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "VCXBCN6|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "FITNESCNJ3|conjunto feminino top e calça fitness confortável e não transparente": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Feminino Top e Calça Fitness – Confortável e Não Transparente"
+  },
+  "BBNBFNNBNBV|kit 2x creatina turbo black skull 300g cada monohidratada": {
+    "categoria": "turbo",
+    "kit_size": 2,
+    "titulo": "Kit 2x Creatina Turbo Black Skull 300g cada – Monohidratada"
+  },
+  "VVCAC2|kit 3 camisetas masculinas dry fit vyra tecido leve respirável": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Kit 3 Camisetas Masculinas Dry Fit VYRA – Tecido Leve Respirável"
+  },
+  "ESSC31|conjunto fitness feminino premium top calça em poliamida conforto e modelagem perfeita": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Premium – Top + Calça em Poliamida Conforto e Modelagem Perfeita"
+  },
+  "ESSC11|conjunto fitness feminino premium ": {
+    "categoria": "roupa",
+    "kit_size": 1,
+    "titulo": "Conjunto Fitness Feminino Premium –"
   }
 }
