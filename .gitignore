@@ -1,6 +1,7 @@
 # Runtime data
 uploads/
 outputs/
+archive/
 history.json
 server.log
 flask_errors.log

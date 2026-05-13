@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import re
 import shutil
 import zipfile
@@ -2166,6 +2167,297 @@ def order_locator_download():
     return send_file(buf, as_attachment=True,
                      download_name=f"pedidos_localizados_{today}.pdf",
                      mimetype="application/pdf")
+
+
+def _split_pdf_columns(src_bytes, num_cols=None, with_selo=False):
+    """Corta PDF com etiquetas lado a lado e retorna PDF com uma etiqueta por página.
+    Usa insert_pdf + manipulação do content stream para preservar texto extraível,
+    idêntico ao comportamento do sistema corta-etiqueta original (pdf-lib).
+    Constantes calibradas no sistema original: TOP_CROP=20 (PN), CONTENT_H=355 (TN)."""
+    TARGET_W  = 283.46  # 100 mm
+    TARGET_H  = 425.20  # 150 mm
+    TOP_CROP  = 20
+    CONTENT_H = 355
+    AJUSTE_X  = -5      # AJUSTE_X_GLOBAL do sistema original
+
+    # Carimbo "Conferido" — medidas do selo-config.ts (coords PDF: y=0 embaixo)
+    SELO_X      = 165
+    SELO_Y_PDF  = 205   # distância da borda inferior
+    SELO_W      = 80
+    SELO_H      = 80
+
+    selo_bytes = None
+    if with_selo:
+        selo_path = Path(__file__).parent / "conferido.png"
+        if selo_path.exists():
+            selo_bytes = selo_path.read_bytes()
+
+    src_doc = fitz.open(stream=src_bytes, filetype="pdf")
+    out_doc = fitz.open()
+
+    for page_num in range(len(src_doc)):
+        page = src_doc[page_num]
+        w, h = page.rect.width, page.rect.height
+
+        if num_cols is None:
+            ratio = w / h if h else 1
+            if   ratio > 2.5: cols = 4
+            elif ratio > 1.2: cols = 4
+            elif ratio > 0.6: cols = 2
+            else:              cols = 1
+        else:
+            cols = int(num_cols)
+
+        col_w = w / cols
+
+        for col in range(cols):
+            col_x0 = col * col_w
+            col_x1 = (col + 1) * col_w
+
+            if not page.get_text("blocks", clip=fitz.Rect(col_x0, 0, col_x1, h)):
+                continue
+
+            # Copia página completa preservando fontes e recursos (texto extraível)
+            out_doc.insert_pdf(src_doc, from_page=page_num, to_page=page_num)
+            out_page = out_doc[-1]
+
+            # Matriz de transformação: recorta coluna e escala para TARGET_W × TARGET_H
+            # Em coordenadas PDF nativas (y=0 embaixo):
+            # clip inferior: h - TOP_CROP - CONTENT_H  (ex.: 612-20-355=237)
+            scale_x = TARGET_W / col_w       # ~1.431 para 198→283.46
+            scale_y = TARGET_H / CONTENT_H   # ~1.197 para 355→425.2
+            pdf_y_bot = h - TOP_CROP - CONTENT_H
+            start_x = col_x0 + AJUSTE_X      # AJUSTE_X_GLOBAL do sistema original
+            tx = -start_x * scale_x
+            ty = -pdf_y_bot * scale_y
+
+            # Envolve o content stream original com a transformação
+            original = out_page.read_contents()
+            new_content = (
+                f"q {scale_x:.6f} 0 0 {scale_y:.6f} {tx:.6f} {ty:.6f} cm\n"
+                .encode()
+                + original
+                + b"\nQ\n"
+            )
+
+            # Grava no primeiro xref de content e aponta /Contents para ele
+            content_xrefs = out_page.get_contents()
+            out_doc.update_stream(content_xrefs[0], new_content)
+            out_page.set_contents(content_xrefs[0])
+
+            # Define tamanho da página de saída e remove CropBox residual
+            out_page.set_mediabox(fitz.Rect(0, 0, TARGET_W, TARGET_H))
+            out_doc.xref_set_key(out_page.xref, "CropBox", "null")
+
+            # Overlay do carimbo "Conferido" (coords PDF y-up → fitz y-down)
+            if selo_bytes:
+                selo_y0 = TARGET_H - SELO_Y_PDF - SELO_H  # topo em fitz
+                out_page.insert_image(
+                    fitz.Rect(SELO_X, selo_y0, SELO_X + SELO_W, selo_y0 + SELO_H),
+                    stream=selo_bytes,
+                    overlay=True,
+                )
+
+    try:
+        cat_xref = out_doc.pdf_catalog()
+        out_doc.xref_set_key(cat_xref, "ViewerPreferences", "<</PrintScaling /None>>")
+    except Exception:
+        pass
+
+    result = out_doc.tobytes(garbage=4, deflate=True)
+    out_doc.close()
+    src_doc.close()
+    return result
+
+
+def _split_ml_full(src_bytes, labels_per_page=3, num_cols=4):
+    """Corta PDF de etiquetas Full do Mercado Livre (grade cols × linhas)
+    e agrupa labels_per_page etiquetas por página A4, empilhadas verticalmente."""
+    OUT_W = 595.0   # A4 retrato
+    OUT_H = 842.0
+
+    src_doc = fitz.open(stream=src_bytes, filetype="pdf")
+    cells = []  # (page_num, clip_rect)
+
+    for page_num in range(len(src_doc)):
+        page    = src_doc[page_num]
+        w, h    = page.rect.width, page.rect.height
+        col_w   = w / num_cols
+
+        # Detecta linhas horizontais separadoras via desenhos do PDF
+        y_lines = set()
+        for d in page.get_drawings():
+            r = d.get("rect")
+            if r and r.width >= w * 0.7:
+                y_lines.add(round(r.y0))
+                y_lines.add(round(r.y1))
+
+        y_bounds = sorted(y_lines)
+
+        # Fallback: clusteriza por posição Y dos blocos de texto
+        if len(y_bounds) < 3:
+            blocks = page.get_text("blocks")
+            raw_ys = sorted(set(b[1] for b in blocks if b[4].strip()))
+            y_bounds = [0.0]
+            prev = -999.0
+            for y in raw_ys:
+                if y - prev > 15:
+                    if y_bounds:
+                        y_bounds.append((prev + y) / 2 if prev > 0 else y)
+                    prev = y
+            y_bounds.append(h)
+            y_bounds = sorted(set(round(v) for v in y_bounds))
+
+        for ri in range(len(y_bounds) - 1):
+            y0, y1 = y_bounds[ri], y_bounds[ri + 1]
+            if y1 - y0 < 10:
+                continue
+            for ci in range(num_cols):
+                clip = fitz.Rect(ci * col_w, y0, (ci + 1) * col_w, y1)
+                if page.get_text("text", clip=clip).strip():
+                    cells.append((page_num, clip))
+
+    out_doc  = fitz.open()
+    slot_h   = OUT_H / labels_per_page
+
+    for i in range(0, len(cells), labels_per_page):
+        batch    = cells[i:i + labels_per_page]
+        out_page = out_doc.new_page(width=OUT_W, height=OUT_H)
+        for slot, (pn, clip) in enumerate(batch):
+            dest = fitz.Rect(0, slot * slot_h, OUT_W, (slot + 1) * slot_h)
+            out_page.show_pdf_page(dest, src_doc, pn, clip=clip, keep_proportion=False)
+
+    try:
+        cat = out_doc.pdf_catalog()
+        out_doc.xref_set_key(cat, "ViewerPreferences", "<</PrintScaling /None>>")
+    except Exception:
+        pass
+
+    result = out_doc.tobytes(garbage=4, deflate=True)
+    out_doc.close()
+    src_doc.close()
+    return result
+
+
+@app.route("/cortar-ml", methods=["POST"])
+def cortar_ml_full():
+    f = request.files.get("pdf")
+    if not f or not f.filename.lower().endswith(".pdf"):
+        return jsonify({"error": "Envie um arquivo PDF válido"}), 400
+    try:
+        result = _split_ml_full(f.read(), labels_per_page=3, num_cols=4)
+    except Exception as e:
+        return jsonify({"error": f"Erro ao processar PDF: {e}"}), 500
+    buf = io.BytesIO(result)
+    buf.seek(0)
+    safe_name = re.sub(r"[^\w.\-]", "_", f.filename.rsplit(".", 1)[0])
+    return send_file(buf, mimetype="application/pdf",
+                     as_attachment=True,
+                     download_name=f"ml_cortado_{safe_name}.pdf")
+
+
+@app.route("/cortar", methods=["POST"])
+def cortar_etiquetas():
+    f = request.files.get("pdf")
+    if not f or not f.filename.lower().endswith(".pdf"):
+        return jsonify({"error": "Envie um arquivo PDF válido"}), 400
+    cols_param = request.form.get("cols", "auto")
+    num_cols   = None if cols_param == "auto" else int(cols_param)
+    with_selo  = request.form.get("selo") == "1"
+    try:
+        result = _split_pdf_columns(f.read(), num_cols, with_selo=with_selo)
+    except Exception as e:
+        return jsonify({"error": f"Erro ao processar PDF: {e}"}), 500
+    buf = io.BytesIO(result)
+    buf.seek(0)
+    safe_name = re.sub(r"[^\w.\-]", "_", f.filename.rsplit(".", 1)[0])
+    return send_file(buf, mimetype="application/pdf",
+                     as_attachment=True,
+                     download_name=f"cortado_{safe_name}.pdf")
+
+
+@app.route("/caixas/gerar", methods=["POST"])
+def caixas_gerar():
+    data     = request.get_json()
+    date_iso = data.get("date", "")
+    address  = data.get("address", "").strip()
+    boxes    = data.get("boxes", [])
+    total    = len(boxes)
+    if not boxes:
+        return jsonify({"error": "Nenhuma caixa informada"}), 400
+
+    # Formata data de YYYY-MM-DD para DD/MM/YYYY
+    try:
+        from datetime import datetime as _dt
+        date_display = _dt.strptime(date_iso, "%Y-%m-%d").strftime("%d/%m/%Y")
+    except Exception:
+        date_display = date_iso
+
+    doc = fitz.open()
+    W, H = 595, 842  # A4 retrato
+    M    = 45        # margem horizontal
+
+    for i, box in enumerate(boxes):
+        num_pedidos = int(box.get("pedidos", 0))
+        box_num     = i + 1
+        page        = doc.new_page(width=W, height=H)
+
+        # "N PEDIDOS" — negrito, muito grande
+        r = fitz.Rect(M, 70, W - M, 230)
+        page.insert_textbox(r, f"{num_pedidos} PEDIDOS",
+                            fontsize=80, fontname="hebo",
+                            align=fitz.TEXT_ALIGN_CENTER, color=(0, 0, 0))
+
+        # "CAIXA X/Y" — negrito, muito grande
+        r = fitz.Rect(M, 250, W - M, 430)
+        page.insert_textbox(r, f"CAIXA {box_num}/{total}",
+                            fontsize=80, fontname="hebo",
+                            align=fitz.TEXT_ALIGN_CENTER, color=(0, 0, 0))
+
+        # Data — itálico, grande
+        r = fitz.Rect(M, 445, W - M, 570)
+        page.insert_textbox(r, date_display,
+                            fontsize=54, fontname="heit",
+                            align=fitz.TEXT_ALIGN_CENTER, color=(0, 0, 0))
+
+        # Endereço — itálico, menor, sublinhado manual
+        if address:
+            addr_size = 17
+            r_addr = fitz.Rect(M, 640, W - M, 780)
+            page.insert_textbox(r_addr, address,
+                                fontsize=addr_size, fontname="heit",
+                                align=fitz.TEXT_ALIGN_CENTER, color=(0, 0, 0))
+            # Sublinhado: calcula largura do texto e desenha linha(s)
+            lines = []
+            words = address.split()
+            current = ""
+            line_w = W - 2 * M
+            for word in words:
+                test = (current + " " + word).strip()
+                tw = fitz.get_text_length(test, fontname="heit", fontsize=addr_size)
+                if tw <= line_w:
+                    current = test
+                else:
+                    if current:
+                        lines.append(current)
+                    current = word
+            if current:
+                lines.append(current)
+            line_h = addr_size * 1.35
+            for li, line in enumerate(lines):
+                tw  = fitz.get_text_length(line, fontname="heit", fontsize=addr_size)
+                x0  = (W - tw) / 2
+                x1  = x0 + tw
+                y_u = 640 + (li + 1) * line_h + 1
+                page.draw_line(fitz.Point(x0, y_u), fitz.Point(x1, y_u),
+                               color=(0, 0, 0), width=0.7)
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    doc.close()
+    return send_file(buf, mimetype="application/pdf",
+                     as_attachment=True, download_name="caixas.pdf")
 
 
 if __name__ == "__main__":

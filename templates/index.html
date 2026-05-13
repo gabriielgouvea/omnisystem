@@ -101,11 +101,11 @@
     .page-section {
       width: 100%; display: flex; flex-direction: column; align-items: center;
     }
-    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes {
+    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes, #page-cortar, #page-caixas, #page-ml-full {
       display: none;
     }
     #page-dashboard.active, #page-separacao.active, #page-localizador.active,
-    #page-historico.active, #page-ajustes.active { display: flex; }
+    #page-historico.active, #page-ajustes.active, #page-cortar.active, #page-caixas.active, #page-ml-full.active { display: flex; }
 
     /* ── Separação sub-nav ── */
     .sep-subnav {
@@ -666,6 +666,15 @@
       <button class="nav-item" id="nav-historico">
         <span class="nav-icon">📋</span> Histórico
       </button>
+      <button class="nav-item" id="nav-cortar">
+        <span class="nav-icon">✂</span> Cortar Etiquetas
+      </button>
+      <button class="nav-item" id="nav-ml-full">
+        <span class="nav-icon">✂</span> Cortar ML Full
+      </button>
+      <button class="nav-item" id="nav-caixas">
+        <span class="nav-icon">📦</span> Caixas
+      </button>
       <div class="sidebar-sep"></div>
       <button class="nav-item" id="nav-ajustes">
         <span class="nav-icon">⚙</span> Ajustes
@@ -1152,6 +1161,114 @@
 
 
   <!-- ═══════════════ AJUSTES PAGE ═══════════════ -->
+  <!-- ── Cortar Etiquetas ── -->
+  <div id="page-cortar" class="page-section">
+    <div class="card" style="max-width:620px;">
+      <div class="card-title">Cortar Etiquetas Shopee</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:20px;">
+        Transforma PDFs com etiquetas lado a lado em um PDF com uma etiqueta por página, pronto para impressora térmica.
+      </p>
+
+      <!-- Drop zone -->
+      <div id="cortar-drop-zone" style="border:2px dashed var(--border2);border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--bg);margin-bottom:16px;">
+        <div style="font-size:2rem;margin-bottom:8px;">✂️</div>
+        <p style="font-size:.88rem;font-weight:700;color:var(--text);margin:0 0 4px;">Arraste o PDF aqui ou clique para selecionar</p>
+        <p style="font-size:.75rem;color:var(--muted);margin:0;" id="cortar-file-name">Nenhum arquivo selecionado</p>
+      </div>
+      <input type="file" id="cortar-file-input" accept=".pdf" style="display:none;" />
+
+      <!-- Colunas -->
+      <div style="margin-bottom:18px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">Colunas por página</div>
+        <div style="display:flex;gap:8px;">
+          <label id="cortar-opt-auto" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);cursor:pointer;font-size:.82rem;font-weight:700;">
+            <input type="radio" name="cortar-cols" value="auto" checked style="accent-color:var(--accent);"> Auto
+          </label>
+          <label id="cortar-opt-2" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--border2);cursor:pointer;font-size:.82rem;font-weight:700;">
+            <input type="radio" name="cortar-cols" value="2" style="accent-color:var(--accent);"> 2 colunas
+          </label>
+          <label id="cortar-opt-4" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--border2);cursor:pointer;font-size:.82rem;font-weight:700;">
+            <input type="radio" name="cortar-cols" value="4" style="accent-color:var(--accent);"> 4 colunas
+          </label>
+        </div>
+      </div>
+
+      <!-- Carimbo Conferido -->
+      <div style="margin-bottom:18px;">
+        <label id="cortar-opt-selo" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--border2);cursor:pointer;font-size:.82rem;font-weight:700;user-select:none;">
+          <input type="checkbox" id="cortar-selo" style="accent-color:var(--accent);width:15px;height:15px;">
+          Carimbo "Conferido" em cada etiqueta
+        </label>
+      </div>
+
+      <button class="btn btn-primary" id="cortar-btn" disabled>✂ Cortar e Baixar PDF</button>
+      <div id="cortar-status" style="margin-top:12px;font-size:.82rem;display:none;"></div>
+    </div>
+  </div><!-- /page-cortar -->
+
+  <!-- ── Cortar ML Full ── -->
+  <div id="page-ml-full" class="page-section">
+    <div class="card" style="max-width:620px;">
+      <div class="card-title">Cortar Etiquetas Full — Mercado Livre</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:20px;">
+        Transforma o PDF de etiquetas Full do ML (4 colunas) em um PDF com 3 etiquetas por página, empilhadas verticalmente.
+      </p>
+
+      <div id="cml-drop-zone" style="border:2px dashed var(--border2);border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--bg);margin-bottom:16px;">
+        <div style="font-size:2rem;margin-bottom:8px;">✂️</div>
+        <p style="font-size:.88rem;font-weight:700;color:var(--text);margin:0 0 4px;">Arraste o PDF aqui ou clique para selecionar</p>
+        <p style="font-size:.75rem;color:var(--muted);margin:0;" id="cml-file-name">Nenhum arquivo selecionado</p>
+      </div>
+      <input type="file" id="cml-file-input" accept=".pdf" style="display:none;" />
+
+      <button class="btn btn-primary" id="cml-btn" disabled>✂ Cortar e Baixar PDF</button>
+      <div id="cml-status" style="margin-top:12px;font-size:.82rem;display:none;"></div>
+    </div>
+  </div><!-- /page-ml-full -->
+
+  <!-- ── Caixas ── -->
+  <div id="page-caixas" class="page-section">
+    <div class="card" style="max-width:640px;">
+      <div class="card-title">Identificação de Caixas</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:18px;">
+        Gera um PDF com uma página por caixa, para identificação no caminhão.
+      </p>
+
+      <!-- Data + Endereço -->
+      <div style="display:grid;grid-template-columns:180px 1fr;gap:12px;margin-bottom:18px;">
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Data</div>
+          <input type="date" id="caixa-date"
+            style="width:100%;background:var(--bg);border:1.5px solid var(--border2);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.85rem;font-weight:600;box-sizing:border-box;" />
+        </div>
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Endereço</div>
+          <input type="text" id="caixa-address" placeholder="Rua, número, bairro, cidade - UF, CEP"
+            style="width:100%;background:var(--bg);border:1.5px solid var(--border2);color:var(--text);border-radius:7px;padding:7px 10px;font-size:.85rem;box-sizing:border-box;" />
+        </div>
+      </div>
+
+      <!-- Número de caixas -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span style="font-size:.82rem;font-weight:700;color:var(--muted);">Número de caixas:</span>
+        <button id="caixas-minus"
+          style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border2);background:var(--bg);color:var(--text);font-size:1.1rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+        <span id="caixas-count-display"
+          style="font-size:1.1rem;font-weight:800;min-width:24px;text-align:center;">1</span>
+        <button id="caixas-plus"
+          style="width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border2);background:var(--bg);color:var(--text);font-size:1.1rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+      </div>
+
+      <!-- Lista de caixas -->
+      <div id="caixas-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;"></div>
+
+      <button class="btn btn-primary" id="caixas-gerar-btn" style="gap:7px;">
+        Gerar PDF das Caixas
+      </button>
+      <div id="caixas-status" style="margin-top:10px;font-size:.82rem;display:none;"></div>
+    </div>
+  </div><!-- /page-caixas -->
+
   <div id="page-ajustes" class="page-section">
     <div class="ajustes-section-title">Mapeamentos de Produtos</div>
     <div class="toggle-wrap" style="width:100%;max-width:1200px;">
@@ -1264,8 +1381,8 @@ function showToast(msg, color) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-ajustes"];
-const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-ajustes"];
+const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-cortar","page-ml-full","page-caixas","page-ajustes"];
+const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-cortar","nav-ml-full","nav-caixas","nav-ajustes"];
 
 function showPage(page) {
   PAGES.forEach(id => {
@@ -1296,6 +1413,9 @@ document.getElementById("nav-dashboard").addEventListener("click", () => showPag
 document.getElementById("nav-localizador").addEventListener("click", () => showPage("page-localizador"));
 document.getElementById("nav-historico").addEventListener("click", () => showPage("page-historico"));
 document.getElementById("nav-ajustes").addEventListener("click", () => showPage("page-ajustes"));
+document.getElementById("nav-caixas").addEventListener("click",  () => showPage("page-caixas"));
+document.getElementById("nav-cortar").addEventListener("click",   () => showPage("page-cortar"));
+document.getElementById("nav-ml-full").addEventListener("click",  () => showPage("page-ml-full"));
 
 document.getElementById("nav-separacao").addEventListener("click", () => {
   const sub = document.getElementById("nav-sub-separacao");
@@ -2988,9 +3108,189 @@ document.getElementById("pdf-page-modal").addEventListener("click", (e) => {
 function safeId(s) { return s.replace(/[^a-zA-Z0-9]/g, "_"); }
 function unitLabel(cat) { return cat === "roupa" ? "peças" : "potes"; }
 
+// ── Cortar Etiquetas ──────────────────────────────────────────────────────────
+(function () {
+  let cortarFile = null;
+  const dropZone  = document.getElementById("cortar-drop-zone");
+  const fileInput = document.getElementById("cortar-file-input");
+  const fileLabel = document.getElementById("cortar-file-name");
+  const btn       = document.getElementById("cortar-btn");
+  const statusEl  = document.getElementById("cortar-status");
+  const optLabels = ["cortar-opt-auto","cortar-opt-2","cortar-opt-4"];
+
+  // Highlight label selecionado
+  document.querySelectorAll("input[name='cortar-cols']").forEach(radio => {
+    radio.addEventListener("change", () => {
+      optLabels.forEach(id => {
+        const lbl = document.getElementById(id);
+        const sel = lbl.querySelector("input").checked;
+        lbl.style.borderColor   = sel ? "var(--accent)" : "var(--border2)";
+        lbl.style.background    = sel ? "color-mix(in srgb,var(--accent) 10%,transparent)" : "";
+      });
+    });
+  });
+
+  function setFile(file) {
+    if (!file || !file.name.toLowerCase().endsWith(".pdf")) {
+      statusEl.style.display = "block"; statusEl.style.color = "var(--red)";
+      statusEl.textContent = "Envie apenas arquivos PDF."; return;
+    }
+    cortarFile = file;
+    fileLabel.textContent = `${file.name}  (${(file.size/1024/1024).toFixed(2)} MB)`;
+    btn.disabled = false;
+    statusEl.style.display = "none";
+    dropZone.style.borderColor = "var(--accent)";
+  }
+
+  dropZone.addEventListener("click",     () => fileInput.click());
+  dropZone.addEventListener("dragover",  e  => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
+  dropZone.addEventListener("dragleave", () => { if (!cortarFile) dropZone.style.borderColor = ""; });
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+  btn.addEventListener("click", async () => {
+    if (!cortarFile) return;
+    const cols = document.querySelector("input[name='cortar-cols']:checked").value;
+    btn.disabled = true; btn.textContent = "Processando...";
+    statusEl.style.display = "none";
+    const form = new FormData();
+    form.append("pdf",  cortarFile);
+    form.append("cols", cols);
+    form.append("selo", document.getElementById("cortar-selo").checked ? "1" : "0");
+    try {
+      const res = await fetch("/cortar", { method: "POST", body: form });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Erro"); }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url;
+      a.download = "cortado_" + cortarFile.name;
+      a.click();
+      URL.revokeObjectURL(url);
+      statusEl.style.display = "block"; statusEl.style.color = "var(--green)";
+      statusEl.innerHTML = "✓ PDF baixado! <strong>Ao imprimir: escolha \"Sem escala\" (não \"Ajustar à área\")</strong> para preencher a etiqueta corretamente.";
+    } catch (e) {
+      statusEl.style.display = "block"; statusEl.style.color = "var(--red)";
+      statusEl.textContent = "Erro: " + e.message;
+    }
+    btn.disabled = false; btn.textContent = "✂ Cortar e Baixar PDF";
+  });
+})();
+
+// ── Cortar ML Full ────────────────────────────────────────────────────────────
+(function () {
+  let cmlFile = null;
+  const dropZone  = document.getElementById("cml-drop-zone");
+  const fileInput = document.getElementById("cml-file-input");
+  const fileLabel = document.getElementById("cml-file-name");
+  const btn       = document.getElementById("cml-btn");
+  const statusEl  = document.getElementById("cml-status");
+
+  function setFile(f) {
+    cmlFile = f;
+    fileLabel.textContent = f.name;
+    dropZone.style.borderColor = "var(--accent)";
+    btn.disabled = false;
+  }
+
+  dropZone.addEventListener("click",     () => fileInput.click());
+  dropZone.addEventListener("dragover",  e  => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
+  dropZone.addEventListener("dragleave", () => { if (!cmlFile) dropZone.style.borderColor = ""; });
+  dropZone.addEventListener("drop", e => { e.preventDefault(); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+  fileInput.addEventListener("change", () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+  btn.addEventListener("click", async () => {
+    if (!cmlFile) return;
+    btn.disabled = true; btn.textContent = "Processando...";
+    statusEl.style.display = "none";
+    const form = new FormData();
+    form.append("pdf", cmlFile);
+    try {
+      const res = await fetch("/cortar-ml", { method: "POST", body: form });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Erro"); }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url; a.download = "ml_cortado_" + cmlFile.name; a.click();
+      URL.revokeObjectURL(url);
+      statusEl.style.display = "block"; statusEl.style.color = "var(--green)";
+      statusEl.textContent = "✓ PDF baixado!";
+    } catch (e) {
+      statusEl.style.display = "block"; statusEl.style.color = "var(--red)";
+      statusEl.textContent = "Erro: " + e.message;
+    }
+    btn.disabled = false; btn.textContent = "✂ Cortar e Baixar PDF";
+  });
+})();
+
+// ── Caixas ────────────────────────────────────────────────────────────────────
+let caixasCount = 1;
+
+function updateCaixasList() {
+  const total = caixasCount;
+  document.getElementById("caixas-count-display").textContent = total;
+  const list = document.getElementById("caixas-list");
+  const existing = Array.from(list.querySelectorAll(".caixa-pedidos")).map(i => i.value);
+  list.innerHTML = "";
+  for (let i = 0; i < total; i++) {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);";
+    row.innerHTML = `
+      <span style="font-size:.8rem;font-weight:800;color:var(--accent);min-width:90px;">Caixa ${i+1}/${total}</span>
+      <input type="number" class="caixa-pedidos" min="1" value="${existing[i] || 1}"
+        style="width:72px;padding:5px 8px;border-radius:7px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text);font-size:.9rem;font-weight:700;text-align:center;" />
+      <span style="font-size:.8rem;color:var(--muted);">pedidos</span>`;
+    list.appendChild(row);
+  }
+}
+
+document.getElementById("caixas-minus").addEventListener("click", () => {
+  if (caixasCount > 1) { caixasCount--; updateCaixasList(); }
+});
+document.getElementById("caixas-plus").addEventListener("click", () => {
+  caixasCount++; updateCaixasList();
+});
+
+document.getElementById("caixas-gerar-btn").addEventListener("click", async () => {
+  const date    = document.getElementById("caixa-date").value;
+  const address = document.getElementById("caixa-address").value.trim();
+  const statusEl = document.getElementById("caixas-status");
+  if (!date)    { statusEl.style.display="block"; statusEl.style.color="var(--red)"; statusEl.textContent="Selecione a data."; return; }
+  if (!address) { statusEl.style.display="block"; statusEl.style.color="var(--red)"; statusEl.textContent="Informe o endereço."; return; }
+  const boxes = Array.from(document.querySelectorAll(".caixa-pedidos"))
+                     .map(i => ({ pedidos: parseInt(i.value) || 1 }));
+  const btn = document.getElementById("caixas-gerar-btn");
+  btn.disabled = true; btn.textContent = "Gerando...";
+  statusEl.style.display = "none";
+  try {
+    const res = await fetch("/caixas/gerar", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date, address, boxes })
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Erro"); }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = "caixas.pdf"; a.click();
+    URL.revokeObjectURL(url);
+    statusEl.style.display = "block"; statusEl.style.color = "var(--green)";
+    statusEl.textContent = "✓ PDF gerado e baixado!";
+  } catch(e) {
+    statusEl.style.display = "block"; statusEl.style.color = "var(--red)";
+    statusEl.textContent = "Erro: " + e.message;
+  }
+  btn.disabled = false; btn.textContent = "Gerar PDF das Caixas";
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 showPage("page-dashboard");
-document.getElementById("label-date").value = new Date().toISOString().split("T")[0];
+const _today = new Date().toISOString().split("T")[0];
+document.getElementById("label-date").value  = _today;
+document.getElementById("caixa-date").value  = _today;
+updateCaixasList();
 
 // ── Chart: Pedidos por Estado (UF) ────────────────────────────────────────────
 const UF_NAMES = {
