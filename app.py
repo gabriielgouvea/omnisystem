@@ -1,16 +1,20 @@
+import hashlib
 import io
 import json
 import os
 import re
+import secrets
 import shutil
 import zipfile
 from datetime import date, datetime, timedelta
+from functools import wraps
 import fitz  # PyMuPDF
-from flask import Flask, request, jsonify, render_template, send_from_directory, send_file
+from flask import Flask, request, jsonify, render_template, send_from_directory, send_file, session, redirect, url_for
 from pypdf import PdfReader, PdfWriter
 from pathlib import Path
 
 app = Flask(__name__)
+app.permanent_session_lifetime = timedelta(days=30)
 
 BASE_DIR    = Path(__file__).parent
 UPLOAD_DIR  = BASE_DIR / "uploads"
@@ -21,6 +25,15 @@ BRANDS_FILE       = BASE_DIR / "brands.json"
 HISTORY_FILE      = BASE_DIR / "history.json"
 TRACKING_LOG_FILE   = BASE_DIR / "tracking_log.json"
 TRACKING_INDEX_FILE = BASE_DIR / "tracking_index.json"
+USERS_FILE        = BASE_DIR / "users.json"
+SECRET_KEY_FILE   = BASE_DIR / ".secret_key"
+
+if SECRET_KEY_FILE.exists():
+    app.secret_key = SECRET_KEY_FILE.read_text().strip()
+else:
+    _key = secrets.token_hex(32)
+    SECRET_KEY_FILE.write_text(_key)
+    app.secret_key = _key
 
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -1181,6 +1194,75 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
     return {"output_files": output_files, "page_results": page_results,
             "stats": stats, "errors": [], "security_alerts": security_alerts}
 
+
+# ── Auth ──────────────────────────────────────────────────────────────────────
+
+def hash_pin(pin):
+    return hashlib.sha256(pin.encode()).hexdigest()
+
+def load_users():
+    if USERS_FILE.exists():
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def save_users(users):
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
+
+@app.before_request
+def require_login():
+    public = {"login", "setup_pin", "logout", "static"}
+    if request.endpoint in public:
+        return
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    users = load_users()
+    error = None
+    if request.method == "POST":
+        username = request.form.get("username", "").upper().strip()
+        pin = request.form.get("pin", "").strip()
+        if username not in users:
+            error = "Usuário inválido."
+        elif users[username]["pin"] is None:
+            return redirect(url_for("setup_pin", username=username))
+        elif users[username]["pin"] != hash_pin(pin):
+            error = "PIN incorreto."
+        else:
+            session.permanent = True
+            session["user"] = username
+            return redirect(url_for("index"))
+    return render_template("login.html", users=list(users.keys()), error=error)
+
+@app.route("/setup-pin", methods=["GET", "POST"])
+def setup_pin():
+    username = (request.args.get("username") or request.form.get("username", "")).upper().strip()
+    users = load_users()
+    error = None
+    if username not in users:
+        return redirect(url_for("login"))
+    if request.method == "POST":
+        pin = request.form.get("pin", "").strip()
+        pin_confirm = request.form.get("pin_confirm", "").strip()
+        if len(pin) != 4 or not pin.isdigit():
+            error = "O PIN deve ter exatamente 4 números."
+        elif pin != pin_confirm:
+            error = "Os PINs não coincidem. Tente novamente."
+        else:
+            users[username]["pin"] = hash_pin(pin)
+            save_users(users)
+            session.permanent = True
+            session["user"] = username
+            return redirect(url_for("index"))
+    return render_template("setup_pin.html", username=username, error=error)
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 

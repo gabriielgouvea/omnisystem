@@ -18,6 +18,10 @@ venv/
 # Claude workspace
 .claude/
 
+# Auth
+.secret_key
+users.json
+
 # Arquivos locais / debug
 debug_*.py
 tracking_log.json

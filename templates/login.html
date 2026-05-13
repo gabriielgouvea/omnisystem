@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OMNI — Login</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .logo-icon {
+      width: 56px; height: 56px;
+      background: #6366f1;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 12px;
+    }
+    .logo h1 { color: #f1f5f9; font-size: 22px; font-weight: 700; }
+    .logo p  { color: #94a3b8; font-size: 13px; margin-top: 4px; }
+
+    h2 { color: #e2e8f0; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+
+    .users-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .user-btn {
+      background: #0f172a;
+      border: 2px solid #334155;
+      border-radius: 10px;
+      color: #cbd5e1;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 14px 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.5px;
+    }
+    .user-btn:hover { border-color: #6366f1; color: #a5b4fc; background: #1e1b4b; }
+    .user-btn.selected { border-color: #6366f1; color: #fff; background: #4338ca; }
+
+    .pin-section { display: none; }
+    .pin-section.visible { display: block; }
+
+    label { display: block; color: #94a3b8; font-size: 13px; margin-bottom: 8px; }
+    .pin-input {
+      width: 100%;
+      background: #0f172a;
+      border: 2px solid #334155;
+      border-radius: 10px;
+      color: #f1f5f9;
+      font-size: 22px;
+      letter-spacing: 12px;
+      text-align: center;
+      padding: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .pin-input:focus { border-color: #6366f1; }
+
+    .error {
+      background: #450a0a;
+      border: 1px solid #dc2626;
+      border-radius: 8px;
+      color: #fca5a5;
+      font-size: 13px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+    }
+    .btn-submit {
+      width: 100%;
+      background: #6366f1;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 14px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.15s;
+    }
+    .btn-submit:hover { background: #4f46e5; }
+    .btn-back {
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 14px;
+      display: block;
+      width: 100%;
+      text-align: center;
+    }
+    .btn-back:hover { color: #94a3b8; }
+    input[type="hidden"] {}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">O</div>
+      <h1>OMNI</h1>
+      <p>Sistema de Operações</p>
+    </div>
+
+    {% if error %}
+    <div class="error">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" id="loginForm">
+      <input type="hidden" name="username" id="hiddenUser" value="" />
+
+      <div id="stepUsers">
+        <h2>Selecione seu usuário</h2>
+        <div class="users-grid">
+          {% for u in users %}
+          <button type="button" class="user-btn" onclick="selectUser('{{ u }}')">{{ u }}</button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="pin-section" id="stepPin">
+        <h2 id="pinLabel">Digite seu PIN</h2>
+        <label>PIN de 4 dígitos</label>
+        <input type="password" name="pin" class="pin-input" id="pinInput"
+               maxlength="4" inputmode="numeric" pattern="[0-9]{4}"
+               placeholder="••••" autocomplete="current-password" />
+        <button type="submit" class="btn-submit">Entrar</button>
+        <button type="button" class="btn-back" onclick="backToUsers()">← Trocar usuário</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function selectUser(name) {
+      document.getElementById('hiddenUser').value = name;
+      document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('selected'));
+      event.target.classList.add('selected');
+      document.getElementById('stepUsers').style.display = 'none';
+      document.getElementById('stepPin').classList.add('visible');
+      document.getElementById('pinLabel').textContent = 'Olá, ' + name + '! Digite seu PIN';
+      setTimeout(() => document.getElementById('pinInput').focus(), 100);
+    }
+    function backToUsers() {
+      document.getElementById('hiddenUser').value = '';
+      document.getElementById('stepPin').classList.remove('visible');
+      document.getElementById('stepUsers').style.display = '';
+      document.getElementById('pinInput').value = '';
+    }
+    {% if error %}
+    document.getElementById('stepUsers').style.display = 'none';
+    document.getElementById('stepPin').classList.add('visible');
+    {% endif %}
+  </script>
+</body>
+</html>
