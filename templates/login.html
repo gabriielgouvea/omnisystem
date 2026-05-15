@@ -44,31 +44,55 @@
 
     h2 { color: #e2e8f0; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
 
-    .users-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 28px;
-    }
-    .user-btn {
+    .field { margin-bottom: 20px; position: relative; }
+    label { display: block; color: #94a3b8; font-size: 13px; margin-bottom: 8px; }
+
+    .dropdown-wrapper { position: relative; }
+    .dropdown-trigger {
+      width: 100%;
       background: #0f172a;
       border: 2px solid #334155;
       border-radius: 10px;
       color: #cbd5e1;
-      font-size: 14px;
-      font-weight: 600;
-      padding: 14px 10px;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 14px 16px;
       cursor: pointer;
-      transition: all 0.15s;
-      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: border-color 0.15s;
+      user-select: none;
     }
-    .user-btn:hover { border-color: #6366f1; color: #a5b4fc; background: #1e1b4b; }
-    .user-btn.selected { border-color: #6366f1; color: #fff; background: #4338ca; }
+    .dropdown-trigger:hover, .dropdown-trigger.open { border-color: #6366f1; color: #f1f5f9; }
+    .dropdown-trigger .arrow { transition: transform 0.2s; font-size: 11px; color: #64748b; }
+    .dropdown-trigger.open .arrow { transform: rotate(180deg); }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0; right: 0;
+      background: #1e293b;
+      border: 2px solid #6366f1;
+      border-radius: 10px;
+      overflow: hidden;
+      z-index: 100;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .dropdown-menu.open { display: block; }
+    .dropdown-item {
+      padding: 13px 16px;
+      color: #cbd5e1;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .dropdown-item:hover { background: #1e1b4b; color: #a5b4fc; }
+    .dropdown-item:not(:last-child) { border-bottom: 1px solid #1e293b; }
 
     .pin-section { display: none; }
     .pin-section.visible { display: block; }
-
-    label { display: block; color: #94a3b8; font-size: 13px; margin-bottom: 8px; }
     .pin-input {
       width: 100%;
       background: #0f172a;
@@ -137,45 +161,54 @@
     <form method="POST" id="loginForm">
       <input type="hidden" name="username" id="hiddenUser" value="" />
 
-      <div id="stepUsers">
-        <h2>Selecione seu usuário</h2>
-        <div class="users-grid">
-          {% for u in users %}
-          <button type="button" class="user-btn" onclick="selectUser('{{ u }}')">{{ u }}</button>
-          {% endfor %}
+      <div class="field">
+        <label>Usuário</label>
+        <div class="dropdown-wrapper">
+          <div class="dropdown-trigger" id="dropdownTrigger" onclick="toggleDropdown()">
+            <span id="selectedLabel">Selecione seu usuário</span>
+            <span class="arrow">▼</span>
+          </div>
+          <div class="dropdown-menu" id="dropdownMenu">
+            {% for u in users %}
+            <div class="dropdown-item" onclick="selectUser('{{ u }}')">{{ u }}</div>
+            {% endfor %}
+          </div>
         </div>
       </div>
 
       <div class="pin-section" id="stepPin">
-        <h2 id="pinLabel">Digite seu PIN</h2>
-        <label>PIN de 4 dígitos</label>
-        <input type="password" name="pin" class="pin-input" id="pinInput"
-               maxlength="4" inputmode="numeric" pattern="[0-9]{4}"
-               placeholder="••••" autocomplete="current-password" />
+        <div class="field">
+          <label id="pinLabel">PIN de 4 dígitos</label>
+          <input type="password" name="pin" class="pin-input" id="pinInput"
+                 maxlength="4" inputmode="numeric" pattern="[0-9]{4}"
+                 placeholder="••••" autocomplete="current-password" />
+        </div>
         <button type="submit" class="btn-submit">Entrar</button>
-        <button type="button" class="btn-back" onclick="backToUsers()">← Trocar usuário</button>
       </div>
     </form>
   </div>
 
   <script>
+    function toggleDropdown() {
+      document.getElementById('dropdownTrigger').classList.toggle('open');
+      document.getElementById('dropdownMenu').classList.toggle('open');
+    }
     function selectUser(name) {
       document.getElementById('hiddenUser').value = name;
-      document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('selected'));
-      event.target.classList.add('selected');
-      document.getElementById('stepUsers').style.display = 'none';
+      document.getElementById('selectedLabel').textContent = name;
+      document.getElementById('dropdownTrigger').classList.remove('open');
+      document.getElementById('dropdownMenu').classList.remove('open');
+      document.getElementById('pinLabel').textContent = 'PIN de 4 dígitos — Olá, ' + name + '!';
       document.getElementById('stepPin').classList.add('visible');
-      document.getElementById('pinLabel').textContent = 'Olá, ' + name + '! Digite seu PIN';
       setTimeout(() => document.getElementById('pinInput').focus(), 100);
     }
-    function backToUsers() {
-      document.getElementById('hiddenUser').value = '';
-      document.getElementById('stepPin').classList.remove('visible');
-      document.getElementById('stepUsers').style.display = '';
-      document.getElementById('pinInput').value = '';
-    }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.dropdown-wrapper')) {
+        document.getElementById('dropdownTrigger').classList.remove('open');
+        document.getElementById('dropdownMenu').classList.remove('open');
+      }
+    });
     {% if error %}
-    document.getElementById('stepUsers').style.display = 'none';
     document.getElementById('stepPin').classList.add('visible');
     {% endif %}
   </script>
