@@ -517,29 +517,186 @@
     .region-val  { font-size: 1.6rem; font-weight: 900; color: var(--text); line-height: 1; }
     .region-pct  { font-size: .65rem; color: var(--muted); margin-top: 3px; }
 
+    /* ── Product card header ── */
+    .product-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+    }
+    .product-card-name {
+      font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 6px;
+    }
+    .product-card-stats { display: flex; gap: 10px; }
+    .product-card-stats .stat-box { min-width: 90px; }
+
+    /* ── Mobile top bar ── */
+    .mobile-bar {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+      height: 54px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      align-items: center; justify-content: space-between;
+      padding: 0 16px;
+    }
+    .mobile-bar-logo { display: flex; align-items: center; gap: 8px; }
+    .mobile-bar-mark {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: var(--accent); display: flex; align-items: center;
+      justify-content: center; color: #fff; font-weight: 900; font-size: .9rem;
+    }
+    .mobile-bar-title { font-size: .95rem; font-weight: 900; letter-spacing: 2px; color: var(--accent); }
+    .hamburger {
+      background: none; border: none; cursor: pointer;
+      display: flex; flex-direction: column; gap: 5px; padding: 6px;
+    }
+    .hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--text); border-radius: 2px;
+      transition: all .25s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ── Sidebar overlay (mobile) ── */
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); z-index: 190;
+    }
+    .sidebar-overlay.visible { display: block; }
+
     /* ── Mobile responsive ── */
     @media (max-width: 768px) {
-      .card, .home-subnav, .metrics-section-header, .toggle-wrap { max-width: 100%; }
+      .mobile-bar { display: flex; }
+
+      /* Bloqueia overflow horizontal em tudo */
+      html { overflow-x: hidden; }
+      body { overflow-x: hidden; width: 100%; }
+      .app-shell { overflow-x: hidden; width: 100%; }
+
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform .28s ease;
+        z-index: 250; top: 0;
+      }
+      .sidebar.mobile-open { transform: translateX(0); }
+
+      .main-content {
+        margin-left: 0 !important;
+        padding: 66px 12px 60px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box;
+      }
+
+      .page-section {
+        width: 100%; min-width: 0;
+        max-width: 100%; overflow: hidden;
+      }
+
+      /* Cards: nunca ultrapassam a tela */
+      .card, .home-subnav, .metrics-section-header, .toggle-wrap {
+        max-width: 100% !important; min-width: 0 !important;
+        box-sizing: border-box; overflow: hidden;
+      }
+      .card { padding: 14px !important; }
+
+      /* Grids */
       #store-drilldown { max-width: 100% !important; }
-      .brand-grid { grid-template-columns: repeat(2, 1fr) !important; }
-      .dash-row { grid-template-columns: 1fr !important; }
-      .kpi-row  { grid-template-columns: repeat(2, 1fr) !important; }
+      .brand-grid    { grid-template-columns: repeat(2, 1fr) !important; }
+      .dash-row      { grid-template-columns: 1fr !important; }
+      .kpi-row       { grid-template-columns: repeat(2, 1fr) !important; }
       .regions-strip { grid-template-columns: repeat(3, 1fr) !important; }
+
+      /* Sub-navs de separação: quebram linha */
+      .sep-subnav { flex-wrap: wrap; gap: 6px; }
+      .home-subnav { flex-wrap: wrap; gap: 6px; }
+
+      /* Botões de período: quebram linha, tamanho menor */
+      .period-btns { display: flex; flex-wrap: wrap; gap: 5px; }
+      .period-btn  { padding: 6px 12px; font-size: .78rem; flex-shrink: 0; }
+
+      /* Filtros de loja: quebram linha */
+      .filter-row { flex-wrap: wrap; gap: 6px; }
+
+      /* Linhas de breakdown */
+      .br-row { gap: 8px; overflow: hidden; }
+      .br-label {
+        min-width: 0; max-width: 110px; flex-shrink: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        font-size: .72rem;
+      }
+      .br-count { min-width: 0; width: 90px; flex-shrink: 0; font-size: .7rem; }
+
+      /* Header dos cards de produto: empilha em mobile */
+      .card [style*="display:flex"][style*="justify-content:space-between"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+      }
+      .card [style*="display:flex"][style*="justify-content:space-between"] > div:last-child {
+        width: 100%;
+      }
+
+      /* Gráficos */
+      [style*="height:240px"], [style*="height: 240px"] { height: 180px !important; }
+      [style*="height:260px"], [style*="height: 260px"] { height: 180px !important; }
+      [style*="height:200px"], [style*="height: 200px"] { height: 160px !important; }
+
+      /* Stat boxes */
+      .stat-box .sv { font-size: 1.4rem; }
+
+      /* Cards de download */
+      .dl-grid { gap: 8px; }
+      .dl-card  { min-width: 0; flex: 1; }
+
+      /* KPI cards */
+      .kpi-val { font-size: 1.6rem; }
+
+      /* Product card header: empilha verticalmente */
+      .product-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .product-card-stats {
+        width: 100%; justify-content: flex-start;
+      }
+      .product-card-stats .stat-box {
+        min-width: 0; flex: 1; max-width: 140px;
+      }
+
+      /* Page section: alinha à esquerda para não centralizar conteúdo largo */
+      .page-section { align-items: stretch !important; }
+
+      /* Canvas nunca ultrapassa a tela */
+      canvas { max-width: 100% !important; height: auto; }
+
+      /* Remove overflow:hidden dos cards para não cortar conteúdo */
+      .card { overflow: visible !important; }
+
+      /* Sidebar logo: garante que o subtítulo não seja cortado */
+      .sidebar-logo { flex-wrap: wrap; }
+      .sidebar-logo-sub { white-space: normal; word-break: break-word; line-height: 1.3; }
     }
+
     @media (max-width: 520px) {
-      body { padding: 16px 10px 60px; }
+      .mobile-bar { height: 50px; }
+      .main-content { padding-top: 62px; }
       .header h1 { font-size: 1.4rem; }
       .mp-nav { gap: 4px; padding: 4px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
       .mp-tab { padding: 6px 10px 6px 8px; flex-shrink: 0; }
       .mp-tab-badge { display: none; }
       .mp-tab-name { font-size: .7rem; }
       .mp-tab-logo { width: 22px; height: 22px; }
-      .card { padding: 16px; }
+      .card { padding: 14px; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr) !important; }
+      .brand-grid { grid-template-columns: 1fr 1fr !important; }
+      .regions-strip { grid-template-columns: repeat(2, 1fr) !important; }
       .stat-row { grid-template-columns: repeat(2, 1fr); }
       .stat-box .sv { font-size: 1.5rem; }
       .period-btns { gap: 4px; }
       .period-btn { padding: 5px 10px; font-size: .75rem; }
       .metrics-section-header { margin: 8px 0 4px; }
+      .dash-row { grid-template-columns: 1fr !important; }
     }
 
     /* ── PDF view button (classify card) ──────────────────────────────── */
@@ -603,6 +760,21 @@
   </style>
 </head>
 <body>
+
+<!-- ── Mobile top bar ── -->
+<div class="mobile-bar">
+  <div class="mobile-bar-logo">
+    <div class="mobile-bar-mark">O</div>
+    <span class="mobile-bar-title">OMNI</span>
+  </div>
+  <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</div>
+
+<!-- ── Sidebar overlay ── -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileMenu()"></div>
+
 <div class="app-shell">
 
   <!-- ── Sidebar ── -->
@@ -2690,18 +2862,18 @@ function renderAllProducts(items) {
     const mergedCard = document.createElement("div");
     mergedCard.className = "card";
     mergedCard.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:6px;">${esc(display)}</div>
+      <div class="product-card-header">
+        <div class="product-card-info">
+          <div class="product-card-name">${esc(display)}</div>
           <span class="product-meta-chip cat-${esc(cat)}">${esc(cat)}</span>
         </div>
-        <div style="display:flex;gap:10px;">
-          <div class="stat-box" style="min-width:90px;"><div class="sv">${totalUnits}</div><div class="sl">POTES</div></div>
-          <div class="stat-box" style="min-width:90px;"><div class="sv">${avgPerDay}</div><div class="sl">MÉDIA/DIA</div></div>
+        <div class="product-card-stats">
+          <div class="stat-box"><div class="sv">${totalUnits}</div><div class="sl">POTES</div></div>
+          <div class="stat-box"><div class="sv">${avgPerDay}</div><div class="sl">MÉDIA/DIA</div></div>
         </div>
       </div>
       <div class="card-title" style="margin-bottom:10px;">Ranking de Lojas</div>
-      <div style="position:relative;" id="pwrap-${sid}">
+      <div style="position:relative;width:100%;max-width:100%;overflow:hidden;" id="pwrap-${sid}">
         <canvas id="pchart-${sid}"></canvas>
       </div>`;
     container.appendChild(mergedCard);
@@ -3886,4 +4058,30 @@ document.getElementById("ml-download-all-btn").addEventListener("click", async (
     </div>
   </div>
 </div>
+
+<script>
+// ── Mobile menu ────────────────────────────────────────────────────────────────
+function toggleMobileMenu() {
+  const sidebar  = document.querySelector('.sidebar');
+  const overlay  = document.getElementById('sidebarOverlay');
+  const btn      = document.getElementById('hamburgerBtn');
+  const isOpen   = sidebar.classList.contains('mobile-open');
+  if (isOpen) { closeMobileMenu(); } else {
+    sidebar.classList.add('mobile-open');
+    overlay.classList.add('visible');
+    btn.classList.add('open');
+  }
+}
+function closeMobileMenu() {
+  document.querySelector('.sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').classList.remove('visible');
+  document.getElementById('hamburgerBtn').classList.remove('open');
+}
+// Fecha o menu ao navegar
+document.querySelectorAll('.nav-item, .nav-sub-item').forEach(el => {
+  el.addEventListener('click', () => {
+    if (window.innerWidth <= 768) closeMobileMenu();
+  });
+});
+</script>
 </html>
