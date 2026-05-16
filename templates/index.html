@@ -930,6 +930,14 @@
         <span class="nav-icon">⚙</span> Ajustes
       </button>
     </nav>
+    <div style="padding:12px 10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:900;color:#fff;flex-shrink:0;">{{ current_user[0] | upper }}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.72rem;color:var(--muted);line-height:1.2;">Olá,</div>
+        <div style="font-size:.8rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ current_user }}</div>
+      </div>
+      <a href="/logout" title="Sair" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;padding:5px;border-radius:7px;transition:color .15s,background .15s;text-decoration:none;display:flex;align-items:center;" onmouseover="this.style.color='var(--red)';this.style.background='rgba(255,80,80,.1)'" onmouseout="this.style.color='var(--muted)';this.style.background='none'" title="Sair">⏻</a>
+    </div>
   </aside>
 
   <!-- ── Main content ── -->
