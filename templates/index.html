@@ -3429,6 +3429,10 @@ document.getElementById("export-pdf-btn").addEventListener("click", async () => 
 })();
 
 // ── History management ────────────────────────────────────────────────────────
+function _histPlatform(stores) {
+  return /\bML\b/i.test(stores.join(' ')) ? 'ml' : 'shopee';
+}
+
 async function loadHistoryEntries() {
   const list = document.getElementById("history-entries-list");
   try {
@@ -3439,7 +3443,37 @@ async function loadHistoryEntries() {
       list.innerHTML = '<p style="font-size:.82rem;color:var(--muted);text-align:center;padding:20px;">Nenhuma expedição registrada.</p>';
       return;
     }
+    let lastDate = null;
     entries.forEach(entry => {
+      const [y, m, d] = entry.date.split("-");
+      const dateFmt = `${d}/${m}/${y}`;
+
+      // ── Separador de dia ──
+      if (entry.date !== lastDate) {
+        if (lastDate !== null) {
+          const sep = document.createElement("div");
+          sep.style.cssText = "display:flex;align-items:center;gap:10px;margin:14px 0 10px;";
+          sep.innerHTML = `<div style="flex:1;height:1px;background:var(--border);"></div><span style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);white-space:nowrap;">${dateFmt}</span><div style="flex:1;height:1px;background:var(--border);"></div>`;
+          list.appendChild(sep);
+        } else {
+          // Primeiro dia: só adiciona label se houver mais de um dia
+          const hasManyDays = entries.some(e => e.date !== entry.date);
+          if (hasManyDays) {
+            const sep = document.createElement("div");
+            sep.style.cssText = "display:flex;align-items:center;gap:10px;margin:0 0 10px;";
+            sep.innerHTML = `<div style="flex:1;height:1px;background:var(--border);"></div><span style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);white-space:nowrap;">${dateFmt}</span><div style="flex:1;height:1px;background:var(--border);"></div>`;
+            list.appendChild(sep);
+          }
+        }
+        lastDate = entry.date;
+      }
+
+      // ── Plataforma ──
+      const platform = _histPlatform(entry.stores);
+      const logoSrc  = platform === 'ml' ? '/static/ml.png' : '/static/shopee.png';
+      const logoAlt  = platform === 'ml' ? 'Mercado Livre' : 'Shopee';
+      const logoHtml = `<img src="${logoSrc}" alt="${logoAlt}" style="height:18px;object-fit:contain;vertical-align:middle;border-radius:3px;" title="${logoAlt}">`;
+
       const row = document.createElement("div");
       row.className = "hist-row";
 
@@ -3453,12 +3487,9 @@ async function loadHistoryEntries() {
         </div>`;
       }).join("");
 
-      const [y, m, d] = entry.date.split("-");
-      const dateFmt = `${d}/${m}/${y}`;
-
       row.innerHTML = `
         <div class="hist-info">
-          <div class="hist-date">${dateFmt}</div>
+          <div class="hist-date" style="display:flex;align-items:center;gap:7px;">${logoHtml} ${dateFmt}</div>
           <div class="hist-meta">${esc(entry.stores.join(", "))} &nbsp;·&nbsp; ${entry.total_orders} pedido${entry.total_orders !== 1 ? "s" : ""}</div>
           <div class="hist-stores">${storeListHtml}</div>
         </div>
