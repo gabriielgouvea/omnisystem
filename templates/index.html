@@ -3453,7 +3453,7 @@ async function loadHistoryEntries() {
         if (lastDate !== null) {
           const sep = document.createElement("div");
           sep.style.cssText = "display:flex;align-items:center;gap:10px;margin:14px 0 10px;";
-          sep.innerHTML = `<div style="flex:1;height:1px;background:var(--border);"></div><span style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);white-space:nowrap;">${dateFmt}</span><div style="flex:1;height:1px;background:var(--border);"></div>`;
+          sep.innerHTML = `<div style="flex:1;height:2px;background:var(--border2);border-radius:2px;"></div><span style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text);white-space:nowrap;">${dateFmt}</span><div style="flex:1;height:2px;background:var(--border2);border-radius:2px;"></div>`;
           list.appendChild(sep);
         } else {
           // Primeiro dia: só adiciona label se houver mais de um dia
@@ -3461,7 +3461,7 @@ async function loadHistoryEntries() {
           if (hasManyDays) {
             const sep = document.createElement("div");
             sep.style.cssText = "display:flex;align-items:center;gap:10px;margin:0 0 10px;";
-            sep.innerHTML = `<div style="flex:1;height:1px;background:var(--border);"></div><span style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);white-space:nowrap;">${dateFmt}</span><div style="flex:1;height:1px;background:var(--border);"></div>`;
+            sep.innerHTML = `<div style="flex:1;height:2px;background:var(--border2);border-radius:2px;"></div><span style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text);white-space:nowrap;">${dateFmt}</span><div style="flex:1;height:2px;background:var(--border2);border-radius:2px;"></div>`;
             list.appendChild(sep);
           }
         }
