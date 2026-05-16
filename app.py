@@ -2773,6 +2773,10 @@ def api_produtos_get():
         })
     for g in grupos.values():
         g["itens"].sort(key=lambda x: x["titulo"].lower())
+    # Incluir grupos vazios (criados mas sem produtos ainda)
+    for cat, display in brand_display.items():
+        if cat not in grupos and cat not in _ESTOQUE_EXCLUDED:
+            grupos[cat] = {"cat": cat, "display": display, "itens": []}
     ordered = []
     for cat in STANDARD_ORDER:
         if cat in grupos:
@@ -3099,6 +3103,8 @@ def api_produtos_editar():
 
 @app.route("/api/grupos/novo", methods=["POST"])
 def api_grupos_novo():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
     data    = request.json
     slug    = (data.get("slug") or "").strip().lower()
     display = (data.get("display") or "").strip()
@@ -3113,6 +3119,7 @@ def api_grupos_novo():
     if slug not in estoque:
         estoque[slug] = {"quantidade": 0, "display": display}
         save_estoque(estoque)
+    registrar_aud("grupo_novo", f"Novo grupo criado: '{display}' (slug: {slug})")
     return jsonify({"ok": True})
 
 

@@ -1679,6 +1679,18 @@
     </div>
   </div>
 
+  <!-- Modal: Input de texto (substitui prompt() do navegador) -->
+  <div class="modal-bg" id="modal-input-text" style="z-index:9600;">
+    <div class="modal-box" style="max-width:420px;">
+      <div class="modal-title" id="input-modal-title">Editar</div>
+      <input type="text" id="input-modal-field" class="modal-input" style="width:100%;margin:16px 0 20px;" />
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-outline" onclick="closeModalE('modal-input-text')" style="padding:9px 20px;font-size:.82rem;">Cancelar</button>
+        <button id="input-modal-ok" class="btn btn-primary" style="padding:9px 20px;font-size:.82rem;">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Confirmação genérica -->
   <div class="modal-bg" id="modal-confirm-action" style="z-index:9500;">
     <div class="modal-box" style="max-width:440px;">
@@ -4637,6 +4649,26 @@ document.querySelectorAll('.modal-bg').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
 
+let _inputModalCallback = null;
+function showInputModal(title, defaultValue, placeholder, callback) {
+  document.getElementById('input-modal-title').textContent = title;
+  const field = document.getElementById('input-modal-field');
+  field.value = defaultValue || '';
+  field.placeholder = placeholder || '';
+  _inputModalCallback = callback;
+  document.getElementById('modal-input-text').classList.add('open');
+  setTimeout(() => { field.focus(); field.select(); }, 80);
+}
+document.getElementById('input-modal-ok').addEventListener('click', () => {
+  const val = document.getElementById('input-modal-field').value.trim();
+  if (!val) return;
+  closeModalE('modal-input-text');
+  if (_inputModalCallback) { const cb = _inputModalCallback; _inputModalCallback = null; cb(val); }
+});
+document.getElementById('input-modal-field').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('input-modal-ok').click();
+});
+
 let _confirmActionCallback = null;
 function showConfirmAction(title, bodyHtml, okCallback, okLabel, okColor) {
   document.getElementById('confirm-action-title').textContent = title;
@@ -4772,22 +4804,22 @@ function toggleProdGrupo(cat) {
   }
 }
 
-async function editGrupoTitulo(slug, displayAtual) {
-  const novo = prompt('Novo nome para o grupo:', displayAtual);
-  if (!novo || novo.trim() === displayAtual) return;
-  const res = await fetch('/api/grupos/editar', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ slug, display: novo.trim() })
+function editGrupoTitulo(slug, displayAtual) {
+  const nameEl = document.getElementById('pname-' + slug);
+  const atual = nameEl ? nameEl.textContent.trim() : displayAtual;
+  showInputModal('Renomear Grupo', atual, 'Nome do grupo', async (novo) => {
+    const res = await fetch('/api/grupos/editar', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ slug, display: novo })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (nameEl) nameEl.textContent = novo.toUpperCase();
+      loadProdutosPage();
+    } else {
+      alert(data.error || 'Erro ao editar grupo');
+    }
   });
-  const data = await res.json();
-  if (data.ok) {
-    const el = document.getElementById('pname-' + slug);
-    if (el) el.textContent = novo.trim().toUpperCase();
-    loadProdutosPage();
-  } else {
-    alert(data.error || 'Erro ao editar grupo');
-  }
 }
 
 function prodItemHtml(it, cat, grupos) {
@@ -4857,16 +4889,16 @@ async function deleteProdInline(key, titulo) {
   if (el) { const g = el.dataset.grupo; el.remove(); const c = document.getElementById('pcount-'+g); if(c) c.textContent=document.getElementById('pitems-'+g).querySelectorAll('.prod-item').length; }
 }
 
-async function editProdInline(key, titulo) {
-  const novoTitulo = prompt('Editar título:', titulo);
-  if (!novoTitulo || novoTitulo.trim() === titulo) return;
-  const res = await fetch('/api/produtos/editar', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ key, titulo: novoTitulo.trim() })
+function editProdInline(key, titulo) {
+  showInputModal('Renomear Produto', titulo, 'Nome do produto', async (novo) => {
+    const res = await fetch('/api/produtos/editar', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ key, titulo: novo })
+    });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    loadProdutosPage();
   });
-  const data = await res.json();
-  if (data.error) { alert(data.error); return; }
-  loadProdutosPage();
 }
 
 function openNovoProdutoModal() {
@@ -4891,12 +4923,19 @@ async function submitNovoProdutoInline() {
 }
 
 function openNovoGrupoModal() {
-  const nome = prompt('Nome do novo grupo (ex: Creatina Beta Pump):');
-  if (!nome || !nome.trim()) return;
-  const slug = nome.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
-  if (!slug) { alert('Nome inválido.'); return; }
-  fetch('/api/grupos/novo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ slug, display: nome.trim() }) })
-    .then(r => r.json()).then(d => { if (d.ok) loadProdutosPage(); else alert(d.error); });
+  showInputModal('Novo Grupo', '', 'Ex: Creatina Beta Pump', (nome) => {
+    const slug = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+    if (!slug) { alert('Nome inválido.'); return; }
+    requirePin('Criar Novo Grupo', async () => {
+      const res = await fetch('/api/grupos/novo', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ slug, display: nome })
+      });
+      const d = await res.json();
+      if (d.ok) { showToast('Grupo criado!', 'var(--green)'); loadProdutosPage(); }
+      else alert(d.error);
+    });
+  });
 }
 
 // ── PIN Confirmation ───────────────────────────────────────────────────────────
@@ -4972,6 +5011,7 @@ const _MOV_LABELS = {
   prod_deletar:        { label: 'Deletar Produto',          color: '#e03e3e', bg: 'rgba(224,62,62,.1)'  },
   prod_editar:         { label: 'Renomear Produto',         color: '#2b7ed4', bg: 'rgba(43,126,212,.1)' },
   prod_mover:          { label: 'Mover Produto',            color: '#2b7ed4', bg: 'rgba(43,126,212,.1)' },
+  grupo_novo:          { label: 'Novo Grupo',               color: '#00b876', bg: 'rgba(0,184,118,.1)'  },
   grupo_editar:        { label: 'Renomear Grupo',           color: '#2b7ed4', bg: 'rgba(43,126,212,.1)' },
   estoque_ativo:       { label: 'Ativar/Desativar Grupo',   color: '#d97706', bg: 'rgba(245,158,11,.1)' },
   estoque_desfazer:    { label: 'Desfazer Movimentação',    color: '#9b44d4', bg: 'rgba(155,68,212,.1)' },
