@@ -1830,7 +1830,7 @@
     <div id="estoque-modal-rows"></div>
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
       <button onclick="closeEstoqueModal()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:9px 18px;font-size:.82rem;font-weight:700;cursor:pointer;">Cancelar</button>
-      <button id="estoque-modal-confirm" onclick="requirePin('Retirar do Estoque', confirmEstoque)" style="background:var(--green);color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:.82rem;font-weight:700;cursor:pointer;">✓ Confirmar Retirada</button>
+      <button id="estoque-modal-confirm" onclick="confirmEstoque()" style="background:var(--green);color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:.82rem;font-weight:700;cursor:pointer;">✓ Confirmar Retirada</button>
     </div>
   </div>
 </div>
@@ -5254,29 +5254,8 @@ function closeEstoqueModal() {
   document.getElementById('estoque-modal').style.display = 'none';
 }
 
-async function confirmEstoque() {
+async function _doConfirmEstoque() {
   const errEl = document.getElementById('estoque-modal-error');
-  const errors = [];
-
-  _estoqueModalItems.forEach(item => {
-    const allocated = item.lines.reduce((s, l) => s + (parseInt(l.qty) || 0), 0);
-    if (allocated !== item.units) {
-      errors.push(`${item.display}: alocado ${allocated} de ${item.units}`);
-    }
-    item.lines.forEach(l => {
-      const avail = _getGrupoQty(l.grupoReal);
-      const lqty = parseInt(l.qty) || 0;
-      if (lqty > avail) {
-        errors.push(`${_getGrupoDisplay(l.grupoReal)}: disponível ${avail}, solicitado ${lqty}`);
-      }
-    });
-  });
-
-  if (errors.length) {
-    errEl.textContent = errors.join(' | ');
-    errEl.style.display = 'block';
-    return;
-  }
   errEl.style.display = 'none';
 
   const dateEl = _estoqueModalSource === 'ml'
@@ -5329,6 +5308,46 @@ async function confirmEstoque() {
     errEl.style.display = 'block';
     btn.disabled = false; btn.textContent = '✓ Confirmar Retirada';
   }
+}
+
+async function confirmEstoque() {
+  const errEl = document.getElementById('estoque-modal-error');
+  const allocErrors = [];
+  const negWarnings = [];
+
+  _estoqueModalItems.forEach(item => {
+    const allocated = item.lines.reduce((s, l) => s + (parseInt(l.qty) || 0), 0);
+    if (allocated !== item.units) {
+      allocErrors.push(`${item.display}: alocado ${allocated} de ${item.units}`);
+    }
+    item.lines.forEach(l => {
+      const avail = _getGrupoQty(l.grupoReal);
+      const lqty = parseInt(l.qty) || 0;
+      if (lqty > avail) {
+        const resultado = avail - lqty;
+        negWarnings.push(`<b>${esc(_getGrupoDisplay(l.grupoReal))}</b>: disponível ${avail}, solicitado ${lqty} → ficará em <b style="color:var(--red)">${resultado}</b>`);
+      }
+    });
+  });
+
+  if (allocErrors.length) {
+    errEl.textContent = allocErrors.join(' | ');
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  if (negWarnings.length) {
+    showConfirmAction(
+      'Estoque ficará negativo',
+      `<p style="color:var(--text);margin:0 0 10px;">Os seguintes grupos ficarão com estoque negativo:</p><ul style="margin:0;padding-left:18px;font-size:.82rem;line-height:1.8;">${negWarnings.map(w => `<li>${w}</li>`).join('')}</ul><p style="margin:10px 0 0;font-size:.78rem;color:var(--muted);">O estoque aparecerá em vermelho até ser reposto.</p>`,
+      () => requirePin('Retirar do Estoque', _doConfirmEstoque),
+      'Confirmar mesmo assim', 'var(--red)'
+    );
+    return;
+  }
+
+  requirePin('Retirar do Estoque', _doConfirmEstoque);
 }
 
 document.getElementById('estoque-modal').addEventListener('click', e => {
