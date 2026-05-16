@@ -3123,6 +3123,28 @@ def api_grupos_novo():
     return jsonify({"ok": True})
 
 
+@app.route("/api/grupos/excluir", methods=["POST"])
+def api_grupos_excluir():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+    slug = (request.json.get("slug") or "").strip().lower()
+    if not slug:
+        return jsonify({"error": "Slug é obrigatório"}), 400
+    mappings = load_mappings()
+    if any(v.get("categoria") == slug for v in mappings.values()):
+        return jsonify({"error": "Grupo tem produtos. Mova-os antes de excluir."}), 400
+    estoque = load_estoque()
+    if estoque.get(slug, {}).get("quantidade", 0) > 0:
+        return jsonify({"error": "Grupo tem estoque. Zere antes de excluir."}), 400
+    brands = load_brands()
+    display = brands.pop(slug, slug)
+    save_brands(brands)
+    estoque.pop(slug, None)
+    save_estoque(estoque)
+    registrar_aud("grupo_excluir", f"Grupo excluído: '{display}' (slug: {slug})")
+    return jsonify({"ok": True})
+
+
 if __name__ == "__main__":
     import webbrowser, threading, time
     threading.Thread(target=lambda: (time.sleep(1), webbrowser.open("http://localhost:5000")),

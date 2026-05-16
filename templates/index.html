@@ -3489,7 +3489,7 @@ async function loadHistoryEntries() {
 
       row.innerHTML = `
         <div class="hist-info">
-          <div class="hist-date" style="display:flex;align-items:center;gap:7px;">${logoHtml} ${dateFmt}</div>
+          <div class="hist-date" style="display:flex;align-items:center;gap:10px;">${dateFmt} ${logoHtml}</div>
           <div class="hist-meta">${esc(entry.stores.join(", "))} &nbsp;·&nbsp; ${entry.total_orders} pedido${entry.total_orders !== 1 ? "s" : ""}</div>
           <div class="hist-stores">${storeListHtml}</div>
         </div>
@@ -4796,6 +4796,7 @@ function renderProdutosGrupos(grupos) {
         <span id="parrow-${cat}" style="color:var(--muted);font-size:.72rem;display:inline-block;transition:transform .2s;${isOpen ? 'transform:rotate(90deg)' : ''}">▶</span>
         <span id="pname-${cat}" style="flex:1;font-size:.84rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;">${esc(display)}</span>
         <button onclick="event.stopPropagation();editGrupoTitulo('${cat}','${esc(display)}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.9rem;padding:2px 6px;border-radius:5px;transition:color .15s;" title="Editar nome do grupo">✏</button>
+        <button onclick="event.stopPropagation();excluirGrupo('${cat}','${esc(display)}',${itens.length})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.85rem;padding:2px 6px;border-radius:5px;transition:color .15s;" title="Excluir grupo">🗑</button>
         <span id="pcount-${cat}" style="background:var(--bg);border:1px solid var(--border2);color:var(--muted);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;">${itens.length}</span>
       </div>
       <div id="pitems-${cat}" style="display:${isOpen ? 'block' : 'none'};border-top:${isOpen ? '1px solid var(--border)' : 'none'};">
@@ -4969,6 +4970,31 @@ function openNovoGrupoModal() {
   });
 }
 
+function excluirGrupo(slug, display, numItens) {
+  if (numItens > 0) {
+    showConfirmAction(
+      'Grupo não está vazio',
+      `<p style="color:var(--text);">O grupo <strong>${esc(display)}</strong> tem <strong>${numItens} produto${numItens !== 1 ? 's' : ''}</strong>.<br>Mova ou exclua os produtos antes de excluir o grupo.</p>`,
+      null, 'Entendido', 'var(--accent)'
+    );
+    return;
+  }
+  showConfirmAction(
+    'Excluir Grupo',
+    `<p style="color:var(--text);">Deseja excluir o grupo <strong>${esc(display)}</strong>?<br><span style="color:var(--muted);font-size:.82rem;">Esta ação não pode ser desfeita.</span></p>`,
+    () => requirePin('Excluir Grupo', async () => {
+      const res = await fetch('/api/grupos/excluir', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ slug })
+      });
+      const d = await res.json();
+      if (d.ok) { showToast('Grupo excluído!', 'var(--red)'); loadProdutosPage(); }
+      else alert(d.error || 'Erro ao excluir grupo.');
+    }),
+    'Excluir', 'var(--red)'
+  );
+}
+
 // ── PIN Confirmation ───────────────────────────────────────────────────────────
 let _pinUser = CURRENT_USER;
 let _pinCallback = null;
@@ -5043,6 +5069,7 @@ const _MOV_LABELS = {
   prod_editar:         { label: 'Renomear Produto',         color: '#2b7ed4', bg: 'rgba(43,126,212,.1)' },
   prod_mover:          { label: 'Mover Produto',            color: '#2b7ed4', bg: 'rgba(43,126,212,.1)' },
   grupo_novo:          { label: 'Novo Grupo',               color: '#00b876', bg: 'rgba(0,184,118,.1)'  },
+  grupo_excluir:       { label: 'Grupo Excluído',           color: 'var(--red)', bg: 'rgba(255,80,80,.1)' },
   grupo_editar:        { label: 'Renomear Grupo',           color: '#2b7ed4', bg: 'rgba(43,126,212,.1)' },
   estoque_ativo:       { label: 'Ativar/Desativar Grupo',   color: '#d97706', bg: 'rgba(245,158,11,.1)' },
   estoque_desfazer:    { label: 'Desfazer Movimentação',    color: '#9b44d4', bg: 'rgba(155,68,212,.1)' },
