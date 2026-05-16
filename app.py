@@ -2799,6 +2799,8 @@ def api_estoque_ativo():
         return jsonify({"error": "Grupo não encontrado"}), 404
     estoque[grupo]["ativo"] = ativo
     save_estoque(estoque)
+    status = "ativado" if ativo else "desativado"
+    registrar_aud("estoque_ativo", f"Grupo '{grupo}' {status} no estoque")
     return jsonify({"ok": True})
 
 
@@ -2829,12 +2831,15 @@ def api_grupos_editar():
     if not slug or not new_display:
         return jsonify({"error": "Dados inválidos"}), 400
     brands = load_brands()
+    old_display = brands.get(slug, slug)
     brands[slug] = new_display
     save_brands(brands)
     estoque = load_estoque()
     if slug in estoque:
+        old_display = estoque[slug].get("display", old_display)
         estoque[slug]["display"] = new_display
         save_estoque(estoque)
+    registrar_aud("grupo_editar", f"Nome do grupo alterado: '{old_display}' → '{new_display}'")
     return jsonify({"ok": True})
 
 
@@ -3023,9 +3028,11 @@ def api_produtos_mover():
     mappings = load_mappings()
     if key not in mappings:
         return jsonify({"error": "Produto não encontrado"}), 404
+    titulo = mappings[key].get("titulo", key)
     origem = mappings[key].get("categoria", "?")
     mappings[key]["categoria"] = grupo
     save_mappings(mappings)
+    registrar_aud("prod_mover", f"Produto '{titulo}' movido de '{origem}' para '{grupo}'")
     return jsonify({"ok": True})
 
 
@@ -3086,6 +3093,7 @@ def api_produtos_editar():
     new_key = mapping_key(new_titulo, sku)
     mappings[new_key] = entry
     save_mappings(mappings)
+    registrar_aud("prod_editar", f"Produto renomeado: '{old_titulo}' → '{new_titulo}'")
     return jsonify({"ok": True, "new_key": new_key})
 
 
