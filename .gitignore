@@ -29,6 +29,9 @@ auditoria.json
 brands.json
 mappings.json
 
+# Logos originais (já copiadas para static/)
+logopng/
+
 # Arquivos locais / debug
 debug_*.py
 debug_*.json
