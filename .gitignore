@@ -22,6 +22,11 @@ venv/
 .secret_key
 users.json
 
+# Estoque (dados operacionais, variam por servidor)
+estoque.json
+historico_estoque.json
+auditoria.json
+
 # Arquivos locais / debug
 debug_*.py
 tracking_log.json

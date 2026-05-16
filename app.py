@@ -5,11 +5,12 @@ import os
 import re
 import secrets
 import shutil
+import time as _time
 import zipfile
 from datetime import date, datetime, timedelta
 from functools import wraps
 import fitz  # PyMuPDF
-from flask import Flask, request, jsonify, render_template, send_from_directory, send_file, session, redirect, url_for
+from flask import Flask, request, jsonify, render_template, send_from_directory, send_file, session, redirect, url_for, make_response
 from pypdf import PdfReader, PdfWriter
 from pathlib import Path
 
@@ -26,6 +27,7 @@ HISTORY_FILE      = BASE_DIR / "history.json"
 TRACKING_LOG_FILE   = BASE_DIR / "tracking_log.json"
 TRACKING_INDEX_FILE = BASE_DIR / "tracking_index.json"
 USERS_FILE        = BASE_DIR / "users.json"
+AUDITORIA_FILE    = BASE_DIR / "auditoria.json"
 SECRET_KEY_FILE   = BASE_DIR / ".secret_key"
 
 if SECRET_KEY_FILE.exists():
@@ -1200,6 +1202,34 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
 def hash_pin(pin):
     return hashlib.sha256(pin.encode()).hexdigest()
 
+# ── Auditoria ─────────────────────────────────────────────────────────────────
+
+def load_auditoria():
+    if AUDITORIA_FILE.exists():
+        with open(AUDITORIA_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+def save_auditoria(hist):
+    with open(AUDITORIA_FILE, "w", encoding="utf-8") as f:
+        json.dump(hist, f, ensure_ascii=False, indent=2)
+
+def registrar_aud(acao, descricao):
+    usuario = session.pop("audit_user", None) or session.get("user", "?")
+    hist = load_auditoria()
+    hist.insert(0, {
+        "ts":        datetime.now().isoformat(),
+        "usuario":   usuario,
+        "acao":      acao,
+        "descricao": descricao,
+    })
+    save_auditoria(hist[:1000])
+
+def _valida_pin_session():
+    """Verifica se um PIN foi confirmado nos últimos 30s e consome o token."""
+    ts = session.pop("pin_ok_ts", 0)
+    return (_time.time() - ts) <= 30
+
 def load_users():
     if USERS_FILE.exists():
         with open(USERS_FILE, "r", encoding="utf-8") as f:
@@ -1264,11 +1294,38 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
+@app.route("/api/confirmar-pin", methods=["POST"])
+def api_confirmar_pin():
+    data         = request.json or {}
+    pin          = data.get("pin", "").strip()
+    usuario_alvo = (data.get("username") or session.get("user", "")).upper().strip()
+    users        = load_users()
+    if not usuario_alvo or usuario_alvo not in users:
+        return jsonify({"error": "Usuário inválido"}), 403
+    if users[usuario_alvo]["pin"] != hash_pin(pin):
+        registrar_aud("pin_falhou", f"PIN incorreto para usuário {usuario_alvo}")
+        return jsonify({"error": "PIN incorreto"}), 403
+    session["pin_ok_ts"]   = _time.time()
+    session["audit_user"]  = usuario_alvo
+    return jsonify({"ok": True})
+
+@app.route("/api/auditoria", methods=["GET"])
+def api_auditoria():
+    limit = int(request.args.get("limit", 200))
+    return jsonify(load_auditoria()[:limit])
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    users = load_users()
+    resp = make_response(render_template("index.html",
+        current_user=session.get("user", ""),
+        all_users=list(users.keys())
+    ))
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
 
 
 @app.route("/upload", methods=["POST"])
@@ -1569,6 +1626,8 @@ def save_brand_route():
 
 @app.route("/history/add", methods=["POST"])
 def history_add():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
     data        = request.json
     history     = load_history()
     entry_date  = data.get("date") or date.today().isoformat()
@@ -1628,6 +1687,8 @@ def history_add():
             }
         save_tracking_index(index)
 
+    total = sum(data.get("store_label_counts", {}).values()) or data.get("label_pages", 0)
+    registrar_aud("lacrar", f"Expedição {entry_date} — {total} etiquetas lacradas")
     return jsonify({"ok": True, "id": entry["id"]})
 
 
@@ -1914,19 +1975,30 @@ def history_product_metrics():
 
 @app.route("/history/entries", methods=["GET"])
 def history_entries_list():
-    history = load_history()
+    history      = load_history()
+    estoque      = load_estoque()
+    brand_display = get_brand_display()
     entries = []
     for i, entry in enumerate(history):
         slc = entry.get("store_label_counts", {})
         total_orders = sum(slc.values()) if slc else entry.get("totals", {}).get("label_pages", 0)
         stores = list(slc.keys()) or list(entry.get("store_items", {}).keys())
+        breakdown_raw = entry.get("totals", {}).get("breakdown", {})
+        breakdown_items = []
+        for grupo, qtd in breakdown_raw.items():
+            if not isinstance(qtd, (int, float)) or qtd <= 0:
+                continue
+            display = (estoque.get(grupo, {}).get("display")
+                       or brand_display.get(grupo, grupo))
+            breakdown_items.append({"grupo": grupo, "display": display, "quantidade": int(qtd)})
         entries.append({
-            "index":        i,
-            "date":         entry.get("date", "?"),
-            "id":           entry.get("id", str(i)),
-            "stores":       stores,
-            "store_orders": {s: slc.get(s, 0) for s in stores},
-            "total_orders": total_orders,
+            "index":           i,
+            "date":            entry.get("date", "?"),
+            "id":              entry.get("id", str(i)),
+            "stores":          stores,
+            "store_orders":    {s: slc.get(s, 0) for s in stores},
+            "total_orders":    total_orders,
+            "breakdown_items": breakdown_items,
         })
     # Sort by date descending so newest is first regardless of insertion order
     entries.sort(key=lambda e: e["date"], reverse=True)
@@ -1935,18 +2007,54 @@ def history_entries_list():
 
 @app.route("/history/delete", methods=["POST"])
 def history_delete():
-    data    = request.json
-    idx     = data.get("index")
-    history = load_history()
+    if not _valida_pin_session():
+        return jsonify({"ok": False, "error": "Confirmação de PIN necessária"}), 403
+    data          = request.json
+    idx           = data.get("index")
+    restore_stock = data.get("restore_stock", False)
+    history       = load_history()
     if idx is None or not (0 <= idx < len(history)):
         return jsonify({"ok": False, "error": "index inválido"}), 400
+    entry      = history[idx]
+    entry_date = entry.get("date", "?")
+
+    if restore_stock:
+        breakdown    = entry.get("totals", {}).get("breakdown", {})
+        estoque      = load_estoque()
+        hist_est     = load_hist_estoque()
+        brand_display = get_brand_display()
+        movimentos   = []
+        for grupo, qtd in breakdown.items():
+            if not isinstance(qtd, (int, float)) or qtd <= 0:
+                continue
+            if grupo not in estoque:
+                continue
+            estoque[grupo]["quantidade"] += int(qtd)
+            display = estoque[grupo].get("display") or brand_display.get(grupo, grupo)
+            movimentos.append({"grupo": grupo, "display": display, "quantidade": int(qtd)})
+        if movimentos:
+            hist_est.append({
+                "id":            secrets.token_hex(8),
+                "timestamp":     datetime.now().isoformat(timespec="seconds"),
+                "usuario":       session.get("user", "?"),
+                "tipo":          "estorno_historico",
+                "itens":         movimentos,
+                "justificativa": f"Estorno — expedição {entry_date} excluída",
+                "contexto":      entry.get("id", ""),
+            })
+            save_estoque(estoque)
+            save_hist_estoque(hist_est)
+
     history.pop(idx)
     save_history(history)
+    registrar_aud("del_hist", f"Expedição de {entry_date} excluída do histórico")
     return jsonify({"ok": True})
 
 
 @app.route("/history/delete-store", methods=["POST"])
 def history_delete_store():
+    if not _valida_pin_session():
+        return jsonify({"ok": False, "error": "Confirmação de PIN necessária"}), 403
     data    = request.json
     idx     = data.get("index")
     store   = data.get("store", "")
@@ -1954,9 +2062,9 @@ def history_delete_store():
     if idx is None or not (0 <= idx < len(history)):
         return jsonify({"ok": False, "error": "index inválido"}), 400
     entry = history[idx]
+    entry_date = entry.get("date", "?")
     entry.get("store_items", {}).pop(store, None)
     entry.get("store_label_counts", {}).pop(store, None)
-    # If no stores remain, remove the whole entry
     remaining = (list(entry.get("store_items", {}).keys())
                  or list(entry.get("store_label_counts", {}).keys()))
     if not remaining:
@@ -1966,6 +2074,7 @@ def history_delete_store():
         entry.setdefault("totals", {})["label_pages"] = new_lp
         history[idx] = entry
     save_history(history)
+    registrar_aud("del_hist_loja", f"Loja '{store}' removida da expedição {entry_date}")
     return jsonify({"ok": True})
 
 
@@ -2540,6 +2649,463 @@ def caixas_gerar():
     doc.close()
     return send_file(buf, mimetype="application/pdf",
                      as_attachment=True, download_name="caixas.pdf")
+
+
+# ── Estoque & Produtos ────────────────────────────────────────────────────────
+
+ESTOQUE_FILE      = BASE_DIR / "estoque.json"
+HIST_ESTOQUE_FILE = BASE_DIR / "historico_estoque.json"
+
+_ESTOQUE_EXCLUDED = {"roupa", "roupas", "variacoes", "variaes"}
+
+# Produtos padrão que compõem o estoque físico
+_ESTOQUE_DEFAULT = {
+    "pura":  "Creatina Black Skull Pura",
+    "turbo": "Creatina Black Skull Turbo",
+    "dux":   "Creatina DUX",
+}
+
+def load_estoque():
+    if ESTOQUE_FILE.exists():
+        with open(ESTOQUE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {k: {"quantidade": 0, "display": v} for k, v in _ESTOQUE_DEFAULT.items()}
+
+def save_estoque(e):
+    with open(ESTOQUE_FILE, "w", encoding="utf-8") as f:
+        json.dump(e, f, ensure_ascii=False, indent=2)
+
+def load_hist_estoque():
+    if HIST_ESTOQUE_FILE.exists():
+        with open(HIST_ESTOQUE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+def save_hist_estoque(h):
+    with open(HIST_ESTOQUE_FILE, "w", encoding="utf-8") as f:
+        json.dump(h, f, ensure_ascii=False, indent=2)
+
+def _fmt_ts(ts):
+    try:
+        dt = datetime.fromisoformat(ts)
+        return dt.strftime("%d/%m/%Y %H:%M")
+    except Exception:
+        return ts
+
+
+@app.route("/estoque")
+def estoque_page():
+    estoque  = load_estoque()
+    raw_hist = load_hist_estoque()
+    hist = []
+    for e in reversed(raw_hist[-200:]):
+        e2 = dict(e)
+        e2["ts_fmt"] = _fmt_ts(e.get("timestamp", ""))
+        hist.append(e2)
+    return render_template("estoque.html", estoque=estoque, historico=hist)
+
+
+@app.route("/produtos")
+def produtos_page():
+    mappings      = load_mappings()
+    brand_display = get_brand_display()
+    grupos = {}
+    for mk, info in mappings.items():
+        cat = info.get("categoria", "?")
+        sku, titulo_raw = (mk.split("|", 1) if "|" in mk else (mk, mk))
+        titulo = info.get("titulo") or titulo_raw
+        if cat not in grupos:
+            grupos[cat] = {"display": brand_display.get(cat, cat.upper()), "itens": []}
+        grupos[cat]["itens"].append({
+            "key":      mk,
+            "sku":      sku,
+            "titulo":   titulo,
+            "kit_size": info.get("kit_size", 1),
+        })
+    for g in grupos.values():
+        g["itens"].sort(key=lambda x: x["titulo"].lower())
+    ordered = []
+    for cat in STANDARD_ORDER:
+        if cat in grupos:
+            ordered.append((cat, grupos.pop(cat)))
+    for cat in sorted(grupos):
+        ordered.append((cat, grupos[cat]))
+    all_groups = [(cat, brand_display.get(cat, cat.upper()))
+                  for cat, _ in ordered]
+    # also include groups that exist only in brands but have no products yet
+    for k, v in brand_display.items():
+        if k not in [c for c, _ in all_groups] and k not in _ESTOQUE_EXCLUDED:
+            all_groups.append((k, v))
+    return render_template("produtos.html", grupos=ordered,
+                           all_groups=all_groups, brand_display=brand_display)
+
+
+@app.route("/api/estoque", methods=["GET"])
+def api_estoque_get():
+    return jsonify(load_estoque())
+
+
+@app.route("/estoque-hist", methods=["GET"])
+def estoque_hist():
+    hist = load_hist_estoque()
+    result = []
+    for e in reversed(hist[-200:]):
+        result.append(e)
+    return jsonify(result)
+
+
+@app.route("/api/produtos", methods=["GET"])
+def api_produtos_get():
+    mappings      = load_mappings()
+    brand_display = get_brand_display()
+    grupos = {}
+    for mk, info in mappings.items():
+        cat = info.get("categoria", "?")
+        sku, titulo_raw = (mk.split("|", 1) if "|" in mk else (mk, mk))
+        titulo = info.get("titulo") or titulo_raw
+        if cat not in grupos:
+            grupos[cat] = {"cat": cat, "display": brand_display.get(cat, cat.upper()), "itens": []}
+        grupos[cat]["itens"].append({
+            "key":      mk,
+            "sku":      sku,
+            "titulo":   titulo,
+            "kit_size": info.get("kit_size", 1),
+        })
+    for g in grupos.values():
+        g["itens"].sort(key=lambda x: x["titulo"].lower())
+    ordered = []
+    for cat in STANDARD_ORDER:
+        if cat in grupos:
+            ordered.append(grupos.pop(cat))
+    for cat in sorted(grupos):
+        ordered.append(grupos[cat])
+    return jsonify(ordered)
+
+
+@app.route("/api/estoque/grupos", methods=["GET"])
+def api_estoque_grupos():
+    e = load_estoque()
+    return jsonify([{"grupo": k, "display": v["display"], "quantidade": v["quantidade"]}
+                    for k, v in e.items() if v.get("ativo", True)])
+
+
+@app.route("/api/estoque/ativo", methods=["POST"])
+def api_estoque_ativo():
+    data   = request.json
+    grupo  = data.get("grupo", "").strip()
+    ativo  = bool(data.get("ativo", True))
+    estoque = load_estoque()
+    if grupo not in estoque:
+        return jsonify({"error": "Grupo não encontrado"}), 404
+    estoque[grupo]["ativo"] = ativo
+    save_estoque(estoque)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/todos-grupos", methods=["GET"])
+def api_todos_grupos():
+    brands  = load_brands()
+    estoque = load_estoque()
+    seen    = set()
+    result  = []
+    # Primeiro: grupos que já estão no estoque (pura/turbo/dux podem não estar em brands.json)
+    for slug, info in estoque.items():
+        seen.add(slug)
+        display = info.get("display") or brands.get(slug, slug)
+        ativo   = info.get("ativo", True)
+        result.append({"grupo": slug, "display": display, "ativo": ativo, "quantidade": info.get("quantidade", 0)})
+    # Depois: marcas em brands.json que ainda não estão no estoque
+    for slug, display in brands.items():
+        if slug not in seen:
+            result.append({"grupo": slug, "display": display, "ativo": False, "quantidade": 0})
+    return jsonify(result)
+
+
+@app.route("/api/grupos/editar", methods=["POST"])
+def api_grupos_editar():
+    data        = request.json
+    slug        = data.get("slug", "").strip()
+    new_display = data.get("display", "").strip()
+    if not slug or not new_display:
+        return jsonify({"error": "Dados inválidos"}), 400
+    brands = load_brands()
+    brands[slug] = new_display
+    save_brands(brands)
+    estoque = load_estoque()
+    if slug in estoque:
+        estoque[slug]["display"] = new_display
+        save_estoque(estoque)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/estoque/entrada", methods=["POST"])
+def api_estoque_entrada():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+    data     = request.json
+    itens    = data.get("itens", [])
+    usuario  = session.get("user", "?")
+    estoque  = load_estoque()
+    hist     = load_hist_estoque()
+    movimentos = []
+    for item in itens:
+        grupo = item.get("grupo", "")
+        qtd   = int(item.get("quantidade", 0))
+        if qtd <= 0:
+            continue
+        if grupo not in estoque:
+            estoque[grupo] = {"quantidade": 0, "display": item.get("display", grupo)}
+        estoque[grupo]["quantidade"] += qtd
+        movimentos.append({"grupo": grupo, "display": estoque[grupo]["display"], "quantidade": qtd})
+    if not movimentos:
+        return jsonify({"error": "Nenhum item com quantidade válida"}), 400
+    hist.append({
+        "id":            secrets.token_hex(8),
+        "timestamp":     datetime.now().isoformat(timespec="seconds"),
+        "usuario":       usuario,
+        "tipo":          "entrada",
+        "itens":         movimentos,
+        "justificativa": None,
+        "contexto":      data.get("contexto", ""),
+    })
+    save_estoque(estoque)
+    save_hist_estoque(hist)
+    resumo = ", ".join(f"{m['display']} +{m['quantidade']}" for m in movimentos)
+    registrar_aud("estoque_entrada", f"Entrada de estoque: {resumo}")
+    return jsonify({"ok": True, "estoque": estoque})
+
+
+@app.route("/api/estoque/saida-manual", methods=["POST"])
+def api_estoque_saida_manual():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+    data          = request.json
+    grupo         = (data.get("grupo") or "").strip()
+    qtd           = int(data.get("quantidade", 0))
+    justificativa = (data.get("justificativa") or "").strip()
+    usuario       = session.get("user", "?")
+    if not justificativa:
+        return jsonify({"error": "Justificativa obrigatória"}), 400
+    if qtd <= 0:
+        return jsonify({"error": "Quantidade inválida"}), 400
+    estoque = load_estoque()
+    hist    = load_hist_estoque()
+    if grupo not in estoque:
+        return jsonify({"error": f"Produto não encontrado: {grupo}"}), 400
+    display = estoque[grupo]["display"]
+    estoque[grupo]["quantidade"] -= qtd
+    mov = {"grupo": grupo, "display": display, "quantidade": qtd}
+    hist.append({
+        "id":            secrets.token_hex(8),
+        "timestamp":     datetime.now().isoformat(timespec="seconds"),
+        "usuario":       usuario,
+        "tipo":          "saida_manual",
+        "itens":         [mov],
+        "justificativa": justificativa,
+        "contexto":      None,
+    })
+    save_estoque(estoque)
+    save_hist_estoque(hist)
+    registrar_aud("estoque_saida_manual", f"Saída manual: {display} -{qtd} — {justificativa}")
+    return jsonify({"ok": True, "estoque": estoque})
+
+
+@app.route("/api/estoque/saida-expedicao", methods=["POST"])
+def api_estoque_saida_expedicao():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+    data     = request.json
+    itens    = data.get("itens", [])
+    contexto = data.get("contexto", "")
+    usuario  = session.get("user", "?")
+    estoque  = load_estoque()
+    hist     = load_hist_estoque()
+    movimentos = []
+    for item in itens:
+        grupo_real = item.get("grupo_real", "")
+        qtd        = int(item.get("quantidade", 0))
+        if qtd <= 0 or grupo_real not in estoque:
+            continue
+        estoque[grupo_real]["quantidade"] -= qtd
+        movimentos.append({
+            "grupo":            grupo_real,
+            "display":          estoque[grupo_real]["display"],
+            "quantidade":       qtd,
+            "grupo_original":   item.get("grupo_original"),
+            "display_original": item.get("display_original"),
+        })
+    if not movimentos:
+        return jsonify({"error": "Nenhum item válido para descontar"}), 400
+    hist.append({
+        "id":            secrets.token_hex(8),
+        "timestamp":     datetime.now().isoformat(timespec="seconds"),
+        "usuario":       usuario,
+        "tipo":          "saida_expedicao",
+        "itens":         movimentos,
+        "justificativa": None,
+        "contexto":      contexto,
+    })
+    save_estoque(estoque)
+    save_hist_estoque(hist)
+    resumo = ", ".join(
+        (f"{m['display']} -{m['quantidade']}" if m['grupo'] == m.get('grupo_original') else
+         f"{m['display_original']} -{m['quantidade']} via {m['display']}")
+        for m in movimentos
+    )
+    registrar_aud("estoque_expedicao", f"{contexto}: {resumo}")
+    return jsonify({"ok": True, "estoque": estoque})
+
+
+@app.route("/api/estoque/desfazer", methods=["POST"])
+def api_estoque_desfazer():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+    data     = request.json
+    entry_id = data.get("id", "")
+    hist     = load_hist_estoque()
+    entry    = next((e for e in hist if e.get("id") == entry_id), None)
+    if not entry:
+        return jsonify({"error": "Entrada não encontrada"}), 404
+    tipo    = entry.get("tipo", "")
+    itens   = entry.get("itens", [])
+    estoque = load_estoque()
+    movimentos = []
+
+    # Saída → devolver ao estoque; Entrada/estorno → remover do estoque
+    if tipo in ("saida_manual", "saida_expedicao"):
+        for item in itens:
+            grupo = item.get("grupo", "")
+            qtd   = int(item.get("quantidade", 0))
+            if not grupo or qtd <= 0 or grupo not in estoque:
+                continue
+            estoque[grupo]["quantidade"] += qtd
+            movimentos.append({"grupo": grupo, "display": estoque[grupo].get("display", grupo), "quantidade": qtd, "sinal": "+"})
+        novo_tipo = "estorno"
+    elif tipo in ("entrada", "estorno_historico"):
+        for item in itens:
+            grupo = item.get("grupo", "")
+            qtd   = int(item.get("quantidade", 0))
+            if not grupo or qtd <= 0 or grupo not in estoque:
+                continue
+            estoque[grupo]["quantidade"] -= qtd
+            movimentos.append({"grupo": grupo, "display": estoque[grupo].get("display", grupo), "quantidade": qtd, "sinal": "-"})
+        novo_tipo = "estorno_entrada"
+    else:
+        return jsonify({"error": f"Tipo '{tipo}' não suporta desfazer"}), 400
+
+    if not movimentos:
+        return jsonify({"error": "Nenhuma movimentação válida para desfazer"}), 400
+
+    justificativa = f"Desfazer: {entry.get('justificativa') or entry.get('contexto') or tipo}"
+    hist.append({
+        "id":            secrets.token_hex(8),
+        "timestamp":     datetime.now().isoformat(timespec="seconds"),
+        "usuario":       session.get("user", "?"),
+        "tipo":          novo_tipo,
+        "itens":         [{"grupo": m["grupo"], "display": m["display"], "quantidade": m["quantidade"]} for m in movimentos],
+        "justificativa": justificativa,
+        "contexto":      entry_id,
+    })
+    save_estoque(estoque)
+    save_hist_estoque(hist)
+    resumo = ", ".join(f"{m['display']} {m['sinal']}{m['quantidade']}" for m in movimentos)
+    registrar_aud("estoque_desfazer", f"Desfazer movimentação: {resumo}")
+    return jsonify({"ok": True, "estoque": estoque})
+
+
+@app.route("/api/produtos/mover", methods=["POST"])
+def api_produtos_mover():
+    data  = request.json
+    key   = data.get("key")
+    grupo = data.get("grupo")
+    if not key or not grupo:
+        return jsonify({"error": "Dados inválidos"}), 400
+    mappings = load_mappings()
+    if key not in mappings:
+        return jsonify({"error": "Produto não encontrado"}), 404
+    origem = mappings[key].get("categoria", "?")
+    mappings[key]["categoria"] = grupo
+    save_mappings(mappings)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/produtos/novo", methods=["POST"])
+def api_produtos_novo():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+    data     = request.json
+    sku      = (data.get("sku") or "").strip()
+    titulo   = (data.get("titulo") or "").strip()
+    grupo    = (data.get("grupo") or "").strip()
+    kit_size = int(data.get("kit_size", 1))
+    if not sku or not titulo or not grupo:
+        return jsonify({"error": "SKU, título e grupo são obrigatórios"}), 400
+    mappings = load_mappings()
+    key      = mapping_key(titulo, sku)
+    if key in mappings:
+        return jsonify({"error": "Produto já cadastrado com este SKU+título"}), 400
+    mappings[key] = {"categoria": grupo, "kit_size": kit_size, "titulo": titulo}
+    save_mappings(mappings)
+    registrar_aud("prod_novo", f"Novo produto: {titulo} ({sku}) → {grupo}")
+    return jsonify({"ok": True, "key": key})
+
+
+@app.route("/api/produtos/deletar", methods=["POST"])
+def api_produtos_deletar():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+    data = request.json
+    key  = data.get("key")
+    if not key:
+        return jsonify({"error": "Key obrigatória"}), 400
+    mappings = load_mappings()
+    if key not in mappings:
+        return jsonify({"error": "Produto não encontrado"}), 404
+    titulo = mappings[key].get("titulo", key)
+    del mappings[key]
+    save_mappings(mappings)
+    registrar_aud("prod_deletar", f"Produto removido: {titulo}")
+    return jsonify({"ok": True})
+
+
+@app.route("/api/produtos/editar", methods=["POST"])
+def api_produtos_editar():
+    data      = request.json
+    key       = data.get("key")
+    new_titulo = (data.get("titulo") or "").strip()
+    if not key or not new_titulo:
+        return jsonify({"error": "Dados inválidos"}), 400
+    mappings = load_mappings()
+    if key not in mappings:
+        return jsonify({"error": "Produto não encontrado"}), 404
+    entry    = mappings.pop(key)
+    old_titulo = entry.get("titulo", "")
+    entry["titulo"] = new_titulo
+    # Regenerate key with new title (keep same SKU part from key)
+    sku = key.split("|||")[1] if "|||" in key else key
+    new_key = mapping_key(new_titulo, sku)
+    mappings[new_key] = entry
+    save_mappings(mappings)
+    return jsonify({"ok": True, "new_key": new_key})
+
+
+@app.route("/api/grupos/novo", methods=["POST"])
+def api_grupos_novo():
+    data    = request.json
+    slug    = (data.get("slug") or "").strip().lower()
+    display = (data.get("display") or "").strip()
+    if not slug or not display:
+        return jsonify({"error": "Slug e nome são obrigatórios"}), 400
+    if not re.match(r'^[a-z0-9]+$', slug):
+        return jsonify({"error": "Slug: apenas letras minúsculas e números"}), 400
+    brands  = load_brands()
+    estoque = load_estoque()
+    brands[slug] = display
+    save_brands(brands)
+    if slug not in estoque:
+        estoque[slug] = {"quantidade": 0, "display": display}
+        save_estoque(estoque)
+    return jsonify({"ok": True})
 
 
 if __name__ == "__main__":

@@ -102,11 +102,12 @@
     .page-section {
       width: 100%; display: flex; flex-direction: column; align-items: center;
     }
-    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes, #page-cortar, #page-caixas, #page-ml-full {
+    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes, #page-cortar, #page-caixas, #page-ml-full, #page-estoque, #page-produtos {
       display: none;
     }
     #page-dashboard.active, #page-separacao.active, #page-localizador.active,
-    #page-historico.active, #page-ajustes.active, #page-cortar.active, #page-caixas.active, #page-ml-full.active { display: flex; }
+    #page-historico.active, #page-ajustes.active, #page-cortar.active, #page-caixas.active, #page-ml-full.active,
+    #page-estoque.active, #page-produtos.active { display: flex; }
 
     /* ── Separação sub-nav ── */
     .sep-subnav {
@@ -455,6 +456,60 @@
     .sec-cat-btn.sel-dux   { background: var(--dux);   color: #fff; border-color: var(--dux); }
     .sec-cat-btn.sel-roupa { background: var(--roupa); color: #fff; border-color: var(--roupa); }
 
+    /* ── Modal overlay (Estoque / Produtos) ── */
+    .modal-bg {
+      display: none; position: fixed; inset: 0;
+      background: rgba(26,26,46,.38); z-index: 500;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-bg.open { display: flex; }
+    .modal-box {
+      background: var(--surface); border-radius: 16px; padding: 28px;
+      width: 100%; max-width: 500px; position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,.12); border: 1px solid var(--border);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-title { font-size: .95rem; font-weight: 800; color: var(--text); margin-bottom: 20px; }
+    .modal-close {
+      position: absolute; top: 14px; right: 16px; background: none; border: none;
+      color: var(--muted); font-size: 1.1rem; cursor: pointer;
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px; line-height: 1;
+    }
+    .modal-close:hover { background: var(--bg); color: var(--text); }
+    .modal-field-label {
+      display: block; font-size: .68rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted); margin-bottom: 6px;
+    }
+    .modal-input {
+      width: 100%; background: var(--bg); border: 1.5px solid var(--border2);
+      border-radius: 9px; color: var(--text); font-size: .88rem;
+      padding: 10px 12px; outline: none; font-family: inherit; margin-bottom: 14px;
+    }
+    .modal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(108,95,255,.08); }
+    .modal-error {
+      background: rgba(224,62,62,.07); border: 1px solid rgba(224,62,62,.25);
+      border-radius: 8px; color: var(--red); font-size: .78rem;
+      padding: 8px 12px; margin-bottom: 12px; display: none;
+    }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+
+    /* ── Estoque page responsive ── */
+    #estoque-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    @media (max-width: 600px) {
+      #estoque-cards-grid { grid-template-columns: repeat(2, 1fr); }
+      .modal-box { padding: 20px 16px; }
+    }
+
+    /* ── Produtos inline ── */
+    .prod-acc-header { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; user-select:none; transition:background .15s; }
+    .prod-acc-header:hover { background:var(--bg); }
+    .prod-item { display:flex; align-items:flex-start; gap:8px; background:var(--surface); border-radius:9px; padding:10px 12px; margin-bottom:6px; border:1px solid var(--border); cursor:grab; user-select:none; transition:border-color .15s; }
+    .prod-item:hover { border-color:var(--accent); }
+
+    .del-btn { background:rgba(224,62,62,.1); color:var(--red); border:none; border-radius:6px; padding:3px 7px; font-size:.7rem; cursor:pointer; font-weight:700; }
+    .del-btn:hover { background:rgba(224,62,62,.2); }
+
     /* ── Lacrar card ── */
     .lacrar-card {
       background: linear-gradient(135deg, rgba(108,95,255,.05) 0%, rgba(0,184,118,.03) 100%);
@@ -474,6 +529,11 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
     .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(108,95,255,.25); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; }
+    @keyframes wnBounce { 0%{transform:scale(.5) rotate(-15deg);opacity:0} 60%{transform:scale(1.2) rotate(8deg)} 80%{transform:scale(.9)} 100%{transform:scale(1) rotate(0);opacity:1} }
+    @keyframes wnSlideIn { from{transform:translateY(40px) scale(.96);opacity:0} to{transform:translateY(0) scale(1);opacity:1} }
+    @keyframes wnConfetti { 0%{transform:translateY(-10px) rotate(0);opacity:1} 100%{transform:translateY(120px) rotate(720deg);opacity:0} }
+    #modal-whats-new .modal-box { animation: wnSlideIn .35s cubic-bezier(.22,1,.36,1) both; }
+    #modal-whats-new .modal-box { border-radius:20px !important; }
 
     /* ── History entry rows ── */
     .hist-row { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
@@ -678,6 +738,13 @@
       .sidebar-logo-sub { white-space: normal; word-break: break-word; line-height: 1.3; }
     }
 
+    /* Tabela de histórico de estoque: scroll horizontal em mobile */
+    #estoque-hist-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #estoque-hist-body table { min-width: 600px; }
+
+    /* Modal de confirmação: responsivo */
+    #modal-confirm-action .modal-box { max-width: min(440px, 92vw); }
+
     @media (max-width: 520px) {
       .mobile-bar { height: 50px; }
       .main-content { padding-top: 62px; }
@@ -791,6 +858,9 @@
         <button class="nav-item active" id="nav-dashboard">
           <span class="nav-icon">📊</span> Dashboard
         </button>
+        <button class="nav-item" id="nav-estoque">
+          <span class="nav-icon">📦</span> Estoque
+        </button>
       </div>
       <div class="nav-group" style="margin-top:4px;">
         <button class="nav-item" id="nav-separacao">
@@ -847,6 +917,13 @@
       </button>
       <button class="nav-item" id="nav-caixas">
         <span class="nav-icon">📦</span> Caixas
+      </button>
+      <div class="sidebar-sep"></div>
+      <button class="nav-item" id="nav-produtos">
+        <span class="nav-icon">🗂</span> Produtos
+      </button>
+      <button class="nav-item" id="nav-movimentacoes">
+        <span class="nav-icon">🔐</span> Movimentações
       </button>
       <div class="sidebar-sep"></div>
       <button class="nav-item" id="nav-ajustes">
@@ -1164,10 +1241,19 @@
               style="background:var(--bg);border:1.5px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.82rem;font-weight:600;" />
           </div>
         </div>
-        <button class="btn btn-primary" id="lacrar-btn">⚡ Lacrar Expedição</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="lacrar-btn">⚡ Lacrar Expedição</button>
+          <button class="btn" id="retirar-estoque-btn" onclick="openEstoqueModal('shopee')"
+            style="background:#0f4c3a;color:#4ade80;border:1.5px solid #22c55e;">
+            📦 Retirar do Estoque
+          </button>
+        </div>
       </div>
       <div id="lacrar-status" style="display:none;margin-top:12px;font-size:.82rem;color:var(--green);font-weight:600;">
         ✓ Expedição lacrada! Acesse Dashboard para visualizar as métricas.
+      </div>
+      <div id="retirar-status" style="display:none;margin-top:12px;font-size:.82rem;color:var(--green);font-weight:600;">
+        ✓ Estoque atualizado!
       </div>
     </div>
 
@@ -1271,7 +1357,13 @@
               style="background:var(--bg);border:1.5px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.82rem;font-weight:600;" />
           </div>
         </div>
-        <button class="btn btn-primary" id="ml-lacrar-btn">⚡ Lacrar Expedição ML</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="ml-lacrar-btn">⚡ Lacrar Expedição ML</button>
+          <button class="btn" id="ml-retirar-estoque-btn" onclick="openEstoqueModal('ml')"
+            style="background:#0f4c3a;color:#4ade80;border:1.5px solid #22c55e;">
+            📦 Retirar do Estoque
+          </button>
+        </div>
       </div>
       <div id="ml-lacrar-status" style="display:none;margin-top:12px;font-size:.82rem;color:var(--green);font-weight:600;">
         ✓ Expedição lacrada! Acesse Dashboard para visualizar as métricas.
@@ -1453,6 +1545,224 @@
     </div>
   </div><!-- /page-ajustes -->
 
+  <!-- ── Estoque ── -->
+  <div id="page-estoque" class="page-section">
+    <div style="width:100%;max-width:1200px;">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);">Estoque Atual</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline" onclick="openGerenciarEstoque()">⚙ Gerenciar</button>
+          <button class="btn btn-outline" onclick="openSaidaModal()">− Saída Manual</button>
+          <button class="btn btn-primary" onclick="openEntradaModal()">+ Entrada</button>
+        </div>
+      </div>
+
+      <div id="estoque-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px;"></div>
+
+      <div class="card" style="max-width:100%;">
+        <div class="card-title" style="display:flex;align-items:center;gap:10px;">
+          Histórico de Movimentações
+          <span id="estoque-hist-count" style="background:var(--bg);border:1px solid var(--border2);color:var(--muted);font-size:.68rem;font-weight:700;padding:2px 9px;border-radius:20px;"></span>
+        </div>
+        <div id="estoque-hist-body"></div>
+      </div>
+
+    </div>
+  </div><!-- /page-estoque -->
+
+  <!-- ── Produtos ── -->
+  <div id="page-produtos" class="page-section">
+    <div style="width:100%;max-width:1400px;">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);">Grupos de Produtos</div>
+        <button class="btn btn-primary" onclick="openNovoProdutoModal()">+ Novo Produto</button>
+      </div>
+
+      <div id="produtos-grupos-wrap"></div>
+
+    </div>
+  </div><!-- /page-produtos -->
+
+  <!-- ── Movimentações ── -->
+  <div id="page-movimentacoes" class="page-section">
+    <div style="width:100%;max-width:960px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);">Movimentações do Sistema</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:2px;">Histórico de todas as ações com PIN confirmado</div>
+        </div>
+        <button class="btn" onclick="loadMovimentacoes()" style="font-size:.75rem;padding:7px 14px;">↻ Atualizar</button>
+      </div>
+      <div id="mov-list"></div>
+    </div>
+  </div><!-- /page-movimentacoes -->
+
+  <!-- Modal: Confirmar PIN -->
+  <div class="modal-bg" id="modal-pin" style="z-index:10000;">
+    <div class="modal-box" style="max-width:340px;">
+      <button class="modal-close" onclick="closeModalE('modal-pin')">✕</button>
+      <div class="modal-title">🔐 Confirmar identidade</div>
+      <div id="pin-action-label" style="font-size:.8rem;color:var(--muted);margin-bottom:14px;"></div>
+      <div style="display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:8px 12px;margin-bottom:14px;">
+        <span style="font-size:.75rem;color:var(--muted);">Confirmando como:</span>
+        <span id="pin-user-display" style="font-size:.82rem;font-weight:700;color:var(--accent);flex:1;"></span>
+        <button onclick="togglePinUserSwitch()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-size:.7rem;color:var(--muted);cursor:pointer;">Trocar</button>
+      </div>
+      <div id="pin-user-switch" style="display:none;margin-bottom:12px;">
+        <select id="pin-user-select" class="modal-input" style="margin-bottom:0;" onchange="setPinUser(this.value)"></select>
+      </div>
+      <div class="modal-error" id="pin-modal-error" style="display:none;"></div>
+      <label class="modal-field-label">PIN</label>
+      <input class="modal-input" id="pin-modal-input" type="password" inputmode="numeric" maxlength="6" placeholder="••••"
+        onkeydown="if(event.key==='Enter')confirmPin()" autocomplete="current-password" />
+      <div class="modal-footer">
+        <button onclick="closeModalE('modal-pin')" style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 18px;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--text);">Cancelar</button>
+        <button class="btn btn-primary" id="pin-confirm-btn" onclick="confirmPin()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: O que há de novo -->
+  <div class="modal-bg" id="modal-whats-new" style="z-index:11000;backdrop-filter:blur(6px);">
+    <div class="modal-box" style="max-width:480px;padding:0;overflow:hidden;border-radius:20px;">
+      <!-- Cabeçalho animado -->
+      <div id="wnew-header" style="background:linear-gradient(135deg,#6c5fff 0%,#a78bfa 100%);padding:28px 28px 22px;text-align:center;position:relative;">
+        <div style="font-size:2.6rem;margin-bottom:6px;animation:wnBounce 0.6s ease;">🎉</div>
+        <div style="font-size:1.25rem;font-weight:900;color:#fff;line-height:1.25;letter-spacing:-.3px;">Ebaa! O OMNI foi atualizado!</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.8);margin-top:6px;">Confira as novidades desta versão</div>
+        <div id="wnew-confetti" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+      </div>
+      <!-- Lista de novidades -->
+      <div style="padding:22px 26px;max-height:55vh;overflow-y:auto;">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <div style="display:flex;gap:13px;align-items:flex-start;">
+            <div style="font-size:1.4rem;flex-shrink:0;margin-top:1px;">📦</div>
+            <div>
+              <div style="font-size:.84rem;font-weight:800;color:var(--text);margin-bottom:3px;">Gestão completa de estoque</div>
+              <div style="font-size:.78rem;color:var(--muted);line-height:1.55;">Na retirada, você escolhe exatamente quanto tirar de cada produto — pura, turbo, dux — com total controle do que sai. O sistema mostra em tempo real se tem quantidade disponível antes de confirmar.</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:13px;align-items:flex-start;">
+            <div style="font-size:1.4rem;flex-shrink:0;margin-top:1px;">🔐</div>
+            <div>
+              <div style="font-size:.84rem;font-weight:800;color:var(--text);margin-bottom:3px;">Autenticação em todas as ações</div>
+              <div style="font-size:.78rem;color:var(--muted);line-height:1.55;">Toda ação importante — lacrar expedição, retirar do estoque, adicionar ou remover produto, excluir histórico — exige confirmação por senha. Cada usuário tem o seu acesso, e o sistema sabe exatamente quem fez o quê.</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:13px;align-items:flex-start;">
+            <div style="font-size:1.4rem;flex-shrink:0;margin-top:1px;">📋</div>
+            <div>
+              <div style="font-size:.84rem;font-weight:800;color:var(--text);margin-bottom:3px;">Histórico de movimentações</div>
+              <div style="font-size:.78rem;color:var(--muted);line-height:1.55;">Novo menu "Movimentações" no sidebar. Tudo que acontece no estoque e no sistema fica registrado com data, hora e usuário. Você acompanha em tempo real o que cada pessoa fez.</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:13px;align-items:flex-start;">
+            <div style="font-size:1.4rem;flex-shrink:0;margin-top:1px;">↩️</div>
+            <div>
+              <div style="font-size:.84rem;font-weight:800;color:var(--text);margin-bottom:3px;">Desfazer qualquer movimentação</div>
+              <div style="font-size:.78rem;color:var(--muted);line-height:1.55;">Cometeu um erro? Cada movimentação no histórico de estoque tem um botão <b>Desfazer</b>. O sistema mostra o que será revertido antes de confirmar. Ao excluir uma expedição do histórico, o estoque é restaurado automaticamente.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <!-- Rodapé -->
+      <div style="padding:16px 26px 22px;border-top:1px solid var(--border);text-align:center;">
+        <button onclick="closeWhatsNew()" style="background:linear-gradient(135deg,#6c5fff,#a78bfa);border:none;border-radius:12px;color:#fff;font-size:.88rem;font-weight:800;padding:12px 36px;cursor:pointer;letter-spacing:.2px;box-shadow:0 4px 14px rgba(108,95,255,.35);transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 6px 18px rgba(108,95,255,.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px rgba(108,95,255,.35)'">Entendi! Vamos lá 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmação genérica -->
+  <div class="modal-bg" id="modal-confirm-action" style="z-index:9500;">
+    <div class="modal-box" style="max-width:440px;">
+      <div class="modal-title" id="confirm-action-title">Confirmar ação</div>
+      <div id="confirm-action-body" style="margin:14px 0 22px;font-size:.85rem;line-height:1.65;color:var(--text);"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-outline" onclick="closeModalE('modal-confirm-action')" style="padding:9px 20px;font-size:.82rem;">Cancelar</button>
+        <button id="confirm-action-ok" class="btn" style="padding:9px 20px;font-size:.82rem;background:var(--red);border-color:var(--red);color:#fff;font-weight:700;">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Gerenciar Estoque -->
+  <div class="modal-bg" id="modal-gerenciar-estoque">
+    <div class="modal-box" style="max-width:420px;">
+      <button class="modal-close" onclick="closeModalE('modal-gerenciar-estoque')">✕</button>
+      <div class="modal-title">⚙ Gerenciar Estoque</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:16px;">Marque os produtos que devem aparecer no estoque</div>
+      <div id="gerenciar-estoque-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModalE('modal-gerenciar-estoque')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modais Estoque -->
+  <div class="modal-bg" id="modal-estoque-entrada">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModalE('modal-estoque-entrada')">✕</button>
+      <div class="modal-title">+ Entrada de Produtos</div>
+      <div class="modal-error" id="estoque-entrada-error"></div>
+      <div id="estoque-entrada-rows"></div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModalE('modal-estoque-entrada')">Cancelar</button>
+        <button class="btn btn-primary" onclick="requirePin('Entrada de Estoque', submitEstoqueEntrada)">Confirmar Entrada</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="modal-estoque-saida">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModalE('modal-estoque-saida')">✕</button>
+      <div class="modal-title">− Saída Manual</div>
+      <div class="modal-error" id="estoque-saida-error"></div>
+      <label class="modal-field-label">Produto</label>
+      <select id="saida-grupo-sel" class="modal-input"></select>
+      <label class="modal-field-label">Quantidade</label>
+      <input type="number" id="saida-qty-inp" class="modal-input" min="1" value="1"/>
+      <label class="modal-field-label">Justificativa (obrigatória)</label>
+      <textarea id="saida-just-inp" class="modal-input" placeholder="Ex: AVARIA, AMOSTRA, BRINDE..." style="resize:vertical;min-height:70px;"></textarea>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModalE('modal-estoque-saida')">Cancelar</button>
+        <button class="btn" style="background:rgba(224,62,62,.1);color:var(--red);border:1px solid rgba(224,62,62,.3);" onclick="requirePin('Saída Manual de Estoque', submitEstoqueSaida)">Confirmar Saída</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Novo Produto -->
+  <div class="modal-bg" id="modal-prod-novo">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModalE('modal-prod-novo')">✕</button>
+      <div class="modal-title">+ Novo Produto</div>
+      <div class="modal-error" id="prod-novo-error"></div>
+      <label class="modal-field-label">SKU</label>
+      <input type="text" id="prod-novo-sku" class="modal-input" placeholder="Ex: BLCK15"/>
+      <label class="modal-field-label">Título completo</label>
+      <input type="text" id="prod-novo-titulo" class="modal-input" placeholder="Ex: Creatina Black Skull Turbo 300g"/>
+      <label class="modal-field-label">Grupo</label>
+      <select id="prod-novo-grupo" class="modal-input"></select>
+      <label class="modal-field-label">Kit size</label>
+      <select id="prod-novo-kit" class="modal-input">
+        <option value="1">1 unidade</option>
+        <option value="2">Kit 2</option>
+        <option value="3">Kit 3</option>
+        <option value="4">Kit 4</option>
+        <option value="5">Kit 5</option>
+      </select>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModalE('modal-prod-novo')">Cancelar</button>
+        <button class="btn btn-primary" onclick="requirePin('Adicionar Produto', submitNovoProdutoInline)">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
   </main>
 </div><!-- /app-shell -->
 
@@ -1490,8 +1800,26 @@
   </div>
 </div>
 
+<!-- Modal: Retirar do Estoque -->
+<div id="estoque-modal" style="display:none;position:fixed;inset:0;background:rgba(26,26,46,.45);z-index:9000;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:var(--surface);border-radius:16px;padding:28px;width:100%;max-width:580px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.12);border:1px solid var(--border);max-height:90vh;overflow-y:auto;">
+    <button onclick="closeEstoqueModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;line-height:1;">✕</button>
+    <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:6px;">📦 Retirar do Estoque</div>
+    <div id="estoque-modal-ctx" style="font-size:.75rem;color:var(--muted);margin-bottom:20px;"></div>
+    <div id="estoque-modal-error" style="display:none;background:rgba(224,62,62,.08);border:1px solid var(--red);border-radius:8px;color:var(--red);font-size:.78rem;padding:8px 12px;margin-bottom:12px;"></div>
+    <div id="estoque-modal-rows"></div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+      <button onclick="closeEstoqueModal()" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:9px 18px;font-size:.82rem;font-weight:700;cursor:pointer;">Cancelar</button>
+      <button id="estoque-modal-confirm" onclick="requirePin('Retirar do Estoque', confirmEstoque)" style="background:var(--green);color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:.82rem;font-weight:700;cursor:pointer;">✓ Confirmar Retirada</button>
+    </div>
+  </div>
+</div>
+
 <script>
 Chart.register(ChartDataLabels);
+
+const CURRENT_USER = {{ current_user | tojson }};
+const ALL_USERS    = {{ all_users | tojson }};
 
 const UPLOAD_STEPS = [
   { label: "Mandando os PDFs...",          sub: "Segura aí, já chego..." },
@@ -1554,8 +1882,8 @@ function showToast(msg, color) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-cortar","page-ml-full","page-caixas","page-ajustes"];
-const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-cortar","nav-ml-full","nav-caixas","nav-ajustes"];
+const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-cortar","page-ml-full","page-caixas","page-ajustes","page-estoque","page-produtos","page-movimentacoes"];
+const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-cortar","nav-ml-full","nav-caixas","nav-ajustes","nav-estoque","nav-produtos","nav-movimentacoes"];
 
 function showPage(page) {
   PAGES.forEach(id => {
@@ -1568,6 +1896,9 @@ function showPage(page) {
   });
   if (page === "page-dashboard")  { loadAllMetrics(); }
   if (page === "page-historico")  { loadHistoryEntries(); }
+  if (page === "page-estoque")        { loadEstoquePage(); }
+  if (page === "page-produtos")       { loadProdutosPage(); }
+  if (page === "page-movimentacoes")  { loadMovimentacoes(); }
 }
 
 function showSepTab(tab) {
@@ -1585,8 +1916,11 @@ function showSepTab(tab) {
 document.getElementById("nav-dashboard").addEventListener("click", () => showPage("page-dashboard"));
 document.getElementById("nav-localizador").addEventListener("click", () => showPage("page-localizador"));
 document.getElementById("nav-historico").addEventListener("click", () => showPage("page-historico"));
-document.getElementById("nav-ajustes").addEventListener("click", () => showPage("page-ajustes"));
-document.getElementById("nav-caixas").addEventListener("click",  () => showPage("page-caixas"));
+document.getElementById("nav-ajustes").addEventListener("click",  () => showPage("page-ajustes"));
+document.getElementById("nav-caixas").addEventListener("click",   () => showPage("page-caixas"));
+document.getElementById("nav-estoque").addEventListener("click",       () => showPage("page-estoque"));
+document.getElementById("nav-produtos").addEventListener("click",      () => showPage("page-produtos"));
+document.getElementById("nav-movimentacoes").addEventListener("click", () => showPage("page-movimentacoes"));
 document.getElementById("nav-cortar").addEventListener("click",   () => showPage("page-cortar"));
 document.getElementById("nav-ml-full").addEventListener("click",  () => showPage("page-ml-full"));
 
@@ -2048,34 +2382,40 @@ document.getElementById("process-btn").addEventListener("click", async () => {
 });
 
 // ── Lacrar Expedição ──────────────────────────────────────────────────────────
-document.getElementById("lacrar-btn").addEventListener("click", async () => {
+document.getElementById("lacrar-btn").addEventListener("click", () => {
   if (!currentProcessData) return;
-  const btn = document.getElementById("lacrar-btn");
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Lacrando...';
-  try {
-    const res = await fetch("/history/add", {
-      method: "POST", headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        date:                document.getElementById("lacrar-date").value || new Date().toISOString().split("T")[0],
-        store_items:         currentProcessData.stats.store_items || {},
-        store_label_counts:  currentProcessData.stats.store_label_counts || {},
-        label_pages:         currentProcessData.stats.label_pages,
-        breakdown:           currentProcessData.stats.breakdown,
-        output_page_counts:  currentProcessData.stats.output_page_counts || {},
-        state_counts:        currentProcessData.stats.state_counts || {},
-        tracking_numbers:    currentProcessData.stats.tracking_numbers || [],
-        tracking_data:       currentProcessData.stats.tracking_data    || {},
-      })
-    });
-    if ((await res.json()).ok) {
-      document.getElementById("lacrar-status").style.display = "block";
-      btn.style.display = "none";
-      showToast("Expedição lacrada!", "var(--green)");
+  requirePin("Lacrar Expedição Shopee", async () => {
+    const btn = document.getElementById("lacrar-btn");
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Lacrando...';
+    try {
+      const res = await fetch("/history/add", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          date:                document.getElementById("lacrar-date").value || new Date().toISOString().split("T")[0],
+          store_items:         currentProcessData.stats.store_items || {},
+          store_label_counts:  currentProcessData.stats.store_label_counts || {},
+          label_pages:         currentProcessData.stats.label_pages,
+          breakdown:           currentProcessData.stats.breakdown,
+          output_page_counts:  currentProcessData.stats.output_page_counts || {},
+          state_counts:        currentProcessData.stats.state_counts || {},
+          tracking_numbers:    currentProcessData.stats.tracking_numbers || [],
+          tracking_data:       currentProcessData.stats.tracking_data    || {},
+        })
+      });
+      const d = await res.json();
+      if (d.ok) {
+        document.getElementById("lacrar-status").style.display = "block";
+        btn.style.display = "none";
+        showToast("Expedição lacrada!", "var(--green)");
+      } else {
+        btn.disabled = false; btn.innerHTML = "⚡ Lacrar Expedição";
+        setStatus(d.error || "Erro ao lacrar", "error");
+      }
+    } catch(e) {
+      btn.disabled = false; btn.innerHTML = "⚡ Lacrar Expedição";
+      setStatus("Erro ao lacrar: " + e.message, "error");
     }
-  } catch(e) {
-    btn.disabled = false; btn.innerHTML = "⚡ Lacrar Expedição";
-    setStatus("Erro ao lacrar: " + e.message, "error");
-  }
+  });
 });
 
 // ── Security / Validation ─────────────────────────────────────────────────────
@@ -3123,30 +3463,52 @@ async function loadHistoryEntries() {
         this.textContent = open ? "▲ Lojas" : "▼ Lojas";
       });
 
-      row.querySelector(".del-btn").addEventListener("click", async function() {
-        if (!confirm("Excluir toda esta expedição? Isso não pode ser desfeito.")) return;
-        this.disabled = true; this.textContent = "...";
-        await fetch("/history/delete", {
-          method: "POST", headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({ index: parseInt(this.dataset.idx) })
-        });
-        showToast("Expedição excluída", "var(--red)");
-        await loadHistoryEntries();
-        loadAllMetrics();
+      row.querySelector(".del-btn").addEventListener("click", function() {
+        const idx = parseInt(this.dataset.idx);
+        const self = this;
+        const breakdownItems = entry.breakdown_items || [];
+        const restoreStock   = breakdownItems.length > 0;
+        const [y, m, d]      = (entry.date || "").split("-");
+        const dateFmt        = d ? `${d}/${m}/${y}` : entry.date;
+
+        let bodyHtml;
+        if (restoreStock) {
+          const lista = breakdownItems.map(it =>
+            `<span style="display:inline-block;background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:3px 10px;font-size:.82rem;margin:3px 3px 3px 0;"><b>${it.quantidade}</b>× ${esc(it.display)}</span>`
+          ).join('');
+          bodyHtml = `<b>Expedição de ${dateFmt}</b><br><br>Excluindo essa expedição, os seguintes itens serão devolvidos ao estoque:<br><div style="margin:10px 0;">${lista}</div>Deseja continuar?`;
+        } else {
+          bodyHtml = `Excluir a expedição de <b>${dateFmt}</b> do histórico? Esta ação não pode ser desfeita.`;
+        }
+
+        showConfirmAction("Excluir Expedição", bodyHtml, () => {
+          requirePin("Excluir Expedição do Histórico", async () => {
+            self.disabled = true; self.textContent = "...";
+            await fetch("/history/delete", {
+              method: "POST", headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({ index: idx, restore_stock: restoreStock })
+            });
+            showToast("Expedição excluída" + (restoreStock ? " — estoque restaurado" : ""), "var(--red)");
+            await loadHistoryEntries();
+            loadAllMetrics();
+          });
+        }, "Sim, excluir", "var(--red)");
       });
 
-      row.querySelectorAll(".del-store-btn").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const store = btn.dataset.store;
-          if (!confirm(`Excluir dados da loja "${store}" desta expedição? Isso não pode ser desfeito.`)) return;
-          btn.disabled = true; btn.textContent = "...";
-          await fetch("/history/delete-store", {
-            method: "POST", headers: {"Content-Type":"application/json"},
-            body: JSON.stringify({ index: parseInt(btn.dataset.idx), store })
+      row.querySelectorAll(".del-store-btn").forEach(storeBtn => {
+        storeBtn.addEventListener("click", () => {
+          const store = storeBtn.dataset.store;
+          const idx   = parseInt(storeBtn.dataset.idx);
+          requirePin(`Excluir loja "${store}" do histórico`, async () => {
+            storeBtn.disabled = true; storeBtn.textContent = "...";
+            await fetch("/history/delete-store", {
+              method: "POST", headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({ index: idx, store })
+            });
+            showToast(`Loja "${store}" excluída`, "var(--red)");
+            await loadHistoryEntries();
+            loadAllMetrics();
           });
-          showToast(`Loja "${store}" excluída`, "var(--red)");
-          await loadHistoryEntries();
-          loadAllMetrics();
         });
       });
 
@@ -3464,6 +3826,37 @@ const _today = new Date().toISOString().split("T")[0];
 document.getElementById("label-date").value  = _today;
 document.getElementById("caixa-date").value  = _today;
 updateCaixasList();
+
+// ── What's New popup ─────────────────────────────────────────────────────────
+(function checkWhatsNew() {
+  const VERSION_KEY = 'omni_seen_v4_desfazer';
+  if (localStorage.getItem(VERSION_KEY)) return;
+  setTimeout(() => {
+    document.getElementById('modal-whats-new').classList.add('open');
+    _spawnConfetti();
+  }, 800);
+})();
+
+function closeWhatsNew() {
+  localStorage.setItem('omni_seen_v4_desfazer', '1');
+  const modal = document.getElementById('modal-whats-new');
+  modal.style.opacity = '0';
+  modal.style.transition = 'opacity .3s';
+  setTimeout(() => { modal.classList.remove('open'); modal.style.opacity = ''; modal.style.transition = ''; }, 300);
+}
+
+function _spawnConfetti() {
+  const container = document.getElementById('wnew-confetti');
+  if (!container) return;
+  const colors = ['#fff', '#ffd700', '#ff6b6b', '#a78bfa', '#34d399', '#fb923c'];
+  const shapes = ['■', '●', '★', '▲', '◆'];
+  for (let i = 0; i < 28; i++) {
+    const el = document.createElement('span');
+    el.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+    el.style.cssText = `position:absolute;left:${Math.random()*100}%;top:${Math.random()*100}%;font-size:${8+Math.random()*10}px;color:${colors[Math.floor(Math.random()*colors.length)]};opacity:.85;animation:wnConfetti ${0.8+Math.random()*1.2}s ease-out ${Math.random()*0.5}s both;`;
+    container.appendChild(el);
+  }
+}
 
 // ── Chart: Pedidos por Estado (UF) ────────────────────────────────────────────
 const UF_NAMES = {
@@ -3826,34 +4219,40 @@ document.getElementById("ml-process-btn").addEventListener("click", async () => 
 });
 
 // ── ML Lacrar ─────────────────────────────────────────────────────────────────
-document.getElementById("ml-lacrar-btn").addEventListener("click", async () => {
+document.getElementById("ml-lacrar-btn").addEventListener("click", () => {
   if (!mlCurrentProcessData) return;
-  const btn = document.getElementById("ml-lacrar-btn");
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Lacrando...';
-  try {
-    const res = await fetch("/history/add", {
-      method: "POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        date:                document.getElementById("ml-lacrar-date").value || new Date().toISOString().split("T")[0],
-        store_items:         mlCurrentProcessData.stats.store_items || {},
-        store_label_counts:  mlCurrentProcessData.stats.store_label_counts || {},
-        label_pages:         mlCurrentProcessData.stats.label_pages,
-        breakdown:           mlCurrentProcessData.stats.breakdown,
-        output_page_counts:  mlCurrentProcessData.stats.output_page_counts || {},
-        state_counts:        mlCurrentProcessData.stats.state_counts || {},
-        tracking_numbers:    mlCurrentProcessData.stats.tracking_numbers || [],
-        tracking_data:       mlCurrentProcessData.stats.tracking_data    || {},
-      })
-    });
-    if ((await res.json()).ok) {
-      document.getElementById("ml-lacrar-status").style.display = "block";
-      btn.style.display = "none";
-      showToast("Expedição ML lacrada!", "var(--green)");
+  requirePin("Lacrar Expedição ML", async () => {
+    const btn = document.getElementById("ml-lacrar-btn");
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Lacrando...';
+    try {
+      const res = await fetch("/history/add", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          date:                document.getElementById("ml-lacrar-date").value || new Date().toISOString().split("T")[0],
+          store_items:         mlCurrentProcessData.stats.store_items || {},
+          store_label_counts:  mlCurrentProcessData.stats.store_label_counts || {},
+          label_pages:         mlCurrentProcessData.stats.label_pages,
+          breakdown:           mlCurrentProcessData.stats.breakdown,
+          output_page_counts:  mlCurrentProcessData.stats.output_page_counts || {},
+          state_counts:        mlCurrentProcessData.stats.state_counts || {},
+          tracking_numbers:    mlCurrentProcessData.stats.tracking_numbers || [],
+          tracking_data:       mlCurrentProcessData.stats.tracking_data    || {},
+        })
+      });
+      const d = await res.json();
+      if (d.ok) {
+        document.getElementById("ml-lacrar-status").style.display = "block";
+        btn.style.display = "none";
+        showToast("Expedição ML lacrada!", "var(--green)");
+      } else {
+        btn.disabled = false; btn.innerHTML = "⚡ Lacrar Expedição ML";
+        mlSetStatus(d.error || "Erro ao lacrar", "error");
+      }
+    } catch(e) {
+      btn.disabled = false; btn.innerHTML = "⚡ Lacrar Expedição ML";
+      mlSetStatus("Erro ao lacrar: " + e.message, "error");
     }
-  } catch(e) {
-    btn.disabled = false; btn.innerHTML = "⚡ Lacrar Expedição ML";
-    mlSetStatus("Erro ao lacrar: " + e.message, "error");
-  }
+  });
 });
 
 // ── ML Dashboard ──────────────────────────────────────────────────────────────
@@ -4060,6 +4459,771 @@ document.getElementById("ml-download-all-btn").addEventListener("click", async (
 </div>
 
 <script>
+// ── Estoque Page ───────────────────────────────────────────────────────────────
+let _estoqueData = {};
+
+async function loadEstoquePage() {
+  const [estoqueRes, gruposRes] = await Promise.all([
+    fetch('/api/estoque'),
+    fetch('/api/estoque/grupos'),
+  ]);
+  _estoqueData = await estoqueRes.json();
+  renderEstoqueCards(_estoqueData);
+  await loadEstoqueHist();
+}
+
+function renderEstoqueCards(estoque) {
+  const grid = document.getElementById('estoque-cards-grid');
+  grid.innerHTML = '';
+  Object.entries(estoque)
+    .filter(([, info]) => info.ativo !== false)
+    .forEach(([grupo, info]) => {
+      const neg  = info.quantidade < 0;
+      const card = document.createElement('div');
+      card.style.cssText = `background:var(--surface);border:1px solid ${neg ? 'rgba(224,62,62,.35)' : 'var(--border)'};border-radius:14px;padding:22px 20px;box-shadow:0 1px 3px rgba(0,0,0,.04);`;
+      card.innerHTML = `
+        <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;">${esc(info.display)}</div>
+        <div style="font-size:2.6rem;font-weight:900;line-height:1;color:${neg ? 'var(--red)' : 'var(--text)'};margin-bottom:4px;">${info.quantidade}</div>
+        <div style="font-size:.72rem;color:var(--muted);">unidades em estoque</div>
+        ${neg ? `<div style="margin-top:8px;font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(224,62,62,.1);color:var(--red);display:inline-block;">⚠ faltam ${Math.abs(info.quantidade)}</div>` : ''}`;
+      grid.appendChild(card);
+    });
+}
+
+let _histEstoqueData = [];
+
+async function loadEstoqueHist() {
+  const res  = await fetch('/estoque-hist');
+  _histEstoqueData = await res.json();
+  const hist  = _histEstoqueData;
+  const body  = document.getElementById('estoque-hist-body');
+  const count = document.getElementById('estoque-hist-count');
+  count.textContent = hist.length + ' registros';
+  if (!hist.length) {
+    body.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:.86rem;">Nenhuma movimentação registrada ainda.</div>';
+    return;
+  }
+  const tipoLabel = {
+    entrada:           'Entrada',
+    saida_manual:      'Saída Manual',
+    saida_expedicao:   'Expedição',
+    estorno:           'Estorno',
+    estorno_historico: 'Est. Histórico',
+    estorno_entrada:   'Est. Entrada',
+  };
+  const tipoCls = {
+    entrada:           'rgba(0,184,118,.12);color:var(--green)',
+    saida_manual:      'rgba(212,122,0,.12);color:var(--yellow)',
+    saida_expedicao:   'rgba(108,95,255,.12);color:var(--accent)',
+    estorno:           'rgba(0,184,118,.08);color:#00875a',
+    estorno_historico: 'rgba(0,184,118,.08);color:#00875a',
+    estorno_entrada:   'rgba(224,62,62,.08);color:var(--red)',
+  };
+  const canUndo = new Set(['saida_manual', 'saida_expedicao', 'entrada', 'estorno_historico']);
+  const thStyle = 'padding:9px 14px;text-align:left;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border);';
+  body.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:.82rem;">
+    <thead><tr>
+      <th style="${thStyle}">Data / Hora</th>
+      <th style="${thStyle}">Usuário</th>
+      <th style="${thStyle}">Tipo</th>
+      <th style="${thStyle}">Itens</th>
+      <th style="${thStyle}">Contexto</th>
+      <th style="${thStyle}">Ações</th>
+    </tr></thead>
+    <tbody>${hist.map(m => {
+      const ts = m.timestamp ? (() => { try { const d=new Date(m.timestamp); return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); } catch(e){ return m.timestamp; } })() : '';
+      const itensHtml = (m.itens||[]).map(it => {
+        const subst = it.grupo_original && it.grupo_original !== it.grupo;
+        return `<span style="display:inline-block;background:var(--bg);border:1px solid var(--border2);color:${subst?'var(--accent)':'var(--muted)'};border-radius:6px;padding:2px 8px;font-size:.7rem;margin:2px 2px 2px 0;">${it.quantidade}× ${esc(it.display)}${subst?` ↔ ${esc(it.display_original||'')}`:''}</span>`;
+      }).join('');
+      const cls = tipoCls[m.tipo] || 'var(--bg);color:var(--muted)';
+      const desfBtn = canUndo.has(m.tipo)
+        ? `<button onclick="desfazerMovEstoque('${m.id}')" style="background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:3px 10px;font-size:.72rem;cursor:pointer;color:var(--muted);font-weight:700;transition:all .15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">↩ Desfazer</button>`
+        : '<span style="color:var(--border2);font-size:.7rem;">—</span>';
+      return `<tr>
+        <td style="padding:10px 14px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.76rem;white-space:nowrap;">${ts}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid var(--border);font-weight:700;">${esc(m.usuario||'')}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid var(--border);"><span style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:.68rem;font-weight:700;text-transform:uppercase;background:${cls};">${tipoLabel[m.tipo]||m.tipo}</span></td>
+        <td style="padding:10px 14px;border-bottom:1px solid var(--border);">${itensHtml}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.78rem;">${esc(m.justificativa||m.contexto||'—')}</td>
+        <td style="padding:10px 14px;border-bottom:1px solid var(--border);">${desfBtn}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+function desfazerMovEstoque(id) {
+  const m = _histEstoqueData.find(e => e.id === id);
+  if (!m) return;
+  const itens   = m.itens || [];
+  const isSaida = m.tipo === 'saida_manual' || m.tipo === 'saida_expedicao';
+  const lista   = itens.map(it => `<b>${it.quantidade}×</b> ${esc(it.display)}`).join(', ');
+  const acao    = isSaida
+    ? `devolver ao estoque: ${lista}`
+    : `remover do estoque: ${lista}`;
+  showConfirmAction(
+    'Desfazer Movimentação',
+    `Desfazer esta ação irá ${acao}.<br><br>Deseja continuar?`,
+    () => {
+      requirePin('Desfazer Movimentação de Estoque', async () => {
+        const res  = await fetch('/api/estoque/desfazer', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (data.error) { alert(data.error); return; }
+        showToast('Movimentação desfeita', 'var(--green)');
+        loadEstoqueHist();
+        const estoqueRes = await fetch('/api/estoque');
+        _estoqueData = await estoqueRes.json();
+        renderEstoqueCards(_estoqueData);
+      });
+    },
+    'Sim, desfazer',
+    'var(--accent)'
+  );
+}
+
+async function openGerenciarEstoque() {
+  const res = await fetch('/api/todos-grupos');
+  const grupos = await res.json();
+  const body = document.getElementById('gerenciar-estoque-body');
+  body.innerHTML = grupos.map(g => `
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+      <input type="checkbox" data-grupo="${esc(g.grupo)}" ${g.ativo ? 'checked' : ''}
+        onchange="toggleGrupoEstoque('${esc(g.grupo)}', this.checked)"
+        style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;" />
+      <span style="flex:1;font-size:.84rem;font-weight:600;color:var(--text);">${esc(g.display)}</span>
+      <span style="font-size:.72rem;color:var(--muted);">${g.quantidade} un.</span>
+    </label>`).join('');
+  document.getElementById('modal-gerenciar-estoque').classList.add('open');
+}
+
+async function toggleGrupoEstoque(grupo, ativo) {
+  await fetch('/api/estoque/ativo', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ grupo, ativo })
+  });
+  const res = await fetch('/api/estoque');
+  _estoqueData = await res.json();
+  renderEstoqueCards(_estoqueData);
+}
+
+function openEntradaModal() {
+  const rows = document.getElementById('estoque-entrada-rows');
+  rows.innerHTML = '';
+  Object.entries(_estoqueData).forEach(([grupo, info]) => {
+    rows.innerHTML += `<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 14px;">
+      <div style="flex:1;font-size:.86rem;font-weight:600;">${esc(info.display)}</div>
+      <input type="number" min="0" value="0" data-grupo="${grupo}" data-display="${esc(info.display)}"
+        style="width:90px;background:var(--surface);border:1.5px solid var(--border2);border-radius:9px;color:var(--text);font-size:.88rem;padding:8px 10px;text-align:center;outline:none;"/>
+    </div>`;
+  });
+  document.getElementById('estoque-entrada-error').style.display = 'none';
+  document.getElementById('modal-estoque-entrada').classList.add('open');
+}
+
+function openSaidaModal() {
+  const sel = document.getElementById('saida-grupo-sel');
+  sel.innerHTML = Object.entries(_estoqueData).map(([g, info]) =>
+    `<option value="${g}">${esc(info.display)}</option>`).join('');
+  document.getElementById('saida-qty-inp').value = 1;
+  document.getElementById('saida-just-inp').value = '';
+  document.getElementById('estoque-saida-error').style.display = 'none';
+  document.getElementById('modal-estoque-saida').classList.add('open');
+}
+
+function closeModalE(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+let _confirmActionCallback = null;
+function showConfirmAction(title, bodyHtml, okCallback, okLabel, okColor) {
+  document.getElementById('confirm-action-title').textContent = title;
+  document.getElementById('confirm-action-body').innerHTML = bodyHtml;
+  const okBtn = document.getElementById('confirm-action-ok');
+  okBtn.textContent = okLabel || 'Confirmar';
+  okBtn.style.background = okColor || 'var(--red)';
+  okBtn.style.borderColor = okColor || 'var(--red)';
+  _confirmActionCallback = okCallback;
+  document.getElementById('modal-confirm-action').classList.add('open');
+}
+document.getElementById('confirm-action-ok').addEventListener('click', () => {
+  closeModalE('modal-confirm-action');
+  if (_confirmActionCallback) { const cb = _confirmActionCallback; _confirmActionCallback = null; cb(); }
+});
+
+async function submitEstoqueEntrada() {
+  const itens = [];
+  document.querySelectorAll('#estoque-entrada-rows input[type="number"]').forEach(inp => {
+    const qtd = parseInt(inp.value) || 0;
+    if (qtd > 0) itens.push({ grupo: inp.dataset.grupo, display: inp.dataset.display, quantidade: qtd });
+  });
+  if (!itens.length) { showErrE('estoque-entrada-error', 'Informe ao menos uma quantidade.'); return; }
+  const res  = await fetch('/api/estoque/entrada', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ itens }) });
+  const data = await res.json();
+  if (data.error) { showErrE('estoque-entrada-error', data.error); return; }
+  closeModalE('modal-estoque-entrada');
+  _estoqueData = data.estoque;
+  renderEstoqueCards(_estoqueData);
+  await loadEstoqueHist();
+}
+
+async function submitEstoqueSaida() {
+  const grupo = document.getElementById('saida-grupo-sel').value;
+  const qtd   = parseInt(document.getElementById('saida-qty-inp').value) || 0;
+  const just  = document.getElementById('saida-just-inp').value.trim();
+  if (!just) { showErrE('estoque-saida-error', 'Justificativa obrigatória.'); return; }
+  if (qtd <= 0) { showErrE('estoque-saida-error', 'Quantidade inválida.'); return; }
+  const res  = await fetch('/api/estoque/saida-manual', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ grupo, quantidade: qtd, justificativa: just }) });
+  const data = await res.json();
+  if (data.error) { showErrE('estoque-saida-error', data.error); return; }
+  closeModalE('modal-estoque-saida');
+  _estoqueData = data.estoque;
+  renderEstoqueCards(_estoqueData);
+  await loadEstoqueHist();
+}
+
+function showErrE(id, msg) { const el=document.getElementById(id); if(!el) return; el.textContent=msg; el.style.display='block'; }
+
+// ── Produtos Page ───────────────────────────────────────────────────────────────
+let _produtosData = [];
+
+async function loadProdutosPage() {
+  const res = await fetch('/api/produtos');
+  _produtosData = await res.json();
+  renderProdutosGrupos(_produtosData);
+}
+
+let _prodOpenGroups = new Set();
+
+function renderProdutosGrupos(grupos) {
+  const wrap = document.getElementById('produtos-grupos-wrap');
+  wrap.innerHTML = '';
+
+  grupos.forEach(({ cat, display, itens }) => {
+    // Group by kit_size
+    const kitMap = {};
+    itens.forEach(it => {
+      const k = it.kit_size || 1;
+      if (!kitMap[k]) kitMap[k] = [];
+      kitMap[k].push(it);
+    });
+    const kitKeys = Object.keys(kitMap).map(Number).sort((a, b) => a - b);
+
+    const kitSectionsHtml = kitKeys.map(k => {
+      const label = k === 1 ? 'Individual' : `Kit ${k}`;
+      const items = kitMap[k].map(it => prodItemHtml(it, cat, grupos)).join('');
+      return `<div style="padding:4px 12px 8px;">
+        <div style="font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:8px 2px 4px;border-bottom:1px solid var(--border);margin-bottom:6px;">${label}</div>
+        ${items}
+      </div>`;
+    }).join('');
+
+    const isOpen = _prodOpenGroups.has(cat);
+    const row = document.createElement('div');
+    row.id = 'pacc-' + cat;
+    row.dataset.grupo = cat;
+    row.style.cssText = 'background:var(--surface);border-radius:12px;border:1px solid var(--border);margin-bottom:10px;overflow:hidden;transition:border-color .15s;';
+    row.setAttribute('ondragover', 'onPDragOver(event,this)');
+    row.setAttribute('ondragleave', 'onPDragLeave(event,this)');
+    row.setAttribute('ondrop', `onPDrop(event,'${cat}')`);
+    row.innerHTML = `
+      <div class="prod-acc-header" onclick="toggleProdGrupo('${cat}')">
+        <span id="parrow-${cat}" style="color:var(--muted);font-size:.72rem;display:inline-block;transition:transform .2s;${isOpen ? 'transform:rotate(90deg)' : ''}">▶</span>
+        <span id="pname-${cat}" style="flex:1;font-size:.84rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;">${esc(display)}</span>
+        <button onclick="event.stopPropagation();editGrupoTitulo('${cat}','${esc(display)}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:.9rem;padding:2px 6px;border-radius:5px;transition:color .15s;" title="Editar nome do grupo">✏</button>
+        <span id="pcount-${cat}" style="background:var(--bg);border:1px solid var(--border2);color:var(--muted);font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;">${itens.length}</span>
+      </div>
+      <div id="pitems-${cat}" style="display:${isOpen ? 'block' : 'none'};border-top:${isOpen ? '1px solid var(--border)' : 'none'};">
+        ${kitSectionsHtml || '<div style="padding:16px;color:var(--muted);font-size:.78rem;text-align:center;">Vazio</div>'}
+      </div>`;
+    wrap.appendChild(row);
+  });
+
+  // Add group button
+  const addRow = document.createElement('div');
+  addRow.style.cssText = 'border:2px dashed var(--border2);border-radius:12px;display:flex;align-items:center;justify-content:center;padding:14px;cursor:pointer;color:var(--muted);font-size:.82rem;font-weight:700;gap:6px;transition:border-color .15s,color .15s;';
+  addRow.onmouseenter = () => { addRow.style.borderColor='var(--accent)'; addRow.style.color='var(--accent)'; };
+  addRow.onmouseleave = () => { addRow.style.borderColor='var(--border2)'; addRow.style.color='var(--muted)'; };
+  addRow.onclick = openNovoGrupoModal;
+  addRow.textContent = '+ Novo Grupo';
+  wrap.appendChild(addRow);
+
+  // Populate "Novo Produto" grupo select
+  const sel = document.getElementById('prod-novo-grupo');
+  sel.innerHTML = grupos.map(g => `<option value="${g.cat}">${esc(g.display)}</option>`).join('');
+}
+
+function toggleProdGrupo(cat) {
+  const body  = document.getElementById('pitems-' + cat);
+  const arrow = document.getElementById('parrow-' + cat);
+  const isOpen = body.style.display !== 'none';
+  if (isOpen) {
+    body.style.display = 'none';
+    body.style.borderTop = 'none';
+    arrow.style.transform = '';
+    _prodOpenGroups.delete(cat);
+  } else {
+    body.style.display = 'block';
+    body.style.borderTop = '1px solid var(--border)';
+    arrow.style.transform = 'rotate(90deg)';
+    _prodOpenGroups.add(cat);
+  }
+}
+
+async function editGrupoTitulo(slug, displayAtual) {
+  const novo = prompt('Novo nome para o grupo:', displayAtual);
+  if (!novo || novo.trim() === displayAtual) return;
+  const res = await fetch('/api/grupos/editar', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ slug, display: novo.trim() })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    const el = document.getElementById('pname-' + slug);
+    if (el) el.textContent = novo.trim().toUpperCase();
+    loadProdutosPage();
+  } else {
+    alert(data.error || 'Erro ao editar grupo');
+  }
+}
+
+function prodItemHtml(it, cat, grupos) {
+  const moveOpts = (grupos || _produtosData || [])
+    .filter(g => g.cat !== cat)
+    .map(g => `<option value="${esc(g.cat)}">${esc(g.display)}</option>`)
+    .join('');
+  const moveBtn = moveOpts
+    ? `<select onchange="moveProdTo('${esc(it.key)}',this)" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:.68rem;padding:3px 4px;cursor:pointer;max-width:90px;">
+        <option value="">Mover→</option>${moveOpts}
+       </select>`
+    : '';
+  return `<div class="prod-item" draggable="true" data-key="${esc(it.key)}" data-titulo="${esc(it.titulo)}" data-sku="${esc(it.sku)}" data-grupo="${cat}"
+    ondragstart="onPDragStart(event,this)">
+    <div style="color:var(--border2);font-size:.9rem;padding-top:2px;flex-shrink:0;">⠿</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:.78rem;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:4px;">${esc(it.titulo)}</div>
+      <span style="font-size:.68rem;color:var(--muted);font-family:monospace;background:var(--bg);border:1px solid var(--border);padding:1px 6px;border-radius:4px;">${esc(it.sku)}</span>
+    </div>
+    <div class="prod-actions" style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+      ${moveBtn}
+      <button class="del-btn" title="Editar título" onclick="editProdInline('${esc(it.key)}','${esc(it.titulo.replace(/'/g,"\\'"))}')" style="background:none;border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:.75rem;cursor:pointer;color:var(--muted);">✏</button>
+      <button class="del-btn" onclick="requirePin('Remover Produto', () => deleteProdInline('${esc(it.key)}','${esc(it.titulo.replace(/'/g,"\\'"))}'))">✕</button>
+    </div>
+  </div>`;
+}
+
+async function moveProdTo(key, sel) {
+  const grupo = sel.value;
+  if (!grupo) return;
+  sel.value = '';
+  const res = await fetch('/api/produtos/mover', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key, grupo }) });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+  loadProdutosPage();
+}
+
+let _pDragKey = null, _pDragOrigin = null;
+function onPDragStart(e, el) {
+  _pDragKey = el.dataset.key; _pDragOrigin = el.dataset.grupo;
+  e.dataTransfer.setData('text/plain', _pDragKey);
+}
+function onPDragOver(e, el) { e.preventDefault(); el.style.borderColor='var(--accent)'; el.style.background='rgba(108,95,255,.03)'; }
+function onPDragLeave(e, el) {
+  if (el.contains(e.relatedTarget)) return;
+  el.style.borderColor='var(--border)'; el.style.background='var(--surface)';
+}
+async function onPDrop(e, novoGrupo) {
+  e.preventDefault();
+  const el = document.getElementById('pacc-' + novoGrupo);
+  if (el) { el.style.borderColor='var(--border)'; el.style.background='var(--surface)'; }
+  if (!_pDragKey || novoGrupo === _pDragOrigin) return;
+  const key = _pDragKey;
+  _pDragKey = null; _pDragOrigin = null;
+  const res = await fetch('/api/produtos/mover', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key, grupo: novoGrupo }) });
+  const data = await res.json();
+  if (data.error) return;
+  loadProdutosPage();
+}
+
+async function deleteProdInline(key, titulo) {
+  if (!confirm(`Remover "${titulo}"?`)) return;
+  const res = await fetch('/api/produtos/deletar', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ key }) });
+  const data = await res.json();
+  if (data.error) return;
+  const el = document.querySelector(`[data-key="${CSS.escape(key)}"]`);
+  if (el) { const g = el.dataset.grupo; el.remove(); const c = document.getElementById('pcount-'+g); if(c) c.textContent=document.getElementById('pitems-'+g).querySelectorAll('.prod-item').length; }
+}
+
+async function editProdInline(key, titulo) {
+  const novoTitulo = prompt('Editar título:', titulo);
+  if (!novoTitulo || novoTitulo.trim() === titulo) return;
+  const res = await fetch('/api/produtos/editar', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ key, titulo: novoTitulo.trim() })
+  });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+  loadProdutosPage();
+}
+
+function openNovoProdutoModal() {
+  ['prod-novo-sku','prod-novo-titulo'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('prod-novo-kit').value = '1';
+  document.getElementById('prod-novo-error').style.display = 'none';
+  document.getElementById('modal-prod-novo').classList.add('open');
+  setTimeout(() => document.getElementById('prod-novo-sku').focus(), 100);
+}
+
+async function submitNovoProdutoInline() {
+  const sku    = document.getElementById('prod-novo-sku').value.trim();
+  const titulo = document.getElementById('prod-novo-titulo').value.trim();
+  const grupo  = document.getElementById('prod-novo-grupo').value;
+  const kit    = parseInt(document.getElementById('prod-novo-kit').value);
+  if (!sku || !titulo) { showErrE('prod-novo-error','SKU e título são obrigatórios.'); return; }
+  const res  = await fetch('/api/produtos/novo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sku, titulo, grupo, kit_size: kit }) });
+  const data = await res.json();
+  if (data.error) { showErrE('prod-novo-error', data.error); return; }
+  closeModalE('modal-prod-novo');
+  loadProdutosPage();
+}
+
+function openNovoGrupoModal() {
+  const nome = prompt('Nome do novo grupo (ex: Creatina Beta Pump):');
+  if (!nome || !nome.trim()) return;
+  const slug = nome.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+  if (!slug) { alert('Nome inválido.'); return; }
+  fetch('/api/grupos/novo', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ slug, display: nome.trim() }) })
+    .then(r => r.json()).then(d => { if (d.ok) loadProdutosPage(); else alert(d.error); });
+}
+
+// ── PIN Confirmation ───────────────────────────────────────────────────────────
+let _pinUser = CURRENT_USER;
+let _pinCallback = null;
+
+function requirePin(label, callback) {
+  _pinUser = CURRENT_USER;
+  _pinCallback = callback;
+  document.getElementById('pin-action-label').textContent = label;
+  document.getElementById('pin-modal-input').value = '';
+  document.getElementById('pin-user-display').textContent = _pinUser;
+  document.getElementById('pin-user-switch').style.display = 'none';
+  const sel = document.getElementById('pin-user-select');
+  sel.innerHTML = ALL_USERS.map(u => `<option value="${u}" ${u === _pinUser ? 'selected' : ''}>${u}</option>`).join('');
+  const errEl = document.getElementById('pin-modal-error');
+  errEl.textContent = ''; errEl.style.display = 'none';
+  document.getElementById('pin-confirm-btn').disabled = false;
+  document.getElementById('pin-confirm-btn').textContent = 'Confirmar';
+  document.getElementById('modal-pin').classList.add('open');
+  setTimeout(() => document.getElementById('pin-modal-input').focus(), 100);
+}
+
+function togglePinUserSwitch() {
+  const sw = document.getElementById('pin-user-switch');
+  sw.style.display = sw.style.display === 'none' ? 'block' : 'none';
+}
+
+function setPinUser(username) {
+  _pinUser = username;
+  document.getElementById('pin-user-display').textContent = username;
+  document.getElementById('pin-modal-input').value = '';
+  document.getElementById('pin-modal-input').focus();
+}
+
+async function confirmPin() {
+  const pin   = document.getElementById('pin-modal-input').value.trim();
+  const errEl = document.getElementById('pin-modal-error');
+  const btn   = document.getElementById('pin-confirm-btn');
+  if (!pin) { errEl.textContent = 'Digite seu PIN.'; errEl.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const res  = await fetch('/api/confirmar-pin', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ pin, username: _pinUser })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      errEl.textContent = data.error || 'PIN incorreto';
+      errEl.style.display = 'block';
+      document.getElementById('pin-modal-input').value = '';
+      document.getElementById('pin-modal-input').focus();
+      btn.disabled = false; btn.textContent = 'Confirmar';
+      return;
+    }
+    closeModalE('modal-pin');
+    if (_pinCallback) { const cb = _pinCallback; _pinCallback = null; cb(); }
+  } catch(e) {
+    errEl.textContent = 'Erro de conexão'; errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Confirmar';
+  }
+}
+
+// ── Movimentações ──────────────────────────────────────────────────────────────
+const _MOV_LABELS = {
+  lacrar:              { label: 'Lacrar Expedição',         color: '#6c5fff', bg: 'rgba(108,95,255,.1)' },
+  del_hist:            { label: 'Excluir Expedição',        color: '#e03e3e', bg: 'rgba(224,62,62,.1)'  },
+  del_hist_loja:       { label: 'Excluir Loja do Histórico',color: '#e03e3e', bg: 'rgba(224,62,62,.1)'  },
+  estoque_entrada:     { label: 'Entrada de Estoque',       color: '#00b876', bg: 'rgba(0,184,118,.1)'  },
+  estoque_saida_manual:{ label: 'Saída Manual',             color: '#d97706', bg: 'rgba(245,158,11,.1)' },
+  estoque_expedicao:   { label: 'Retirar do Estoque',       color: '#2b7ed4', bg: 'rgba(43,126,212,.1)' },
+  prod_novo:           { label: 'Novo Produto',             color: '#00b876', bg: 'rgba(0,184,118,.1)'  },
+  prod_deletar:        { label: 'Deletar Produto',          color: '#e03e3e', bg: 'rgba(224,62,62,.1)'  },
+  pin_falhou:          { label: 'PIN Inválido',             color: '#9b44d4', bg: 'rgba(155,68,212,.1)' },
+};
+
+async function loadMovimentacoes() {
+  const list = document.getElementById('mov-list');
+  list.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:20px 0;text-align:center;">Carregando...</div>';
+  const res  = await fetch('/api/auditoria');
+  const data = await res.json();
+  if (!data.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:30px 0;text-align:center;">Nenhuma movimentação registrada ainda.</div>';
+    return;
+  }
+  list.innerHTML = data.map(entry => {
+    const info = _MOV_LABELS[entry.acao] || { label: entry.acao, color: 'var(--muted)', bg: 'var(--bg)' };
+    const ts   = entry.ts ? new Date(entry.ts).toLocaleString('pt-BR') : '—';
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+      <div style="font-size:.7rem;color:var(--muted);min-width:130px;padding-top:2px;">${ts}</div>
+      <span style="background:rgba(108,95,255,.08);color:var(--accent);border-radius:6px;padding:2px 10px;font-size:.72rem;font-weight:700;flex-shrink:0;">${esc(entry.usuario || '?')}</span>
+      <span style="background:${info.bg};color:${info.color};border-radius:6px;padding:2px 10px;font-size:.72rem;font-weight:700;flex-shrink:0;">${info.label}</span>
+      <div style="flex:1;font-size:.78rem;color:var(--text);min-width:160px;">${esc(entry.descricao || '')}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Estoque Modal ──────────────────────────────────────────────────────────────
+let _estoqueModalSource = 'shopee';
+let _estoqueGruposAll = [];
+let _estoqueModalItems = [];
+// _estoqueModalItems: [{brand, display, units, lines: [{grupoReal, qty}]}]
+
+async function openEstoqueModal(source) {
+  _estoqueModalSource = source;
+  const processData = source === 'ml' ? mlCurrentProcessData : currentProcessData;
+  if (!processData) return;
+
+  const brandSummary = processData.brand_summary || processData.stats?.brand_summary || [];
+  const dateEl = source === 'ml'
+    ? document.getElementById('ml-lacrar-date')
+    : document.getElementById('lacrar-date');
+  const dateStr = dateEl ? dateEl.value : '';
+  const dateDisplay = dateStr
+    ? new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR')
+    : new Date().toLocaleDateString('pt-BR');
+  const plat = source === 'ml' ? 'Mercado Livre' : 'Shopee';
+
+  document.getElementById('estoque-modal-ctx').textContent = `Expedição ${plat} — ${dateDisplay}`;
+  document.getElementById('estoque-modal-error').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/estoque/grupos');
+    _estoqueGruposAll = await res.json();
+  } catch(e) {
+    _estoqueGruposAll = [];
+  }
+
+  const estoqueKeys = new Set(_estoqueGruposAll.map(g => g.grupo));
+  const filtered = brandSummary.filter(b => estoqueKeys.has(b.brand) && b.units > 0);
+
+  _estoqueModalItems = filtered.map(b => ({
+    brand: b.brand,
+    display: b.display,
+    units: b.units,
+    lines: [{ grupoReal: b.brand, qty: b.units }]
+  }));
+
+  renderEstoqueModalRows();
+  document.getElementById('estoque-modal').style.display = 'flex';
+}
+
+function _getGrupoQty(grupo) {
+  const g = _estoqueGruposAll.find(x => x.grupo === grupo);
+  return g ? g.quantidade : 0;
+}
+
+function _getGrupoDisplay(grupo) {
+  const g = _estoqueGruposAll.find(x => x.grupo === grupo);
+  return g ? g.display : grupo;
+}
+
+function renderEstoqueModalRows() {
+  const container = document.getElementById('estoque-modal-rows');
+  container.innerHTML = '';
+
+  if (!_estoqueModalItems.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:12px 0;">Nenhum produto desta expedição está cadastrado no estoque.</div>';
+    return;
+  }
+
+  _estoqueModalItems.forEach((item, idx) => {
+    const allocated = item.lines.reduce((s, l) => s + (parseInt(l.qty) || 0), 0);
+    const remaining = item.units - allocated;
+
+    // Find worst stock shortage across lines
+    let stockShortage = null;
+    item.lines.forEach(l => {
+      const avail = _getGrupoQty(l.grupoReal);
+      const lqty = parseInt(l.qty) || 0;
+      if (lqty > avail && (!stockShortage || (avail < stockShortage.avail))) {
+        stockShortage = { avail, faltam: lqty - avail, display: _getGrupoDisplay(l.grupoReal) };
+      }
+    });
+
+    let statusHtml;
+    if (stockShortage) {
+      statusHtml = `<span style="background:rgba(224,62,62,.1);color:var(--red);border-radius:6px;padding:3px 10px;font-size:.72rem;font-weight:700;">⚠ ${stockShortage.display}: disponível ${stockShortage.avail}, faltam ${stockShortage.faltam}</span>`;
+    } else if (allocated === item.units) {
+      statusHtml = `<span style="background:rgba(0,184,118,.12);color:var(--green);border-radius:6px;padding:3px 10px;font-size:.72rem;font-weight:700;">✓ Estoque OK</span>`;
+    } else {
+      statusHtml = `<span style="background:rgba(245,158,11,.12);color:#d97706;border-radius:6px;padding:3px 10px;font-size:.72rem;font-weight:700;">Alocado: ${allocated}/${item.units}${remaining > 0 ? ` — faltam ${remaining}` : ''}</span>`;
+    }
+
+    const linesHtml = item.lines.map((line, lIdx) => {
+      const grupoQty = _getGrupoQty(line.grupoReal);
+      const lqty = parseInt(line.qty) || 0;
+      const borderColor = lqty > grupoQty ? '#e03e3e' : (lqty > 0 && lqty <= grupoQty ? '#00b876' : '#e2e2ec');
+      const opts = _estoqueGruposAll.map(g =>
+        `<option value="${g.grupo}" ${g.grupo === line.grupoReal ? 'selected' : ''}>${g.display} (${g.quantidade} disp.)</option>`
+      ).join('');
+      const removeBtn = item.lines.length > 1
+        ? `<button onclick="_estoqueRemoveLine(${idx},${lIdx})" style="background:rgba(224,62,62,.1);border:none;border-radius:6px;color:var(--red);padding:5px 9px;font-size:.78rem;cursor:pointer;flex-shrink:0;">✕</button>`
+        : `<div style="width:32px;"></div>`;
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <select onchange="_estoqueUpdateLineSrc(${idx},${lIdx},this.value)"
+          style="flex:1;background:var(--surface);border:1.5px solid ${borderColor};border-radius:8px;color:var(--text);font-size:.78rem;padding:6px 8px;outline:none;">${opts}</select>
+        <input type="number" min="1" value="${line.qty || ''}"
+          oninput="_estoqueUpdateLineQty(${idx},${lIdx},this.value)"
+          style="width:62px;background:var(--surface);border:1.5px solid ${borderColor};border-radius:8px;color:var(--text);font-size:.82rem;padding:6px 8px;text-align:center;outline:none;" />
+        ${removeBtn}
+      </div>`;
+    }).join('');
+
+    const block = document.createElement('div');
+    block.style.cssText = 'background:var(--bg);border-radius:12px;padding:14px 16px;margin-bottom:14px;border:1px solid var(--border);';
+    block.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px;">
+        <div style="font-size:.88rem;font-weight:700;color:var(--text);">${item.display} <span style="color:var(--muted);font-weight:400;font-size:.78rem;">— ${item.units} un.</span></div>
+        ${statusHtml}
+      </div>
+      <div style="font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;letter-spacing:.04em;">Descontar de → Qtd</div>
+      ${linesHtml}
+      <button onclick="_estoqueAddLine(${idx})" style="background:rgba(108,95,255,.08);border:1px dashed #6c5fff;border-radius:8px;color:#6c5fff;padding:5px 14px;font-size:.75rem;font-weight:700;cursor:pointer;width:100%;margin-top:4px;">+ Adicionar linha</button>
+    `;
+    container.appendChild(block);
+  });
+}
+
+function _estoqueAddLine(idx) {
+  const item = _estoqueModalItems[idx];
+  const allocated = item.lines.reduce((s, l) => s + (parseInt(l.qty) || 0), 0);
+  const remaining = Math.max(0, item.units - allocated);
+  item.lines.push({ grupoReal: item.brand, qty: remaining });
+  renderEstoqueModalRows();
+}
+
+function _estoqueRemoveLine(idx, lIdx) {
+  _estoqueModalItems[idx].lines.splice(lIdx, 1);
+  renderEstoqueModalRows();
+}
+
+function _estoqueUpdateLineQty(idx, lIdx, val) {
+  _estoqueModalItems[idx].lines[lIdx].qty = parseInt(val) || 0;
+  renderEstoqueModalRows();
+}
+
+function _estoqueUpdateLineSrc(idx, lIdx, val) {
+  _estoqueModalItems[idx].lines[lIdx].grupoReal = val;
+  renderEstoqueModalRows();
+}
+
+function closeEstoqueModal() {
+  document.getElementById('estoque-modal').style.display = 'none';
+}
+
+async function confirmEstoque() {
+  const errEl = document.getElementById('estoque-modal-error');
+  const errors = [];
+
+  _estoqueModalItems.forEach(item => {
+    const allocated = item.lines.reduce((s, l) => s + (parseInt(l.qty) || 0), 0);
+    if (allocated !== item.units) {
+      errors.push(`${item.display}: alocado ${allocated} de ${item.units}`);
+    }
+    item.lines.forEach(l => {
+      const avail = _getGrupoQty(l.grupoReal);
+      const lqty = parseInt(l.qty) || 0;
+      if (lqty > avail) {
+        errors.push(`${_getGrupoDisplay(l.grupoReal)}: disponível ${avail}, solicitado ${lqty}`);
+      }
+    });
+  });
+
+  if (errors.length) {
+    errEl.textContent = errors.join(' | ');
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  const dateEl = _estoqueModalSource === 'ml'
+    ? document.getElementById('ml-lacrar-date')
+    : document.getElementById('lacrar-date');
+  const dateStr = dateEl ? dateEl.value : '';
+  const dateDisplay = dateStr
+    ? new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR')
+    : new Date().toLocaleDateString('pt-BR');
+  const plat = _estoqueModalSource === 'ml' ? 'Mercado Livre' : 'Shopee';
+  const contexto = `Expedição ${plat} ${dateDisplay}`;
+
+  const itens = [];
+  _estoqueModalItems.forEach(item => {
+    item.lines.forEach(l => {
+      itens.push({
+        grupo_original: item.brand,
+        display_original: item.display,
+        grupo_real: l.grupoReal,
+        quantidade: parseInt(l.qty) || 0
+      });
+    });
+  });
+
+  if (!itens.length) { closeEstoqueModal(); return; }
+
+  const btn = document.getElementById('estoque-modal-confirm');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  try {
+    const res = await fetch('/api/estoque/saida-expedicao', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ itens, contexto })
+    });
+    const data = await res.json();
+    if (data.error) {
+      errEl.textContent = data.error;
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.textContent = '✓ Confirmar Retirada';
+      return;
+    }
+    closeEstoqueModal();
+    const statusEl = _estoqueModalSource === 'ml'
+      ? null
+      : document.getElementById('retirar-status');
+    if (statusEl) statusEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = '✓ Confirmar Retirada';
+  } catch(e) {
+    errEl.textContent = 'Erro: ' + e.message;
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = '✓ Confirmar Retirada';
+  }
+}
+
+document.getElementById('estoque-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('estoque-modal')) closeEstoqueModal();
+});
+
 // ── Mobile menu ────────────────────────────────────────────────────────────────
 function toggleMobileMenu() {
   const sidebar  = document.querySelector('.sidebar');
