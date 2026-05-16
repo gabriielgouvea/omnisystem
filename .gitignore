@@ -22,14 +22,18 @@ venv/
 .secret_key
 users.json
 
-# Estoque (dados operacionais, variam por servidor)
+# Estoque / configuração (dados operacionais, variam por servidor)
 estoque.json
 historico_estoque.json
 auditoria.json
+brands.json
+mappings.json
 
 # Arquivos locais / debug
 debug_*.py
+debug_*.json
 tracking_log.json
 tracking_index.json
 *.docx
 test_*.pdf
+conferido.png

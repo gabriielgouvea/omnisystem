@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OMNI — Estoque</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #f2f2f7;
+      --surface: #ffffff;
+      --border:  #e2e2ec;
+      --border2: #d0d0e4;
+      --text:    #1a1a2e;
+      --muted:   #8888a8;
+      --accent:  #6c5fff;
+      --accent-h:#5546ee;
+      --green:   #00b876;
+      --red:     #e03e3e;
+      --yellow:  #d47a00;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* Topbar */
+    .topbar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 56px; display: flex; align-items: center; gap: 14px;
+      position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .logo-mark {
+      width: 30px; height: 30px; border-radius: 8px; background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 900; font-size: .9rem; flex-shrink: 0;
+    }
+    .topbar-title { font-size: .95rem; font-weight: 900; letter-spacing: 1.5px; color: var(--accent); }
+    .topbar-sep   { font-size: .9rem; color: var(--border2); }
+    .topbar-page  { font-size: .9rem; font-weight: 700; color: var(--text); }
+    .back-btn {
+      color: var(--muted); text-decoration: none; font-size: .82rem; font-weight: 700;
+      display: flex; align-items: center; gap: 5px; padding: 6px 12px;
+      border-radius: 8px; border: 1px solid var(--border2); background: var(--surface);
+      transition: all .15s; cursor: pointer;
+    }
+    .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 20px; border-radius: 9px; border: none;
+      font-size: .84rem; font-weight: 700; cursor: pointer;
+      transition: opacity .15s; font-family: inherit;
+    }
+    .btn:hover { opacity: .88; }
+    .btn:disabled { opacity: .4; cursor: default; pointer-events: none; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-ghost   { background: var(--surface); color: var(--muted); border: 1px solid var(--border2); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border2); opacity: 1; }
+    .btn-danger  { background: rgba(224,62,62,.09); color: var(--red); border: 1px solid rgba(224,62,62,.25); }
+    .btn-danger:hover { background: rgba(224,62,62,.15); opacity: 1; }
+
+    /* Layout */
+    .page { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+
+    /* Section label */
+    .section-label {
+      font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px;
+      color: var(--muted); margin-bottom: 14px;
+    }
+
+    /* Stock cards */
+    .stock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .stock-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04); position: relative;
+    }
+    .stock-card.negative { border-color: rgba(224,62,62,.35); background: rgba(224,62,62,.03); }
+    .stock-name { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 10px; }
+    .stock-qty  { font-size: 2.6rem; font-weight: 900; line-height: 1; color: var(--text); margin-bottom: 4px; }
+    .stock-card.negative .stock-qty { color: var(--red); }
+    .stock-unit { font-size: .72rem; color: var(--muted); margin-bottom: 12px; }
+    .stock-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: .68rem; font-weight: 700; padding: 3px 9px; border-radius: 20px;
+    }
+    .badge-ok  { background: rgba(0,184,118,.1);  color: var(--green); }
+    .badge-neg { background: rgba(224,62,62,.1);  color: var(--red); cursor: pointer; }
+    .badge-neg:hover { background: rgba(224,62,62,.18); }
+
+    /* Card */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04); margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+    }
+    .count-pill {
+      background: var(--bg); border: 1px solid var(--border2);
+      color: var(--muted); font-size: .68rem; font-weight: 700;
+      padding: 2px 9px; border-radius: 20px;
+    }
+
+    /* History table */
+    .hist-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .hist-table th {
+      padding: 9px 14px; text-align: left; font-size: .68rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .8px; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .hist-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text); }
+    .hist-table tr:last-child td { border-bottom: none; }
+    .hist-table tr:hover td { background: var(--bg); }
+    .tipo-badge {
+      display: inline-block; padding: 2px 9px; border-radius: 20px;
+      font-size: .68rem; font-weight: 700; text-transform: uppercase;
+    }
+    .tipo-entrada         { background: rgba(0,184,118,.1);   color: var(--green); }
+    .tipo-saida_manual    { background: rgba(212,122,0,.1);   color: var(--yellow); }
+    .tipo-saida_expedicao { background: rgba(108,95,255,.1);  color: var(--accent); }
+    .item-tag {
+      display: inline-block; background: var(--bg); border: 1px solid var(--border2);
+      color: var(--muted); border-radius: 6px; padding: 2px 8px;
+      font-size: .7rem; margin: 2px 2px 2px 0;
+    }
+    .item-tag.subst { border-color: rgba(108,95,255,.3); color: var(--accent); }
+    .ts-col { color: var(--muted); font-size: .76rem; white-space: nowrap; }
+    .user-col { font-weight: 700; }
+
+    /* Modals */
+    .modal-bg {
+      display: none; position: fixed; inset: 0;
+      background: rgba(26,26,46,.4); z-index: 300;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-bg.open { display: flex; }
+    .modal-box {
+      background: var(--surface); border-radius: 16px; padding: 28px;
+      width: 100%; max-width: 500px; position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,.12); border: 1px solid var(--border);
+    }
+    .modal-close {
+      position: absolute; top: 14px; right: 16px; background: none; border: none;
+      color: var(--muted); font-size: 1.1rem; cursor: pointer; line-height: 1;
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px;
+    }
+    .modal-close:hover { background: var(--bg); color: var(--text); }
+    .modal-title { font-size: .95rem; font-weight: 800; color: var(--text); margin-bottom: 20px; }
+    .field-label {
+      display: block; font-size: .68rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted); margin-bottom: 6px;
+    }
+    input[type="number"], input[type="text"], select, textarea {
+      width: 100%; background: var(--bg); border: 1.5px solid var(--border2);
+      border-radius: 9px; color: var(--text); font-size: .88rem;
+      padding: 10px 12px; outline: none; font-family: inherit; margin-bottom: 14px;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(108,95,255,.08); }
+    textarea { resize: vertical; min-height: 72px; }
+    select option { background: var(--surface); }
+
+    .entrada-row {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;
+    }
+    .entrada-label { flex: 1; font-size: .86rem; font-weight: 600; color: var(--text); }
+    .entrada-qty   { width: 90px; margin-bottom: 0 !important; text-align: center; }
+
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+    .error-msg {
+      background: rgba(224,62,62,.07); border: 1px solid rgba(224,62,62,.25);
+      border-radius: 8px; color: var(--red); font-size: .78rem;
+      padding: 8px 12px; margin-bottom: 12px; display: none;
+    }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); font-size: .86rem; }
+
+    @media (max-width: 520px) {
+      .stock-grid { grid-template-columns: repeat(2, 1fr); }
+      .topbar { padding: 0 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo-mark">O</div>
+  <div class="topbar-title">OMNI</div>
+  <div class="topbar-sep">/</div>
+  <div class="topbar-page">Estoque</div>
+  <div style="flex:1;"></div>
+  <button class="btn btn-ghost" onclick="openSaida()" style="margin-right:6px;">− Saída Manual</button>
+  <button class="btn btn-primary" onclick="openEntrada()">+ Entrada</button>
+  <a href="/" class="back-btn" style="margin-left:10px;">← Voltar</a>
+</div>
+
+<div class="page">
+
+  <!-- Stock cards -->
+  <div class="section-label">Estoque Atual</div>
+  <div class="stock-grid">
+    {% for grupo, info in estoque.items() %}
+    {% set qty = info.quantidade %}
+    {% set neg = qty < 0 %}
+    <div class="stock-card {% if neg %}negative{% endif %}">
+      <div class="stock-name">{{ info.display }}</div>
+      <div class="stock-qty">{{ qty }}</div>
+      <div class="stock-unit">unidades em estoque</div>
+      {% if neg %}
+      <div class="stock-badge badge-neg">⚠ Negativo — faltam {{ qty|abs }}</div>
+      {% else %}
+      <div class="stock-badge badge-ok">✓ OK</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <div class="card-title">
+      Histórico de Movimentações
+      <span class="count-pill">{{ historico|length }} registros</span>
+    </div>
+    {% if historico %}
+    <table class="hist-table">
+      <thead>
+        <tr>
+          <th>Data / Hora</th>
+          <th>Usuário</th>
+          <th>Tipo</th>
+          <th>Itens</th>
+          <th>Contexto / Justificativa</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for mov in historico %}
+        <tr>
+          <td class="ts-col">{{ mov.ts_fmt }}</td>
+          <td class="user-col">{{ mov.usuario }}</td>
+          <td>
+            <span class="tipo-badge tipo-{{ mov.tipo }}">
+              {% if mov.tipo == 'entrada' %}Entrada
+              {% elif mov.tipo == 'saida_manual' %}Saída Manual
+              {% else %}Expedição
+              {% endif %}
+            </span>
+          </td>
+          <td>
+            {% for item in mov.itens %}
+              {% if item.grupo_original and item.grupo_original != item.grupo %}
+                <span class="item-tag subst" title="Substituído de: {{ item.display_original }}">
+                  {{ item.quantidade }}× {{ item.display }} ↔ {{ item.display_original }}
+                </span>
+              {% else %}
+                <span class="item-tag">{{ item.quantidade }}× {{ item.display }}</span>
+              {% endif %}
+            {% endfor %}
+          </td>
+          <td style="color:var(--muted);font-size:.78rem;">{{ mov.justificativa or mov.contexto or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">Nenhuma movimentação registrada ainda.</div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Modal: Entrada -->
+<div class="modal-bg" id="modal-entrada">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-entrada')">✕</button>
+    <div class="modal-title">+ Entrada de Produtos</div>
+    <div class="error-msg" id="entrada-error"></div>
+    {% for grupo, info in estoque.items() %}
+    <div class="entrada-row">
+      <div class="entrada-label">{{ info.display }}</div>
+      <input type="number" class="entrada-qty" id="entrada-{{ grupo }}"
+             min="0" value="0" data-grupo="{{ grupo }}" data-display="{{ info.display }}"/>
+    </div>
+    {% endfor %}
+    <div class="modal-footer" style="margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-entrada')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitEntrada()">Confirmar Entrada</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Saída Manual -->
+<div class="modal-bg" id="modal-saida">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-saida')">✕</button>
+    <div class="modal-title">− Saída Manual</div>
+    <div class="error-msg" id="saida-error"></div>
+    <div>
+      <label class="field-label">Produto</label>
+      <select id="saida-grupo">
+        {% for grupo, info in estoque.items() %}
+        <option value="{{ grupo }}">{{ info.display }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="field-label">Quantidade</label>
+      <input type="number" id="saida-qty" min="1" value="1"/>
+    </div>
+    <div>
+      <label class="field-label">Justificativa (obrigatória)</label>
+      <textarea id="saida-just" placeholder="Ex: AVARIA, AMOSTRA, BRINDE..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-saida')">Cancelar</button>
+      <button class="btn btn-danger" onclick="submitSaida()">Confirmar Saída</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openEntrada() {
+    document.querySelectorAll('.entrada-qty').forEach(i => i.value = 0);
+    document.getElementById('entrada-error').style.display = 'none';
+    document.getElementById('modal-entrada').classList.add('open');
+  }
+  function openSaida() {
+    document.getElementById('saida-qty').value = 1;
+    document.getElementById('saida-just').value = '';
+    document.getElementById('saida-error').style.display = 'none';
+    document.getElementById('modal-saida').classList.add('open');
+  }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-bg').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  async function submitEntrada() {
+    const itens = [];
+    document.querySelectorAll('.entrada-qty').forEach(inp => {
+      const qtd = parseInt(inp.value) || 0;
+      if (qtd > 0) itens.push({ grupo: inp.dataset.grupo, display: inp.dataset.display, quantidade: qtd });
+    });
+    if (!itens.length) { showErr('entrada-error', 'Informe ao menos uma quantidade maior que zero.'); return; }
+    const res = await fetch('/api/estoque/entrada', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ itens })
+    });
+    const data = await res.json();
+    if (data.error) { showErr('entrada-error', data.error); return; }
+    location.reload();
+  }
+
+  async function submitSaida() {
+    const grupo = document.getElementById('saida-grupo').value;
+    const qtd   = parseInt(document.getElementById('saida-qty').value) || 0;
+    const just  = document.getElementById('saida-just').value.trim();
+    if (!just) { showErr('saida-error', 'Justificativa obrigatória.'); return; }
+    if (qtd <= 0) { showErr('saida-error', 'Informe uma quantidade válida.'); return; }
+    const res = await fetch('/api/estoque/saida-manual', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ grupo, quantidade: qtd, justificativa: just })
+    });
+    const data = await res.json();
+    if (data.error) { showErr('saida-error', data.error); return; }
+    location.reload();
+  }
+
+  function showErr(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg; el.style.display = 'block';
+  }
+</script>
+</body>
+</html>

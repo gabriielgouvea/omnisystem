@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OMNI — Produtos</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #f2f2f7;
+      --surface: #ffffff;
+      --border:  #e2e2ec;
+      --border2: #d0d0e4;
+      --text:    #1a1a2e;
+      --muted:   #8888a8;
+      --accent:  #6c5fff;
+      --accent-h:#5546ee;
+      --green:   #00b876;
+      --red:     #e03e3e;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* Topbar */
+    .topbar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 56px; display: flex; align-items: center; gap: 14px;
+      position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .logo-mark {
+      width: 30px; height: 30px; border-radius: 8px; background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 900; font-size: .9rem; flex-shrink: 0;
+    }
+    .topbar-title { font-size: .95rem; font-weight: 900; letter-spacing: 1.5px; color: var(--accent); }
+    .topbar-sep   { color: var(--border2); }
+    .topbar-page  { font-size: .9rem; font-weight: 700; color: var(--text); }
+    .back-btn {
+      color: var(--muted); text-decoration: none; font-size: .82rem; font-weight: 700;
+      display: flex; align-items: center; gap: 5px; padding: 6px 12px;
+      border-radius: 8px; border: 1px solid var(--border2); background: var(--surface);
+      transition: all .15s; cursor: pointer;
+    }
+    .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 20px; border-radius: 9px; border: none;
+      font-size: .84rem; font-weight: 700; cursor: pointer;
+      transition: opacity .15s; font-family: inherit;
+    }
+    .btn:hover { opacity: .88; }
+    .btn:disabled { opacity: .4; cursor: default; pointer-events: none; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-ghost   { background: var(--surface); color: var(--muted); border: 1px solid var(--border2); }
+    .btn-ghost:hover { color: var(--text); opacity: 1; }
+
+    /* Page */
+    .page { padding: 24px 20px 60px; overflow-x: auto; }
+
+    /* Groups wrapper */
+    .grupos-wrap { display: flex; gap: 16px; align-items: flex-start; min-width: max-content; }
+
+    /* Group column */
+    .grupo-col {
+      background: var(--surface); border-radius: 14px; width: 280px; flex-shrink: 0;
+      border: 1.5px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.04);
+      overflow: hidden;
+    }
+    .grupo-col.drag-over { border-color: var(--accent); background: rgba(108,95,255,.03); }
+    .grupo-header {
+      padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border); background: var(--surface);
+    }
+    .grupo-name  { font-size: .82rem; font-weight: 800; color: var(--text); text-transform: uppercase; letter-spacing: .5px; }
+    .grupo-count {
+      background: var(--bg); border: 1px solid var(--border2); color: var(--muted);
+      font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+    }
+    .grupo-items { padding: 8px; min-height: 80px; }
+
+    /* Product item */
+    .prod-item {
+      background: var(--bg); border-radius: 9px; padding: 10px 12px; margin-bottom: 6px;
+      border: 1px solid var(--border); cursor: grab; user-select: none;
+      display: flex; align-items: flex-start; gap: 8px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .prod-item:hover { border-color: var(--accent); box-shadow: 0 1px 6px rgba(108,95,255,.1); }
+    .prod-item.dragging { opacity: .4; }
+    .prod-drag-handle { color: var(--border2); font-size: .9rem; padding-top: 2px; flex-shrink: 0; }
+    .prod-info { flex: 1; min-width: 0; }
+    .prod-titulo { font-size: .78rem; font-weight: 600; color: var(--text); line-height: 1.35; margin-bottom: 4px; }
+    .prod-sku    { font-size: .68rem; color: var(--muted); font-family: monospace; background: var(--surface); border: 1px solid var(--border); padding: 1px 6px; border-radius: 4px; display: inline-block; }
+    .prod-kit    {
+      display: inline-block; background: rgba(108,95,255,.1); color: var(--accent);
+      font-size: .62rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; margin-top: 4px;
+    }
+    .prod-actions { display: flex; gap: 4px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
+    .prod-item:hover .prod-actions { opacity: 1; }
+    .del-btn {
+      background: rgba(224,62,62,.1); color: var(--red); border: none; border-radius: 6px;
+      padding: 3px 7px; font-size: .7rem; cursor: pointer; font-weight: 700;
+    }
+    .del-btn:hover { background: rgba(224,62,62,.2); }
+
+    /* Add group */
+    .add-grupo-col {
+      background: transparent; border: 2px dashed var(--border2); border-radius: 14px;
+      width: 200px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      min-height: 120px; cursor: pointer; color: var(--muted); font-size: .82rem; font-weight: 700;
+      gap: 6px; transition: border-color .15s, color .15s;
+    }
+    .add-grupo-col:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Modals */
+    .modal-bg {
+      display: none; position: fixed; inset: 0;
+      background: rgba(26,26,46,.35); z-index: 300;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-bg.open { display: flex; }
+    .modal-box {
+      background: var(--surface); border-radius: 16px; padding: 28px;
+      width: 100%; max-width: 460px; position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,.1); border: 1px solid var(--border);
+    }
+    .modal-close {
+      position: absolute; top: 14px; right: 16px; background: none; border: none;
+      color: var(--muted); font-size: 1.1rem; cursor: pointer;
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px;
+    }
+    .modal-close:hover { background: var(--bg); color: var(--text); }
+    .modal-title { font-size: .95rem; font-weight: 800; color: var(--text); margin-bottom: 20px; }
+    .field-label {
+      display: block; font-size: .68rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted); margin-bottom: 6px;
+    }
+    input[type="text"], input[type="number"], select {
+      width: 100%; background: var(--bg); border: 1.5px solid var(--border2);
+      border-radius: 9px; color: var(--text); font-size: .88rem;
+      padding: 10px 12px; outline: none; font-family: inherit; margin-bottom: 14px;
+    }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(108,95,255,.08); }
+    input[readonly] { opacity: .6; cursor: not-allowed; }
+    select option { background: var(--surface); }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+    .error-msg {
+      background: rgba(224,62,62,.07); border: 1px solid rgba(224,62,62,.25);
+      border-radius: 8px; color: var(--red); font-size: .78rem;
+      padding: 8px 12px; margin-bottom: 12px; display: none;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--surface); border: 1px solid var(--green); border-radius: 10px;
+      color: var(--green); font-size: .82rem; font-weight: 700; padding: 10px 22px;
+      z-index: 9999; display: none; box-shadow: 0 8px 24px rgba(0,0,0,.1);
+    }
+    .toast.show { display: block; }
+
+    @media (max-width: 600px) {
+      .grupos-wrap { min-width: unset; flex-direction: column; }
+      .grupo-col, .add-grupo-col { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo-mark">O</div>
+  <div class="topbar-title">OMNI</div>
+  <div class="topbar-sep">/</div>
+  <div class="topbar-page">Produtos</div>
+  <div style="flex:1;"></div>
+  <button class="btn btn-primary" onclick="openNovoProduto()">+ Novo Produto</button>
+  <a href="/" class="back-btn" style="margin-left:10px;">← Voltar</a>
+</div>
+
+<div class="page">
+  <div class="grupos-wrap" id="grupos-wrap">
+
+    {% for cat, grupo in grupos %}
+    <div class="grupo-col" id="col-{{ cat }}"
+         data-grupo="{{ cat }}"
+         ondragover="onDragOver(event, this)"
+         ondragleave="onDragLeave(this)"
+         ondrop="onDrop(event, '{{ cat }}')">
+      <div class="grupo-header">
+        <span class="grupo-name">{{ grupo.display }}</span>
+        <span class="grupo-count" id="count-{{ cat }}">{{ grupo.itens|length }}</span>
+      </div>
+      <div class="grupo-items" id="items-{{ cat }}">
+        {% for item in grupo.itens %}
+        <div class="prod-item"
+             draggable="true"
+             data-key="{{ item.key }}"
+             data-titulo="{{ item.titulo }}"
+             data-sku="{{ item.sku }}"
+             data-grupo="{{ cat }}"
+             ondragstart="onDragStart(event, this)">
+          <div class="prod-drag-handle">⠿</div>
+          <div class="prod-info">
+            <div class="prod-titulo">{{ item.titulo }}</div>
+            <span class="prod-sku">{{ item.sku }}</span>
+            {% if item.kit_size > 1 %}
+            <span class="prod-kit">Kit {{ item.kit_size }}</span>
+            {% endif %}
+          </div>
+          <div class="prod-actions">
+            <button class="del-btn" onclick="deleteProd('{{ item.key }}', '{{ item.titulo|replace("'", "\\'") }}')">✕</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="add-grupo-col" onclick="openNovoGrupo()">+ Novo Grupo</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Modal: Novo Produto -->
+<div class="modal-bg" id="modal-novo-prod">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-novo-prod')">✕</button>
+    <div class="modal-title">+ Novo Produto</div>
+    <div class="error-msg" id="prod-error"></div>
+    <label class="field-label">SKU</label>
+    <input type="text" id="prod-sku" placeholder="Ex: BLCK15"/>
+    <label class="field-label">Título completo</label>
+    <input type="text" id="prod-titulo" placeholder="Ex: Creatina Black Skull Turbo 300g"/>
+    <label class="field-label">Grupo</label>
+    <select id="prod-grupo">
+      {% for cat, grupo in grupos %}
+      <option value="{{ cat }}">{{ grupo.display }}</option>
+      {% endfor %}
+    </select>
+    <label class="field-label">Kit size</label>
+    <select id="prod-kit">
+      <option value="1">1 unidade</option>
+      <option value="2">Kit 2</option>
+      <option value="3">Kit 3</option>
+      <option value="4">Kit 4</option>
+      <option value="5">Kit 5</option>
+    </select>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-novo-prod')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitNovoProduto()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Novo Grupo -->
+<div class="modal-bg" id="modal-novo-grupo">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-novo-grupo')">✕</button>
+    <div class="modal-title">+ Novo Grupo de Produtos</div>
+    <div class="error-msg" id="grupo-error"></div>
+    <label class="field-label">Nome de exibição</label>
+    <input type="text" id="grupo-display" placeholder="Ex: Creatina Beta Pump"/>
+    <label class="field-label">Slug interno (gerado automaticamente)</label>
+    <input type="text" id="grupo-slug" placeholder="Ex: betapump" readonly/>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-novo-grupo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitNovoGrupo()">Criar Grupo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let dragKey = null, dragOriginGrupo = null;
+
+  function onDragStart(e, el) {
+    dragKey = el.dataset.key;
+    dragOriginGrupo = el.dataset.grupo;
+    el.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragKey);
+    setTimeout(() => el.classList.remove('dragging'), 0);
+  }
+  function onDragOver(e, col) { e.preventDefault(); col.classList.add('drag-over'); }
+  function onDragLeave(col) { col.classList.remove('drag-over'); }
+
+  async function onDrop(e, novoGrupo) {
+    e.preventDefault();
+    const col = document.getElementById('col-' + novoGrupo);
+    if (col) col.classList.remove('drag-over');
+    if (!dragKey || novoGrupo === dragOriginGrupo) return;
+    const el = document.querySelector(`[data-key="${CSS.escape(dragKey)}"]`);
+    if (!el) return;
+    const res = await fetch('/api/produtos/mover', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ key: dragKey, grupo: novoGrupo })
+    });
+    const data = await res.json();
+    if (data.error) { showToast('Erro: ' + data.error, true); return; }
+    const destItems = document.getElementById('items-' + novoGrupo);
+    if (destItems) { el.dataset.grupo = novoGrupo; destItems.appendChild(el); }
+    updateCount(dragOriginGrupo); updateCount(novoGrupo);
+    showToast('Produto movido!');
+    dragKey = null; dragOriginGrupo = null;
+  }
+
+  function updateCount(grupo) {
+    const items = document.getElementById('items-' + grupo);
+    const count = document.getElementById('count-' + grupo);
+    if (items && count) count.textContent = items.querySelectorAll('.prod-item').length;
+  }
+
+  async function deleteProd(key, titulo) {
+    if (!confirm(`Remover "${titulo}"?\nEsta ação é irreversível.`)) return;
+    const res = await fetch('/api/produtos/deletar', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ key })
+    });
+    const data = await res.json();
+    if (data.error) { showToast('Erro: ' + data.error, true); return; }
+    const el = document.querySelector(`[data-key="${CSS.escape(key)}"]`);
+    if (el) { const g = el.dataset.grupo; el.remove(); updateCount(g); }
+    showToast('Produto removido.');
+  }
+
+  function openNovoProduto() {
+    ['prod-sku','prod-titulo'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('prod-kit').value = '1';
+    document.getElementById('prod-error').style.display = 'none';
+    document.getElementById('modal-novo-prod').classList.add('open');
+    setTimeout(() => document.getElementById('prod-sku').focus(), 100);
+  }
+  function openNovoGrupo() {
+    ['grupo-display','grupo-slug'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('grupo-error').style.display = 'none';
+    document.getElementById('modal-novo-grupo').classList.add('open');
+    setTimeout(() => document.getElementById('grupo-display').focus(), 100);
+  }
+
+  document.getElementById('grupo-display').addEventListener('input', function() {
+    document.getElementById('grupo-slug').value = this.value.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+  });
+
+  async function submitNovoProduto() {
+    const sku    = document.getElementById('prod-sku').value.trim();
+    const titulo = document.getElementById('prod-titulo').value.trim();
+    const grupo  = document.getElementById('prod-grupo').value;
+    const kit    = parseInt(document.getElementById('prod-kit').value);
+    if (!sku || !titulo) { showErrModal('prod-error', 'SKU e título são obrigatórios.'); return; }
+    const res = await fetch('/api/produtos/novo', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ sku, titulo, grupo, kit_size: kit })
+    });
+    const data = await res.json();
+    if (data.error) { showErrModal('prod-error', data.error); return; }
+    closeModal('modal-novo-prod');
+    showToast('Produto adicionado!');
+    setTimeout(() => location.reload(), 800);
+  }
+
+  async function submitNovoGrupo() {
+    const display = document.getElementById('grupo-display').value.trim();
+    const slug    = document.getElementById('grupo-slug').value.trim();
+    if (!display || !slug) { showErrModal('grupo-error', 'Nome é obrigatório.'); return; }
+    const res = await fetch('/api/grupos/novo', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ slug, display })
+    });
+    const data = await res.json();
+    if (data.error) { showErrModal('grupo-error', data.error); return; }
+    closeModal('modal-novo-grupo');
+    showToast('Grupo criado!');
+    setTimeout(() => location.reload(), 800);
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-bg').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+  function showErrModal(id, msg) {
+    const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block';
+  }
+  let toastTimer;
+  function showToast(msg, isErr = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.borderColor = isErr ? 'var(--red)' : 'var(--green)';
+    t.style.color       = isErr ? 'var(--red)' : 'var(--green)';
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+</script>
+</body>
+</html>
