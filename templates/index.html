@@ -3829,7 +3829,7 @@ updateCaixasList();
 
 // ── What's New popup ─────────────────────────────────────────────────────────
 (function checkWhatsNew() {
-  const VERSION_KEY = 'omni_seen_v4_desfazer';
+  const VERSION_KEY = 'omni_v5_estoque_' + (CURRENT_USER || 'all');
   if (localStorage.getItem(VERSION_KEY)) return;
   setTimeout(() => {
     document.getElementById('modal-whats-new').classList.add('open');
@@ -3838,7 +3838,7 @@ updateCaixasList();
 })();
 
 function closeWhatsNew() {
-  localStorage.setItem('omni_seen_v4_desfazer', '1');
+  localStorage.setItem('omni_v5_estoque_' + (CURRENT_USER || 'all'), '1');
   const modal = document.getElementById('modal-whats-new');
   modal.style.opacity = '0';
   modal.style.transition = 'opacity .3s';
