@@ -45,7 +45,7 @@
       background: var(--surface); border-right: 1px solid var(--border);
       display: flex; flex-direction: column;
       position: fixed; top: 0; left: 0; bottom: 0; z-index: 200;
-      overflow-y: auto;
+      overflow: hidden;
     }
     .sidebar-logo {
       padding: 20px 18px 16px; border-bottom: 1px solid var(--border);
@@ -58,7 +58,7 @@
     }
     .sidebar-logo-text { font-size: 1rem; font-weight: 900; letter-spacing: 2px; color: var(--accent); }
     .sidebar-logo-sub  { font-size: .63rem; color: var(--muted); font-weight: 500; }
-    .sidebar-nav { flex: 1; padding: 10px 8px 20px; }
+    .sidebar-nav { flex: 1; padding: 10px 8px 20px; overflow-y: auto; }
     .nav-group { margin-bottom: 2px; }
     .nav-item {
       display: flex; align-items: center; gap: 10px;
