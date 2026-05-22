@@ -102,11 +102,11 @@
     .page-section {
       width: 100%; display: flex; flex-direction: column; align-items: center;
     }
-    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes, #page-cortar, #page-caixas, #page-ml-full, #page-estoque, #page-produtos, #page-movimentacoes {
+    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes, #page-cortar, #page-caixas, #page-estoque, #page-produtos, #page-movimentacoes {
       display: none;
     }
     #page-dashboard.active, #page-separacao.active, #page-localizador.active,
-    #page-historico.active, #page-ajustes.active, #page-cortar.active, #page-caixas.active, #page-ml-full.active,
+    #page-historico.active, #page-ajustes.active, #page-cortar.active, #page-caixas.active,
     #page-estoque.active, #page-produtos.active, #page-movimentacoes.active { display: flex; }
 
     /* ── Separação sub-nav ── */
@@ -889,6 +889,16 @@
             </div>
             Mercado Livre
           </button>
+          <button class="nav-sub-item" id="nav-mlc2">
+            <div class="nav-sub-logo">
+              <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+                <rect width="28" height="28" rx="7" fill="#003087"/>
+                <rect x="5" y="8" width="18" height="13" rx="2" fill="none" stroke="white" stroke-width="1.8"/>
+                <path d="M5 10 L14 16 L23 10" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            ML/CORREIOS
+          </button>
           <button class="nav-sub-item dev" id="nav-tiktok">
             <div class="nav-sub-logo">
               <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
@@ -911,9 +921,6 @@
       </button>
       <button class="nav-item" id="nav-cortar">
         <span class="nav-icon">✂</span> Cortar Etiquetas
-      </button>
-      <button class="nav-item" id="nav-ml-full">
-        <span class="nav-icon">✂</span> Cortar ML Full
       </button>
       <button class="nav-item" id="nav-caixas">
         <span class="nav-icon">📦</span> Caixas
@@ -1111,6 +1118,16 @@
           </svg>
         </div>
         Mercado Livre
+      </button>
+      <button class="sep-tab" id="sep-tab-mlc2">
+        <div class="sep-tab-logo">
+          <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="7" fill="#003087"/>
+            <rect x="5" y="8" width="18" height="13" rx="2" fill="none" stroke="white" stroke-width="1.8"/>
+            <path d="M5 10 L14 16 L23 10" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        ML/CORREIOS
       </button>
       <button class="sep-tab dev" id="sep-tab-tiktok">
         <div class="sep-tab-logo">
@@ -1380,6 +1397,120 @@
 
     </div><!-- /sep-ml -->
 
+    <!-- ─── ML/CORREIOS ─── -->
+    <div id="sep-mlc2" style="width:100%;display:none;flex-direction:column;align-items:center;">
+
+    <!-- mlc2 — 1. Upload -->
+    <div class="card" id="mlc2-upload-card">
+      <div class="card-title">1 — Upload do PDF Cortado (Correios)</div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px;">
+        Envie o PDF já processado pela função "Extrair Etiquetas" em Cortar Etiquetas → ML/CORREIOS (sem NFs, etiquetas + checklist).
+      </p>
+      <div id="mlc2-drop-zone" style="border:2px dashed var(--border2);border-radius:10px;padding:40px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;">
+        <div style="font-size:2rem;margin-bottom:10px;">📬</div>
+        <p style="font-size:.95rem;font-weight:600;color:var(--text);">Arraste o PDF aqui ou clique para selecionar</p>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:4px;">Selecione um ou mais PDFs cortados (.pdf)</p>
+      </div>
+      <input type="file" id="mlc2-file-input" accept=".pdf" multiple style="display:none;" />
+      <div id="mlc2-file-list" style="margin-top:12px;display:flex;flex-direction:column;gap:5px;"></div>
+      <div id="mlc2-status" style="font-size:.82rem;color:var(--muted);margin-top:10px;min-height:18px;"></div>
+    </div>
+
+    <!-- mlc2 — 2. Classificar -->
+    <div class="card" id="mlc2-classify-card" style="display:none;">
+      <div class="card-title">2 — Classificar Produtos Novos</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">
+        Esses produtos aparecem pela primeira vez. Classifique uma vez — o sistema lembra para sempre.
+      </p>
+      <div id="mlc2-unknown-list"></div>
+      <button class="btn btn-primary" id="mlc2-save-btn" style="margin-top:6px;" disabled>Salvar e Continuar</button>
+    </div>
+
+    <!-- mlc2 — 3. Processar -->
+    <div class="card" id="mlc2-process-card" style="display:none;">
+      <div class="card-title">3 — Processar</div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">
+        Todos os produtos estão classificados. Clique para separar as etiquetas.
+      </p>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <span style="font-size:.75rem;font-weight:700;color:var(--muted);">Data da etiqueta:</span>
+        <input type="date" id="mlc2-label-date"
+          style="background:var(--bg);border:1.5px solid var(--border2);color:var(--text);border-radius:7px;padding:5px 10px;font-size:.82rem;font-weight:600;" />
+      </div>
+      <button class="btn btn-primary" id="mlc2-process-btn">Separar Etiquetas ML Correios</button>
+    </div>
+
+    <!-- mlc2 — Dashboard -->
+    <div class="card" id="mlc2-dashboard" style="display:none;">
+      <div class="card-title">Dashboard</div>
+      <div class="dash-top">
+        <div>
+          <div class="dash-stores" id="mlc2-dash-stores"></div>
+          <div style="font-size:.73rem;color:var(--muted);margin-top:5px;" id="mlc2-dash-sub"></div>
+        </div>
+        <div class="verify-badge ok" id="mlc2-verify-badge" style="display:none;"></div>
+      </div>
+      <div class="stat-row" id="mlc2-stat-row" style="margin-bottom:20px;"></div>
+      <div class="section-label">Total de Produtos por Linha</div>
+      <div class="brand-grid" id="mlc2-brand-grid"></div>
+      <div class="section-label" style="margin-top:6px;">Distribuição por Separação</div>
+      <div class="breakdown-rows" id="mlc2-breakdown-rows"></div>
+      <div id="mlc2-val-bar-wrap" style="display:none;margin-top:14px;">
+        <div class="section-label">Validações</div>
+        <div class="val-bar" id="mlc2-val-bar"></div>
+      </div>
+    </div>
+
+    <!-- mlc2 — Arquivos Gerados -->
+    <div class="card" id="mlc2-results-section" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div class="card-title" style="margin-bottom:0;">Arquivos Gerados</div>
+        <button class="btn btn-outline" id="mlc2-download-all-btn" style="padding:8px 18px;font-size:.82rem;">⬇ Baixar Tudo</button>
+      </div>
+      <div id="mlc2-brand-rows-container"></div>
+    </div>
+
+    <!-- mlc2 — Dupla Verificação -->
+    <div class="card" id="mlc2-verify-section" style="display:none;">
+      <div class="card-title">Dupla Verificação</div>
+      <div id="mlc2-verify-detail"></div>
+    </div>
+
+    <!-- mlc2 — Security -->
+    <div class="card" id="mlc2-security-card" style="display:none;">
+      <div class="card-title" style="color:var(--red);">⚠ Varredura de Segurança</div>
+      <div id="mlc2-security-body"></div>
+    </div>
+
+    <!-- mlc2 — Lacrar -->
+    <div class="card lacrar-card" id="mlc2-lacrar-card" style="display:none;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="flex:1;min-width:200px;">
+          <div style="font-weight:700;font-size:.95rem;color:var(--text);">Lacrar no histórico de métricas?</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px;">
+            Registra esta expedição Correios para acompanhar tendências.
+          </div>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:.75rem;font-weight:700;color:var(--muted);">Data da expedição:</span>
+            <input type="date" id="mlc2-lacrar-date"
+              style="background:var(--bg);border:1.5px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.82rem;font-weight:600;" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="mlc2-lacrar-btn">⚡ Lacrar Expedição ML Correios</button>
+          <button class="btn" onclick="openEstoqueModal('mlc2')"
+            style="background:#0f4c3a;color:#4ade80;border:1.5px solid #22c55e;">
+            📦 Retirar do Estoque
+          </button>
+        </div>
+      </div>
+      <div id="mlc2-lacrar-status" style="display:none;margin-top:12px;font-size:.82rem;color:var(--green);font-weight:600;">
+        ✓ Expedição lacrada! Acesse Dashboard para visualizar as métricas.
+      </div>
+    </div>
+
+    </div><!-- /sep-mlc2 -->
+
     <!-- ─── TikTok placeholder ─── -->
     <div id="sep-tiktok" style="width:100%;display:none;flex-direction:column;align-items:center;">
       <div class="card" style="text-align:center;padding:48px 24px;width:100%;max-width:1200px;">
@@ -1436,68 +1567,100 @@
   <!-- ═══════════════ AJUSTES PAGE ═══════════════ -->
   <!-- ── Cortar Etiquetas ── -->
   <div id="page-cortar" class="page-section">
-    <div class="card" style="max-width:620px;">
-      <div class="card-title">Cortar Etiquetas Shopee</div>
-      <p style="font-size:.82rem;color:var(--muted);margin-bottom:20px;">
-        Transforma PDFs com etiquetas lado a lado em um PDF com uma etiqueta por página, pronto para impressora térmica.
-      </p>
 
-      <!-- Drop zone -->
-      <div id="cortar-drop-zone" style="border:2px dashed var(--border2);border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--bg);margin-bottom:16px;">
-        <div style="font-size:2rem;margin-bottom:8px;">✂️</div>
-        <p style="font-size:.88rem;font-weight:700;color:var(--text);margin:0 0 4px;">Arraste o PDF aqui ou clique para selecionar</p>
-        <p style="font-size:.75rem;color:var(--muted);margin:0;" id="cortar-file-name">Nenhum arquivo selecionado</p>
-      </div>
-      <input type="file" id="cortar-file-input" accept=".pdf" style="display:none;" />
+    <!-- Sub-nav tabs -->
+    <div class="sep-subnav">
+      <button class="sep-tab active" id="cortar-tab-shopee">
+        <div class="sep-tab-logo">
+          <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="7" fill="#EE4D2D"/>
+            <path d="M5.5 13h17l-2 10H7.5L5.5 13z" fill="white"/>
+            <path d="M9.5 13c0-2.49 2.01-4.5 4.5-4.5s4.5 2.01 4.5 4.5" fill="none" stroke="white" stroke-width="1.9" stroke-linecap="round"/>
+          </svg>
+        </div>
+        Shopee
+      </button>
+      <button class="sep-tab" id="cortar-tab-ml">
+        <div class="sep-tab-logo">
+          <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="7" fill="#FFE600"/>
+            <path d="M4 7h3l3 11h11l2.5-7.5H11" fill="none" stroke="#003087" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="13" cy="21" r="1.8" fill="#003087"/>
+            <circle cx="19" cy="21" r="1.8" fill="#003087"/>
+          </svg>
+        </div>
+        ML/CORREIOS
+      </button>
+    </div>
 
-      <!-- Colunas -->
-      <div style="margin-bottom:18px;">
-        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">Colunas por página</div>
-        <div style="display:flex;gap:8px;">
-          <label id="cortar-opt-auto" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);cursor:pointer;font-size:.82rem;font-weight:700;">
-            <input type="radio" name="cortar-cols" value="auto" checked style="accent-color:var(--accent);"> Auto
-          </label>
-          <label id="cortar-opt-2" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--border2);cursor:pointer;font-size:.82rem;font-weight:700;">
-            <input type="radio" name="cortar-cols" value="2" style="accent-color:var(--accent);"> 2 colunas
-          </label>
-          <label id="cortar-opt-4" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--border2);cursor:pointer;font-size:.82rem;font-weight:700;">
-            <input type="radio" name="cortar-cols" value="4" style="accent-color:var(--accent);"> 4 colunas
+    <!-- ─── Shopee ─── -->
+    <div id="cortar-shopee" style="width:100%;display:flex;justify-content:center;">
+      <div class="card" style="max-width:620px;">
+        <div class="card-title">Cortar Etiquetas Shopee</div>
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:20px;">
+          Transforma PDFs com etiquetas lado a lado em um PDF com uma etiqueta por página, pronto para impressora térmica.
+        </p>
+
+        <!-- Drop zone -->
+        <div id="cortar-drop-zone" style="border:2px dashed var(--border2);border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--bg);margin-bottom:16px;">
+          <div style="font-size:2rem;margin-bottom:8px;">✂️</div>
+          <p style="font-size:.88rem;font-weight:700;color:var(--text);margin:0 0 4px;">Arraste o PDF aqui ou clique para selecionar</p>
+          <p style="font-size:.75rem;color:var(--muted);margin:0;" id="cortar-file-name">Nenhum arquivo selecionado</p>
+        </div>
+        <input type="file" id="cortar-file-input" accept=".pdf" style="display:none;" />
+
+        <!-- Colunas -->
+        <div style="margin-bottom:18px;">
+          <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">Colunas por página</div>
+          <div style="display:flex;gap:8px;">
+            <label id="cortar-opt-auto" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);cursor:pointer;font-size:.82rem;font-weight:700;">
+              <input type="radio" name="cortar-cols" value="auto" checked style="accent-color:var(--accent);"> Auto
+            </label>
+            <label id="cortar-opt-2" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--border2);cursor:pointer;font-size:.82rem;font-weight:700;">
+              <input type="radio" name="cortar-cols" value="2" style="accent-color:var(--accent);"> 2 colunas
+            </label>
+            <label id="cortar-opt-4" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--border2);cursor:pointer;font-size:.82rem;font-weight:700;">
+              <input type="radio" name="cortar-cols" value="4" style="accent-color:var(--accent);"> 4 colunas
+            </label>
+          </div>
+        </div>
+
+        <!-- Carimbo Conferido -->
+        <div style="margin-bottom:18px;">
+          <label id="cortar-opt-selo" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--border2);cursor:pointer;font-size:.82rem;font-weight:700;user-select:none;">
+            <input type="checkbox" id="cortar-selo" style="accent-color:var(--accent);width:15px;height:15px;">
+            Carimbo "Conferido" em cada etiqueta
           </label>
         </div>
-      </div>
 
-      <!-- Carimbo Conferido -->
-      <div style="margin-bottom:18px;">
-        <label id="cortar-opt-selo" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;border:1.5px solid var(--border2);cursor:pointer;font-size:.82rem;font-weight:700;user-select:none;">
-          <input type="checkbox" id="cortar-selo" style="accent-color:var(--accent);width:15px;height:15px;">
-          Carimbo "Conferido" em cada etiqueta
-        </label>
+        <button class="btn btn-primary" id="cortar-btn" disabled>✂ Cortar e Baixar PDF</button>
+        <div id="cortar-status" style="margin-top:12px;font-size:.82rem;display:none;"></div>
       </div>
+    </div><!-- /cortar-shopee -->
 
-      <button class="btn btn-primary" id="cortar-btn" disabled>✂ Cortar e Baixar PDF</button>
-      <div id="cortar-status" style="margin-top:12px;font-size:.82rem;display:none;"></div>
-    </div>
+    <!-- ─── Mercado Livre (Correios) ─── -->
+    <div id="cortar-mlc" style="width:100%;display:none;justify-content:center;">
+      <div class="card" id="mlc-upload-card" style="max-width:620px;">
+        <div class="card-title">Extrair Etiquetas — PDF Padrão Correios</div>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:14px;">
+          Formato: 1 página etiqueta + 1 página NF por pedido (+ checklist no final).<br>
+          O download inclui todas as etiquetas seguidas das folhas de checklist, ignorando as NFs.
+        </p>
+        <div id="mlc-drop-zone" style="border:2px dashed var(--border2);border-radius:10px;padding:36px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;">
+          <div style="font-size:2rem;margin-bottom:10px;">📦</div>
+          <p style="font-size:.95rem;font-weight:600;color:var(--text);">Arraste o PDF aqui ou clique para selecionar</p>
+          <p style="font-size:.78rem;color:var(--muted);margin-top:4px;">Um arquivo PDF no formato Padrão Correios (.pdf)</p>
+        </div>
+        <input type="file" id="mlc-file-input" accept=".pdf" style="display:none;" />
+        <div id="mlc-status" style="font-size:.82rem;margin-top:10px;min-height:18px;"></div>
+        <div id="mlc-result" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border-radius:8px;border:1.5px solid var(--border2);">
+          <div id="mlc-result-msg" style="font-weight:700;font-size:.88rem;color:var(--green);margin-bottom:10px;"></div>
+          <button class="btn btn-primary" id="mlc-download-btn">⬇ Baixar PDF</button>
+        </div>
+      </div>
+    </div><!-- /cortar-mlc -->
+
   </div><!-- /page-cortar -->
-
-  <!-- ── Cortar ML Full ── -->
-  <div id="page-ml-full" class="page-section">
-    <div class="card" style="max-width:620px;">
-      <div class="card-title">Cortar Etiquetas Full — Mercado Livre</div>
-      <p style="font-size:.82rem;color:var(--muted);margin-bottom:20px;">
-        Transforma o PDF de etiquetas Full do ML (4 colunas) em um PDF com 3 etiquetas por página, empilhadas verticalmente.
-      </p>
-
-      <div id="cml-drop-zone" style="border:2px dashed var(--border2);border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--bg);margin-bottom:16px;">
-        <div style="font-size:2rem;margin-bottom:8px;">✂️</div>
-        <p style="font-size:.88rem;font-weight:700;color:var(--text);margin:0 0 4px;">Arraste o PDF aqui ou clique para selecionar</p>
-        <p style="font-size:.75rem;color:var(--muted);margin:0;" id="cml-file-name">Nenhum arquivo selecionado</p>
-      </div>
-      <input type="file" id="cml-file-input" accept=".pdf" style="display:none;" />
-
-      <button class="btn btn-primary" id="cml-btn" disabled>✂ Cortar e Baixar PDF</button>
-      <div id="cml-status" style="margin-top:12px;font-size:.82rem;display:none;"></div>
-    </div>
-  </div><!-- /page-ml-full -->
 
   <!-- ── Caixas ── -->
   <div id="page-caixas" class="page-section">
@@ -1902,8 +2065,8 @@ function showToast(msg, color) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-cortar","page-ml-full","page-caixas","page-ajustes","page-estoque","page-produtos","page-movimentacoes"];
-const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-cortar","nav-ml-full","nav-caixas","nav-ajustes","nav-estoque","nav-produtos","nav-movimentacoes"];
+const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-cortar","page-caixas","page-ajustes","page-estoque","page-produtos","page-movimentacoes"];
+const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-cortar","nav-caixas","nav-ajustes","nav-estoque","nav-produtos","nav-movimentacoes"];
 
 function showPage(page) {
   PAGES.forEach(id => {
@@ -1922,7 +2085,7 @@ function showPage(page) {
 }
 
 function showSepTab(tab) {
-  ["shopee","ml","tiktok"].forEach(t => {
+  ["shopee","ml","mlc2","tiktok"].forEach(t => {
     const wrap = document.getElementById("sep-" + t);
     const btn  = document.getElementById("sep-tab-" + t);
     const navBtn = document.getElementById("nav-" + t);
@@ -1942,7 +2105,6 @@ document.getElementById("nav-estoque").addEventListener("click",       () => sho
 document.getElementById("nav-produtos").addEventListener("click",      () => showPage("page-produtos"));
 document.getElementById("nav-movimentacoes").addEventListener("click", () => showPage("page-movimentacoes"));
 document.getElementById("nav-cortar").addEventListener("click",   () => showPage("page-cortar"));
-document.getElementById("nav-ml-full").addEventListener("click",  () => showPage("page-ml-full"));
 
 document.getElementById("nav-separacao").addEventListener("click", () => {
   const sub = document.getElementById("nav-sub-separacao");
@@ -1967,12 +2129,17 @@ document.getElementById("nav-ml").addEventListener("click", () => {
   showPage("page-separacao");
   showSepTab("ml");
 });
+document.getElementById("nav-mlc2").addEventListener("click", () => {
+  showPage("page-separacao");
+  showSepTab("mlc2");
+});
 document.getElementById("nav-tiktok").addEventListener("click", () => {
   showToast("Em desenvolvimento 🚧");
 });
 
 document.getElementById("sep-tab-shopee").addEventListener("click", () => showSepTab("shopee"));
 document.getElementById("sep-tab-ml").addEventListener("click",     () => showSepTab("ml"));
+document.getElementById("sep-tab-mlc2").addEventListener("click",   () => showSepTab("mlc2"));
 document.getElementById("sep-tab-tiktok").addEventListener("click", () => showToast("Em desenvolvimento 🚧"));
 
 const dupReclassify = {};  // key -> {categoria, kit_size}
@@ -3694,6 +3861,23 @@ document.getElementById("pdf-page-modal").addEventListener("click", (e) => {
 function safeId(s) { return s.replace(/[^a-zA-Z0-9]/g, "_"); }
 function unitLabel(cat) { return cat === "roupa" ? "peças" : "potes"; }
 
+// ── Cortar Etiquetas — tabs ───────────────────────────────────────────────────
+(function () {
+  const tabShopee = document.getElementById("cortar-tab-shopee");
+  const tabMl     = document.getElementById("cortar-tab-ml");
+  const paneShopee = document.getElementById("cortar-shopee");
+  const paneMl     = document.getElementById("cortar-mlc");
+
+  tabShopee.addEventListener("click", () => {
+    tabShopee.classList.add("active"); tabMl.classList.remove("active");
+    paneShopee.style.display = "flex";  paneMl.style.display = "none";
+  });
+  tabMl.addEventListener("click", () => {
+    tabMl.classList.add("active"); tabShopee.classList.remove("active");
+    paneMl.style.display = "flex";  paneShopee.style.display = "none";
+  });
+})();
+
 // ── Cortar Etiquetas ──────────────────────────────────────────────────────────
 (function () {
   let cortarFile = null;
@@ -3758,52 +3942,6 @@ function unitLabel(cat) { return cat === "roupa" ? "peças" : "potes"; }
       URL.revokeObjectURL(url);
       statusEl.style.display = "block"; statusEl.style.color = "var(--green)";
       statusEl.innerHTML = "✓ PDF baixado! <strong>Ao imprimir: escolha \"Sem escala\" (não \"Ajustar à área\")</strong> para preencher a etiqueta corretamente.";
-    } catch (e) {
-      statusEl.style.display = "block"; statusEl.style.color = "var(--red)";
-      statusEl.textContent = "Erro: " + e.message;
-    }
-    btn.disabled = false; btn.textContent = "✂ Cortar e Baixar PDF";
-  });
-})();
-
-// ── Cortar ML Full ────────────────────────────────────────────────────────────
-(function () {
-  let cmlFile = null;
-  const dropZone  = document.getElementById("cml-drop-zone");
-  const fileInput = document.getElementById("cml-file-input");
-  const fileLabel = document.getElementById("cml-file-name");
-  const btn       = document.getElementById("cml-btn");
-  const statusEl  = document.getElementById("cml-status");
-
-  function setFile(f) {
-    cmlFile = f;
-    fileLabel.textContent = f.name;
-    dropZone.style.borderColor = "var(--accent)";
-    btn.disabled = false;
-  }
-
-  dropZone.addEventListener("click",     () => fileInput.click());
-  dropZone.addEventListener("dragover",  e  => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
-  dropZone.addEventListener("dragleave", () => { if (!cmlFile) dropZone.style.borderColor = ""; });
-  dropZone.addEventListener("drop", e => { e.preventDefault(); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
-  fileInput.addEventListener("change", () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
-
-  btn.addEventListener("click", async () => {
-    if (!cmlFile) return;
-    btn.disabled = true; btn.textContent = "Processando...";
-    statusEl.style.display = "none";
-    const form = new FormData();
-    form.append("pdf", cmlFile);
-    try {
-      const res = await fetch("/cortar-ml", { method: "POST", body: form });
-      if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Erro"); }
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href = url; a.download = "ml_cortado_" + cmlFile.name; a.click();
-      URL.revokeObjectURL(url);
-      statusEl.style.display = "block"; statusEl.style.color = "var(--green)";
-      statusEl.textContent = "✓ PDF baixado!";
     } catch (e) {
       statusEl.style.display = "block"; statusEl.style.color = "var(--red)";
       statusEl.textContent = "Erro: " + e.message;
@@ -4490,6 +4628,527 @@ document.getElementById("ml-download-all-btn").addEventListener("click", async (
     mlSetStatus("Erro ao baixar ZIP: " + e.message, "error");
   }
 });
+
+// ── ML Correios (NO DIGITAL) ──────────────────────────────────────────────────
+(function () {
+  const dropZone  = document.getElementById("mlc-drop-zone");
+  const fileInput = document.getElementById("mlc-file-input");
+  const statusEl  = document.getElementById("mlc-status");
+  const resultDiv = document.getElementById("mlc-result");
+  const resultMsg = document.getElementById("mlc-result-msg");
+  const dlBtn     = document.getElementById("mlc-download-btn");
+  let _filename = null;
+
+  function setStatus(msg, color) {
+    statusEl.textContent = msg;
+    statusEl.style.color = color || "var(--muted)";
+  }
+
+  dropZone.addEventListener("click",    () => fileInput.click());
+  dropZone.addEventListener("dragover", e => {
+    e.preventDefault();
+    dropZone.style.borderColor = "var(--accent)";
+    dropZone.style.background  = "rgba(108,95,255,.04)";
+  });
+  dropZone.addEventListener("dragleave", () => {
+    dropZone.style.borderColor = "";
+    dropZone.style.background  = "";
+  });
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropZone.style.borderColor = "";
+    dropZone.style.background  = "";
+    if (e.dataTransfer.files[0]) process(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) process(fileInput.files[0]);
+  });
+
+  async function process(file) {
+    _filename = null;
+    resultDiv.style.display = "none";
+    setStatus("Processando…");
+    const form = new FormData();
+    form.append("file", file);
+    try {
+      const res  = await fetch("/ml/correios", { method: "POST", body: form });
+      const data = await res.json();
+      if (data.error) { setStatus(data.error, "var(--red)"); return; }
+      _filename = data.filename;
+      resultMsg.textContent = `✓ ${data.labels} etiqueta${data.labels !== 1 ? "s" : ""} + ${data.total - data.labels} folha${(data.total - data.labels) !== 1 ? "s" : ""} de checklist prontas.`;
+      resultDiv.style.display = "";
+      setStatus("");
+    } catch(e) { setStatus("Erro: " + e.message, "var(--red)"); }
+  }
+
+  dlBtn.addEventListener("click", async () => {
+    if (!_filename) return;
+    dlBtn.disabled = true; dlBtn.textContent = "Baixando…";
+    try {
+      const res  = await fetch("/download/" + encodeURIComponent(_filename));
+      if (!res.ok) throw new Error("Arquivo não encontrado");
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a"); a.href = url; a.download = _filename; a.click();
+      URL.revokeObjectURL(url);
+      dlBtn.textContent = "✓ Baixado";
+    } catch(e) {
+      dlBtn.disabled = false; dlBtn.textContent = "⬇ Baixar PDF";
+      setStatus("Erro ao baixar: " + e.message, "var(--red)");
+    }
+  });
+})();
+
+// ── ML Correios 2 — Separação ─────────────────────────────────────────────────
+let mlc2CurrentFiles       = [];
+let mlc2PendingKeys        = {};
+let mlc2SelectedCats       = {};
+let mlc2SelectedKits       = {};
+let mlc2SelectedNewBrand   = {};
+let mlc2AllOutputFiles     = [];
+let mlc2CurrentProcessData = null;
+let mlc2DownloadedSet      = new Set();
+
+const mlc2DropZone  = document.getElementById("mlc2-drop-zone");
+const mlc2FileInput = document.getElementById("mlc2-file-input");
+mlc2DropZone.addEventListener("click",     () => mlc2FileInput.click());
+mlc2DropZone.addEventListener("dragover",  e  => {
+  e.preventDefault();
+  mlc2DropZone.style.borderColor = "var(--accent)";
+  mlc2DropZone.style.background  = "rgba(108,95,255,.04)";
+});
+mlc2DropZone.addEventListener("dragleave", () => {
+  mlc2DropZone.style.borderColor = "";
+  mlc2DropZone.style.background  = "";
+});
+mlc2DropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  mlc2DropZone.style.borderColor = "";
+  mlc2DropZone.style.background  = "";
+  if (e.dataTransfer.files.length) mlc2UploadFiles(e.dataTransfer.files);
+});
+mlc2FileInput.addEventListener("change", () => { if (mlc2FileInput.files.length) mlc2UploadFiles(mlc2FileInput.files); });
+
+function mlc2SetStatus(msg, type = "") {
+  const el = document.getElementById("mlc2-status");
+  el.textContent = msg; el.className = type;
+}
+function mlc2ResetUI() {
+  ["mlc2-classify-card","mlc2-process-card","mlc2-dashboard","mlc2-results-section",
+   "mlc2-verify-section","mlc2-security-card","mlc2-lacrar-card"]
+    .forEach(id => document.getElementById(id).style.display = "none");
+  ["mlc2-brand-rows-container","mlc2-breakdown-rows","mlc2-brand-grid","mlc2-stat-row"]
+    .forEach(id => document.getElementById(id).innerHTML = "");
+  document.getElementById("mlc2-verify-badge").style.display = "none";
+  document.getElementById("mlc2-file-list").innerHTML = "";
+  document.getElementById("mlc2-lacrar-status").style.display = "none";
+  const lb = document.getElementById("mlc2-lacrar-btn");
+  lb.disabled = false; lb.innerHTML = "⚡ Lacrar Expedição ML Correios"; lb.style.display = "";
+  mlc2AllOutputFiles     = [];
+  mlc2SelectedNewBrand   = {};
+  mlc2CurrentProcessData = null;
+  const dlBtn = document.getElementById("mlc2-download-all-btn");
+  dlBtn.disabled = false; dlBtn.textContent = "⬇ Baixar Tudo";
+  dlBtn.classList.add("btn-outline");
+  dlBtn.style.background = ""; dlBtn.style.color = ""; dlBtn.style.borderColor = "";
+}
+function mlc2RenderFileList(files) {
+  const list = document.getElementById("mlc2-file-list");
+  list.innerHTML = "";
+  Array.from(files).forEach(f => {
+    const row = document.createElement("div");
+    row.className = "file-row"; row.id = "mlc2-fr-" + safeId(f.name);
+    row.innerHTML = `<span>📄</span><span class="fr-name">${esc(f.name)}</span><span class="fr-badge pending">Enviando…</span>`;
+    list.appendChild(row);
+  });
+}
+function mlc2UpdateFileBadge(name, cls, text) {
+  const row = document.getElementById("mlc2-fr-" + safeId(name));
+  if (!row) return;
+  const b = row.querySelector(".fr-badge");
+  b.className = `fr-badge ${cls}`; b.textContent = text;
+}
+function mlc2ParsePdfKey(key) {
+  return parsePdfKey(key.replace(/^mlc2_/, ""));
+}
+
+async function mlc2UploadFiles(fileList) {
+  mlc2ResetUI(); mlc2CurrentFiles = []; mlc2SetStatus("");
+  mlc2RenderFileList(fileList);
+  const form = new FormData();
+  Array.from(fileList).forEach(f => form.append("pdfs", f));
+  showLoading(UPLOAD_STEPS);
+  try {
+    const res  = await fetch("/ml/correios2/upload", { method: "POST", body: form });
+    const data = await res.json();
+    hideLoading();
+    if (data.error) { mlc2SetStatus(data.error, "error"); return; }
+    mlc2CurrentFiles = data.filenames;
+    Array.from(fileList).forEach(f => {
+      mlc2UpdateFileBadge(f.name,
+        mlc2CurrentFiles.includes(f.name) ? "ok"      : "error",
+        mlc2CurrentFiles.includes(f.name) ? "✓ Enviado" : "Ignorado");
+    });
+    const n = mlc2CurrentFiles.length;
+    mlc2SetStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
+    if (data.unknown.length > 0) mlc2ShowClassify(data.unknown);
+    else document.getElementById("mlc2-process-card").style.display = "block";
+  } catch (e) { hideLoading(); mlc2SetStatus("Erro ao enviar: " + e.message, "error"); }
+}
+
+function mlc2IsAllClassified() {
+  return Object.keys(mlc2PendingKeys).every(k => {
+    const cat = mlc2SelectedCats[k];
+    if (!cat) return false;
+    if (cat === "__new__") return (mlc2SelectedNewBrand[k]?.slug || "").length > 0;
+    return true;
+  });
+}
+function mlc2ShowClassify(unknowns) {
+  document.getElementById("mlc2-classify-card").style.display = "block";
+  const list = document.getElementById("mlc2-unknown-list");
+  list.innerHTML = "";
+  mlc2SelectedCats = {}; mlc2SelectedKits = {}; mlc2SelectedNewBrand = {}; mlc2PendingKeys = {};
+  unknowns.forEach(u => {
+    const key = u.key; mlc2PendingKeys[key] = u;
+    const sid = safeId(key);
+    const div = document.createElement("div");
+    div.className = "unknown-item";
+    div.innerHTML = `
+      <div class="u-name">${esc(u.produto)}</div>
+      <div class="u-sku">SKU: <span>${esc(u.sku || "—")}</span></div>
+      <div class="cat-row" id="mlc2-cats-${sid}">
+        <button class="cat-btn" data-key="${esc(key)}" data-cat="pura">Pura</button>
+        <button class="cat-btn" data-key="${esc(key)}" data-cat="turbo">Turbo</button>
+        <button class="cat-btn" data-key="${esc(key)}" data-cat="dux">DUX</button>
+        <button class="cat-btn" data-key="${esc(key)}" data-cat="roupa">Roupa</button>
+        <button class="cat-btn" data-key="${esc(key)}" data-cat="__new__">+ Novo Produto</button>
+      </div>
+      <div class="new-prod-wrap" id="mlc2-newprod-${sid}" style="display:none;">
+        <div class="new-prod-label">Nome do novo produto</div>
+        <div class="new-prod-row">
+          <input type="text" class="new-prod-input" id="mlc2-npinput-${sid}" data-key="${esc(key)}" placeholder="Ex: C4 Beta Pump" />
+          <span class="slug-preview" id="mlc2-npslug-${sid}"></span>
+        </div>
+      </div>
+      <div class="kit-row" id="mlc2-kit-${sid}" style="display:none;">
+        <label>Kit size:</label>
+        <select id="mlc2-ksel-${sid}" data-key="${esc(key)}">
+          <option value="1">1 unidade</option>
+          <option value="2">Kit 2</option>
+          <option value="3">Kit 3</option>
+          <option value="4">Kit 4</option>
+          <option value="5">Kit 5</option>
+          <option value="6">Kit 6</option>
+        </select>
+      </div>`;
+    list.appendChild(div);
+  });
+  list.querySelectorAll(".cat-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.key, cat = btn.dataset.cat;
+      mlc2SelectedCats[key] = cat;
+      list.querySelectorAll(`.cat-btn[data-key="${CSS.escape(key)}"]`)
+          .forEach(b => b.className = "cat-btn");
+      const sid2    = safeId(key);
+      const kitRow  = document.getElementById(`mlc2-kit-${sid2}`);
+      const newWrap = document.getElementById(`mlc2-newprod-${sid2}`);
+      if (cat === "__new__") {
+        btn.classList.add("sel-new");
+        if (newWrap) newWrap.style.display = "block";
+        kitRow.style.display = "flex";
+      } else {
+        btn.classList.add(`sel-${cat}`);
+        if (newWrap) newWrap.style.display = "none";
+        kitRow.style.display = cat === "roupa" ? "none" : "flex";
+        if (cat === "roupa") mlc2SelectedKits[key] = 1;
+      }
+      document.getElementById("mlc2-save-btn").disabled = !mlc2IsAllClassified();
+    });
+  });
+  list.querySelectorAll("select[id^='mlc2-ksel-']").forEach(sel => {
+    sel.addEventListener("change", () => { mlc2SelectedKits[sel.dataset.key] = parseInt(sel.value); });
+  });
+  list.querySelectorAll(".new-prod-input").forEach(input => {
+    input.addEventListener("input", () => {
+      const key     = input.dataset.key;
+      const slug    = input.value.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const preview = document.getElementById(`mlc2-npslug-${safeId(key)}`);
+      if (preview) preview.textContent = slug ? `→ ${slug}` : "";
+      mlc2SelectedNewBrand[key] = { slug, display: input.value.trim() };
+      document.getElementById("mlc2-save-btn").disabled = !mlc2IsAllClassified();
+    });
+  });
+}
+document.getElementById("mlc2-save-btn").addEventListener("click", async () => {
+  const toSave = {}, newBrands = {};
+  for (const [key] of Object.entries(mlc2PendingKeys)) {
+    const cat = mlc2SelectedCats[key]; if (!cat) continue;
+    const titulo = (mlc2PendingKeys[key] || {}).produto || "";
+    if (cat === "__new__") {
+      const nb = mlc2SelectedNewBrand[key] || {};
+      if (!nb.slug) continue;
+      newBrands[nb.slug] = nb.display || nb.slug;
+      toSave[key] = { categoria: nb.slug, kit_size: mlc2SelectedKits[key] || 1, titulo };
+    } else {
+      toSave[key] = { categoria: cat, kit_size: cat === "roupa" ? 1 : (mlc2SelectedKits[key] || 1), titulo };
+    }
+  }
+  for (const [slug, display] of Object.entries(newBrands)) {
+    await fetch("/brands/save", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ slug, display })
+    });
+  }
+  const res = await fetch("/save-mappings", {
+    method: "POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ mappings: toSave })
+  });
+  if ((await res.json()).ok) {
+    document.getElementById("mlc2-classify-card").style.display = "none";
+    document.getElementById("mlc2-process-card").style.display  = "block";
+    document.getElementById("mlc2-label-date").value = new Date().toISOString().split("T")[0];
+  }
+});
+
+document.getElementById("mlc2-process-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("mlc2-process-btn");
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Processando...';
+  showLoading(PROCESS_STEPS);
+  try {
+    const res  = await fetch("/ml/correios2/process", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        filenames:  mlc2CurrentFiles,
+        label_date: document.getElementById("mlc2-label-date").value || new Date().toISOString().split("T")[0]
+      })
+    });
+    const data = await res.json();
+    hideLoading();
+    if (data.error) {
+      mlc2SetStatus(data.error, "error");
+      btn.disabled = false; btn.innerHTML = "Separar Etiquetas ML Correios";
+      if (data.unknown) mlc2ShowClassify(data.unknown);
+      return;
+    }
+    document.getElementById("mlc2-process-card").style.display = "none";
+    mlc2CurrentProcessData = data;
+    mlc2RenderDashboard(data);
+    mlc2RenderResults(data);
+    mlc2RenderVerify(data);
+    renderSecurityAlerts(data, "mlc2");
+    document.getElementById("mlc2-lacrar-card").style.display = "block";
+    document.getElementById("mlc2-lacrar-date").value = new Date().toISOString().split("T")[0];
+  } catch(e) {
+    hideLoading(); mlc2SetStatus("Erro: " + e.message, "error");
+    btn.disabled = false; btn.innerHTML = "Separar Etiquetas ML Correios";
+  }
+});
+
+document.getElementById("mlc2-lacrar-btn").addEventListener("click", () => {
+  if (!mlc2CurrentProcessData) return;
+  requirePin("Lacrar Expedição ML Correios", async () => {
+    const btn = document.getElementById("mlc2-lacrar-btn");
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Lacrando...';
+    try {
+      const res = await fetch("/history/add", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          date:                document.getElementById("mlc2-lacrar-date").value || new Date().toISOString().split("T")[0],
+          store_items:         mlc2CurrentProcessData.stats.store_items || {},
+          store_label_counts:  mlc2CurrentProcessData.stats.store_label_counts || {},
+          label_pages:         mlc2CurrentProcessData.stats.label_pages,
+          breakdown:           mlc2CurrentProcessData.stats.breakdown,
+          output_page_counts:  mlc2CurrentProcessData.stats.output_page_counts || {},
+          state_counts:        mlc2CurrentProcessData.stats.state_counts || {},
+          tracking_numbers:    mlc2CurrentProcessData.stats.tracking_numbers || [],
+          tracking_data:       mlc2CurrentProcessData.stats.tracking_data    || {},
+        })
+      });
+      const d = await res.json();
+      if (d.ok) {
+        document.getElementById("mlc2-lacrar-status").style.display = "block";
+        btn.style.display = "none";
+        showToast("Expedição ML Correios lacrada!", "var(--green)");
+      } else {
+        btn.disabled = false; btn.innerHTML = "⚡ Lacrar Expedição ML Correios";
+        mlc2SetStatus(d.error || "Erro ao lacrar", "error");
+      }
+    } catch(e) {
+      btn.disabled = false; btn.innerHTML = "⚡ Lacrar Expedição ML Correios";
+      mlc2SetStatus("Erro ao lacrar: " + e.message, "error");
+    }
+  });
+});
+
+function mlc2RenderDashboard(data) {
+  const s = data.stats;
+  document.getElementById("mlc2-dashboard").style.display = "block";
+  const storesEl = document.getElementById("mlc2-dash-stores");
+  storesEl.innerHTML = "";
+  (s.store_names || []).forEach(name => {
+    const tag = document.createElement("div");
+    tag.className = "store-tag"; tag.textContent = name;
+    storesEl.appendChild(tag);
+  });
+  const n = mlc2CurrentFiles.length;
+  document.getElementById("mlc2-dash-sub").textContent =
+    `${n} PDF${n>1?"s":""} processado${n>1?"s":""} · ${new Date().toLocaleTimeString("pt-BR")}`;
+  const badge = document.getElementById("mlc2-verify-badge");
+  if (s.verification) {
+    badge.style.display = "inline-flex";
+    badge.className   = "verify-badge " + (s.verification.ok ? "ok" : "fail");
+    badge.textContent = s.verification.ok ? "✓ Verificado" : "⚠ Divergência";
+  } else {
+    badge.style.display = "none";
+  }
+  document.getElementById("mlc2-stat-row").innerHTML = `
+    <div class="stat-hero-val">${s.label_pages}</div>
+    <div class="stat-hero-lbl">pedidos</div>
+    <div class="stat-secondary">
+      <span>${Object.keys(s.breakdown).length} grupos gerados</span>
+      <span>·</span>
+      <span>${s.total_pages} páginas</span>
+      <span>·</span>
+      <span>${s.sem_checklist} sem produto</span>
+    </div>`;
+  const brandGrid = document.getElementById("mlc2-brand-grid");
+  brandGrid.innerHTML = "";
+  (s.brand_summary || []).forEach(b => {
+    if (b.brand === "variacoes") return;
+    const card = document.createElement("div");
+    card.className = `brand-card ${b.brand}`;
+    card.innerHTML = `
+      <div class="bc-name">${esc(b.display)}</div>
+      <div class="bc-orders-num">${b.orders}</div>
+      <div class="bc-orders-lbl">pedido${b.orders!==1?"s":""}</div>
+      <div class="bc-units-row">${b.brand === "roupa" ? `${b.units} peças` : `${b.units} potes`}</div>`;
+    brandGrid.appendChild(card);
+  });
+  const brRows = document.getElementById("mlc2-breakdown-rows");
+  brRows.innerHTML = "";
+  const maxCount2 = Math.max(...Object.values(s.breakdown), 1);
+  const catOrder2 = { pura:0, turbo:1, dux:2, roupa:3, variacoes:4 };
+  Object.entries(s.breakdown)
+    .sort((a, b) => {
+      const [cA,uA] = mlc2ParsePdfKey(a[0]), [cB,uB] = mlc2ParsePdfKey(b[0]);
+      const oA = catOrder2[cA]??9, oB = catOrder2[cB]??9;
+      return oA!==oB ? oA-oB : (uA??0)-(uB??0);
+    })
+    .forEach(([key, count]) => {
+      const [cat] = mlc2ParsePdfKey(key);
+      const pct   = Math.round((count / maxCount2) * 100);
+      const row   = document.createElement("div");
+      row.className = "br-row";
+      row.innerHTML = `
+        <div class="br-label">${esc(key)}</div>
+        <div class="br-bar-wrap"><div class="br-bar ${CAT_COLOR[cat]||"other"}" style="width:0%" data-pct="${pct}"></div></div>
+        <div class="br-count">${count} pedido${count!==1?"s":""}</div>`;
+      brRows.appendChild(row);
+    });
+  requestAnimationFrame(() => {
+    document.querySelectorAll("#mlc2-breakdown-rows .br-bar")
+      .forEach(b => { b.style.width = b.dataset.pct + "%"; });
+  });
+}
+
+function mlc2RenderResults(data) {
+  const s = data.stats;
+  document.getElementById("mlc2-results-section").style.display = "block";
+  const container = document.getElementById("mlc2-brand-rows-container");
+  container.innerHTML = "";
+  mlc2DownloadedSet  = new Set();
+  mlc2AllOutputFiles = data.output_files.filter(f => f !== "mlc2_sem_produto.pdf");
+  const counts = s.output_page_counts;
+  const groups = {};
+  data.output_files.forEach(f => {
+    const key   = f.replace(".pdf", "");
+    const pages = counts[f] || 0;
+    const [cat, units] = mlc2ParsePdfKey(key);
+    const gk = (cat === "roupa" || key === "mlc2_roupas") ? "roupas"
+             : (cat === "variacoes" || key === "mlc2_variacoes") ? "variacoes"
+             : (key === "mlc2_sem_produto") ? "sem_checklist"
+             : cat;
+    groups[gk] = groups[gk] || [];
+    groups[gk].push({ filename: f, pages, unitCount: units || 0 });
+  });
+  const rowOrder2 = ["pura","turbo","dux","roupas","variacoes","sem_checklist"];
+  Object.keys(groups).forEach(k => { if (!rowOrder2.includes(k)) rowOrder2.push(k); });
+  rowOrder2.forEach(gk => {
+    const files = groups[gk]; if (!files?.length) return;
+    files.sort((a, b) => a.unitCount - b.unitCount);
+    const cfg   = BRAND_ROWS.find(r => r.key === gk) || { label: gk.toUpperCase(), cls: "lbl-other" };
+    const rowEl = document.createElement("div");
+    rowEl.className = "brand-row";
+    const labelEl = document.createElement("div");
+    labelEl.className = `brand-row-label ${cfg.cls}`;
+    labelEl.textContent = cfg.label;
+    rowEl.appendChild(labelEl);
+    const grid = document.createElement("div");
+    grid.className = "dl-grid";
+    files.forEach(({ filename, pages }) => {
+      const card  = document.createElement("div");
+      card.className = "dl-card";
+      const dlBtn = document.createElement("a");
+      dlBtn.className   = "dl-btn";
+      dlBtn.href        = "/download/" + encodeURIComponent(filename);
+      dlBtn.download    = filename;
+      dlBtn.textContent = "Baixar PDF";
+      dlBtn.addEventListener("click", () => {
+        mlc2DownloadedSet.add(filename);
+        setTimeout(() => { dlBtn.classList.add("downloaded"); dlBtn.textContent = "Baixado"; }, 300);
+      });
+      card.innerHTML = `<div class="dc-name">${esc(filename)}</div><div class="dc-pages">${pages} página${pages!==1?"s":""}</div>`;
+      card.appendChild(dlBtn);
+      grid.appendChild(card);
+    });
+    rowEl.appendChild(grid);
+    container.appendChild(rowEl);
+  });
+}
+
+function mlc2RenderVerify(data) {
+  document.getElementById("mlc2-verify-section").style.display = "block";
+  const v = data.stats.verification, ok = v.ok;
+  document.getElementById("mlc2-verify-detail").innerHTML = `
+    <div class="verify-detail ${ok?"ok":"fail"}">
+      <div class="verify-icon">${ok?"✅":"⚠️"}</div>
+      <div class="verify-text">
+        <div class="vt-main">${esc(ok
+          ? `Tudo certo — ${v.label_pages} etiquetas no PDF, ${v.output_total} páginas geradas`
+          : `Divergência — ${v.label_pages} etiquetas, mas ${v.output_total} páginas geradas`)}</div>
+        <div class="vt-sub">${esc(ok
+          ? "Todas as etiquetas foram separadas corretamente."
+          : "Algumas etiquetas podem não ter sido geradas. Verifique os arquivos.")}</div>
+      </div>
+    </div>`;
+}
+
+document.getElementById("mlc2-download-all-btn").addEventListener("click", async () => {
+  const btn  = document.getElementById("mlc2-download-all-btn");
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = "Preparando ZIP...";
+  try {
+    const resp = await fetch("/ml/correios2/download-all", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ filenames: mlc2AllOutputFiles })
+    });
+    if (!resp.ok) throw new Error("Servidor retornou erro");
+    const blob = await resp.blob();
+    const cd   = resp.headers.get("Content-Disposition") || "";
+    const nm   = cd.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    const zipName = nm ? nm[1].replace(/['"]/g, "") : "ml_correios_etiquetas.zip";
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a"); a.href = url; a.download = zipName; a.click();
+    URL.revokeObjectURL(url);
+    btn.textContent = "✓ ZIP Baixado";
+    btn.classList.remove("btn-outline");
+    btn.style.background = "var(--green)"; btn.style.color = "#fff"; btn.style.borderColor = "var(--green)";
+  } catch(e) {
+    btn.disabled = false; btn.textContent = orig;
+    mlc2SetStatus("Erro ao baixar ZIP: " + e.message, "error");
+  }
+});
 </script>
 </body>
 
@@ -5113,18 +5772,20 @@ let _estoqueModalItems = [];
 
 async function openEstoqueModal(source) {
   _estoqueModalSource = source;
-  const processData = source === 'ml' ? mlCurrentProcessData : currentProcessData;
+  const processData = source === 'ml'   ? mlCurrentProcessData  :
+                      source === 'mlc2' ? mlc2CurrentProcessData :
+                      currentProcessData;
   if (!processData) return;
 
   const brandSummary = processData.brand_summary || processData.stats?.brand_summary || [];
-  const dateEl = source === 'ml'
-    ? document.getElementById('ml-lacrar-date')
-    : document.getElementById('lacrar-date');
+  const dateEl = source === 'ml'   ? document.getElementById('ml-lacrar-date')   :
+                 source === 'mlc2' ? document.getElementById('mlc2-lacrar-date') :
+                 document.getElementById('lacrar-date');
   const dateStr = dateEl ? dateEl.value : '';
   const dateDisplay = dateStr
     ? new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR')
     : new Date().toLocaleDateString('pt-BR');
-  const plat = source === 'ml' ? 'Mercado Livre' : 'Shopee';
+  const plat = source === 'ml' ? 'Mercado Livre' : source === 'mlc2' ? 'ML Correios' : 'Shopee';
 
   document.getElementById('estoque-modal-ctx').textContent = `Expedição ${plat} — ${dateDisplay}`;
   document.getElementById('estoque-modal-error').style.display = 'none';

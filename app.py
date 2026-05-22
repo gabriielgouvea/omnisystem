@@ -617,10 +617,10 @@ def _date_range(period, filtered, from_date=None, to_date=None):
 # ── Cover page generator ─────────────────────────────────────────────────────
 
 _SKIP_COVER = {"sem_produto", "sem_checklist", "pagina_em_branco",
-               "ml_sem_produto", "ml_sem_checklist"}
+               "ml_sem_produto", "ml_sem_checklist", "mlc2_sem_produto"}
 
 def _cover_title(key):
-    k = re.sub(r'^ml_', '', key)
+    k = re.sub(r'^(?:mlc2_|ml_)', '', key)
     m = re.match(r'^([a-z]+)_(\d+)$', k)
     if m:
         return f"{m.group(1).upper()} {m.group(2)}"
@@ -681,9 +681,9 @@ def _prepend_cover(writer, key, label_date=""):
     pedidos = len(writer.pages)
     if pedidos == 0:
         return
-    m      = re.match(r'^(?:ml_)?([a-z]+)_(\d+)$', key)
+    m      = re.match(r'^(?:mlc2_|ml_)?([a-z]+)_(\d+)$', key)
     upo    = int(m.group(2)) if m else 1
-    source = "MERCADO LIVRE" if key.startswith("ml_") else ""
+    source = "MERCADO LIVRE" if key.startswith("ml_") or key.startswith("mlc2_") else ""
     cover_bytes = create_cover_page_bytes(_cover_title(key), pedidos, pedidos * upo,
                                           source=source, label_date=label_date)
     cover_reader = PdfReader(io.BytesIO(cover_bytes))
@@ -2303,6 +2303,318 @@ def ml_download_all():
                      mimetype="application/zip")
 
 
+@app.route("/ml/correios", methods=["POST"])
+def ml_correios():
+    """Extract label + product-checklist pages from a Correios-format ML PDF.
+    Skips DANFE pages; keeps everything else in original order."""
+    f = request.files.get("file")
+    if not f or not f.filename.lower().endswith(".pdf"):
+        return jsonify({"error": "Envie um arquivo PDF"}), 400
+
+    raw  = f.read()
+    src  = fitz.open(stream=raw, filetype="pdf")
+    out  = fitz.open()
+    labels = 0
+
+    for page in src:
+        text = page.get_text("text")
+        if "DANFE" in text:
+            continue
+        out.insert_pdf(src, from_page=page.number, to_page=page.number)
+        if "SHP:" in text:
+            labels += 1
+
+    if len(out) == 0:
+        src.close(); out.close()
+        return jsonify({"error": "Nenhuma página válida encontrada. Verifique o arquivo."}), 400
+
+    today    = date.today().strftime("%d.%m.%y")
+    fname    = f"ml_correios_{today}.pdf"
+    out_path = OUTPUT_DIR / fname
+    out.save(str(out_path))
+    total = len(out)
+    out.close(); src.close()
+
+    return jsonify({"filename": fname, "labels": labels, "total": total})
+
+
+# ── ML Correios 2 — Separação ─────────────────────────────────────────────────
+
+_CORREIOS_TRACKING_RE = re.compile(r'\b([A-Z]{2}\d{9}BR)\b')
+_CORREIOS_QTY_RE      = re.compile(r'^Quantidade:\s*(\d+)', re.IGNORECASE)
+
+
+def parse_correios_product_pages(doc):
+    """Parse product identification pages from a clean Correios-format ML PDF.
+    Returns {tracking_code: [{"produto": title, "sku": "", "quantidade": N}]}
+    """
+    product_map = {}
+    for page_num in range(len(doc)):
+        page = doc[page_num]
+        text = page.get_text("text")
+        if "SHP:" in text or "DANFE" in text:
+            continue
+        if "Quantidade:" not in text:
+            continue
+        lines = [l.strip() for l in text.split('\n') if l.strip()]
+        despachem_idx = next(
+            (i for i, l in enumerate(lines) if l.lower().startswith("despachem")), None
+        )
+        block_lines = lines[:despachem_idx] if despachem_idx is not None else lines
+        page_titles = lines[despachem_idx + 1:] if despachem_idx is not None else []
+        entries = []
+        i = 0
+        while i < len(block_lines):
+            if not re.fullmatch(r'[A-Z]{2}\d{9}BR', block_lines[i]):
+                i += 1; continue
+            tracking_code = block_lines[i]
+            quantidade = 1
+            j = i + 1
+            while j < len(block_lines):
+                if re.fullmatch(r'[A-Z]{2}\d{9}BR', block_lines[j]):
+                    break
+                mq = _CORREIOS_QTY_RE.match(block_lines[j])
+                if mq:
+                    try: quantidade = int(mq.group(1))
+                    except ValueError: pass
+                j += 1
+            entries.append({"tracking_code": tracking_code, "quantidade": quantidade})
+            i = j
+        for idx, e in enumerate(entries):
+            titulo = page_titles[idx] if idx < len(page_titles) else "Produto desconhecido"
+            item = {"sku": "", "produto": titulo, "quantidade": e["quantidade"]}
+            product_map.setdefault(e["tracking_code"], []).append(item)
+    return product_map
+
+
+def extract_correios_label_tracking(page):
+    """Return the postal tracking code from a Correios label page, or None."""
+    m = _CORREIOS_TRACKING_RE.search(page.get_text("text"))
+    return m.group(1) if m else None
+
+
+def get_unknown_items_correios(pdf_path, mappings):
+    doc = fitz.open(str(pdf_path))
+    product_map = parse_correios_product_pages(doc)
+    doc.close()
+    seen = {}
+    for items in product_map.values():
+        for item in items:
+            k = mapping_key(item["produto"], item["sku"])
+            if k not in mappings and k not in seen:
+                seen[k] = {"produto": item["produto"], "sku": item["sku"], "key": k,
+                           "file": pdf_path.name, "page": 1}
+    return list(seen.values())
+
+
+def split_ml_correios2_pdf(filenames, mappings, label_date=""):
+    """Process clean Correios PDFs — same return structure as split_ml_pdfs."""
+    writers            = {}
+    page_results       = []
+    store_items        = {}
+    store_label_counts = {}
+    tracking_numbers   = {}
+    total_pages_all    = 0
+    unmatched_all      = 0
+    breakdown_all      = {}
+    store              = ML_STORE_NAME
+
+    for filename in filenames:
+        pdf_path = UPLOAD_DIR / filename
+        doc      = fitz.open(str(pdf_path))
+        reader   = PdfReader(str(pdf_path))
+        total_pages_all += len(doc)
+        product_map = parse_correios_product_pages(doc)
+
+        for page_num in range(len(doc)):
+            fp   = doc[page_num]
+            text = fp.get_text("text")
+            if "SHP:" not in text:
+                page_results.append({
+                    "file": filename, "page": page_num + 1,
+                    "items": [], "output": "product_info_page",
+                })
+                continue
+            tracking = extract_correios_label_tracking(fp)
+            items = product_map.get(tracking, []) if tracking else []
+            if not items:
+                unmatched_all += 1
+                writers.setdefault("mlc2_sem_produto", PdfWriter()).add_page(reader.pages[page_num])
+                page_results.append({
+                    "file": filename, "page": page_num + 1,
+                    "items": [], "output": "mlc2_sem_produto",
+                })
+                continue
+            checklist_items = [
+                {"produto": it["produto"], "sku": it["sku"], "quantidade": it["quantidade"]}
+                for it in items
+            ]
+            raw_key = determine_output_pdf(checklist_items, mappings)
+            if raw_key is None:
+                page_results.append({
+                    "file": filename, "page": page_num + 1,
+                    "output": "__unknown__", "items": checklist_items,
+                })
+                continue
+            mlc2_key = "mlc2_" + raw_key
+            writers.setdefault(mlc2_key, PdfWriter()).add_page(reader.pages[page_num])
+            breakdown_all[mlc2_key] = breakdown_all.get(mlc2_key, 0) + 1
+            store_label_counts[store] = store_label_counts.get(store, 0) + 1
+            if tracking and tracking not in tracking_numbers:
+                tracking_numbers[tracking] = {"filename": filename, "page": page_num + 1}
+            page_results.append({
+                "file": filename, "page": page_num + 1, "output": mlc2_key,
+                "items": [{"produto": it["produto"][:50], "sku": it["sku"],
+                            "quantidade": it["quantidade"]} for it in items],
+            })
+            for item in checklist_items:
+                mk  = mapping_key(item["produto"], item["sku"])
+                if mk not in mappings:
+                    continue
+                info = mappings[mk]
+                kit  = info.get("kit_size", 1)
+                store_items.setdefault(store, {})
+                if mk not in store_items[store]:
+                    store_items[store][mk] = {
+                        "sku":       item["sku"],
+                        "produto":   item["produto"],
+                        "categoria": info["categoria"],
+                        "kit_size":  kit,
+                        "units":     0,
+                    }
+                store_items[store][mk]["units"] += kit * item["quantidade"]
+        doc.close()
+
+    output_files       = []
+    output_page_counts = {}
+    for key, writer in writers.items():
+        _prepend_cover(writer, key, label_date=label_date)
+        out_path = OUTPUT_DIR / f"{key}.pdf"
+        with open(out_path, "wb") as f:
+            writer.write(f)
+        output_files.append(f"{key}.pdf")
+        cover_offset = 0 if key in _SKIP_COVER else 1
+        output_page_counts[f"{key}.pdf"] = len(writer.pages) - cover_offset
+
+    label_pages  = store_label_counts.get(store, 0)
+    output_total = sum(c for k, c in output_page_counts.items()
+                       if k != "mlc2_sem_produto.pdf")
+    verified     = (output_total == label_pages)
+
+    stripped = {k.replace("mlc2_", "", 1): v for k, v in breakdown_all.items()}
+    brand_orders, brand_units = compute_brand_totals(stripped)
+    brand_display = get_brand_display()
+    brand_summary = sorted(
+        [{"brand": b, "display": brand_display.get(b, b),
+          "orders": brand_orders[b], "units": brand_units[b]}
+         for b in brand_orders],
+        key=lambda x: (
+            STANDARD_ORDER.index(x["brand"]) if x["brand"] in STANDARD_ORDER else len(STANDARD_ORDER),
+            x["brand"]
+        )
+    )
+
+    tracking_log       = load_tracking_log()
+    tracking_conflicts = []
+    for tn, info in tracking_numbers.items():
+        if tn in tracking_log:
+            tracking_conflicts.append({
+                "tracking": tn,
+                "previous_date": tracking_log[tn].get("date", "?"),
+                "filename": info["filename"],
+                "page": info["page"],
+            })
+
+    stats = {
+        "total_pages":        total_pages_all,
+        "label_pages":        label_pages,
+        "blank_pages":        0,
+        "sem_checklist":      unmatched_all,
+        "store_names":        [store],
+        "store_items":        store_items,
+        "store_label_counts": store_label_counts,
+        "state_counts":       {},
+        "breakdown":          breakdown_all,
+        "output_page_counts": output_page_counts,
+        "brand_summary":      brand_summary,
+        "tracking_numbers":   list(tracking_numbers.keys()),
+        "tracking_data":      tracking_numbers,
+        "verification":       {
+            "ok":           verified,
+            "label_pages":  label_pages,
+            "output_total": output_total,
+        },
+    }
+
+    security_alerts = {
+        "tracking_conflicts": tracking_conflicts,
+        "sku_conflicts":      [],
+    }
+
+    return {"output_files": output_files, "page_results": page_results,
+            "stats": stats, "errors": [], "security_alerts": security_alerts}
+
+
+@app.route("/ml/correios2/upload", methods=["POST"])
+def ml_correios2_upload():
+    files = request.files.getlist("pdfs")
+    if not files or all(f.filename == "" for f in files):
+        return jsonify({"error": "Nenhum arquivo enviado"}), 400
+    mappings    = load_mappings()
+    saved       = []
+    all_unknown = {}
+    for file in files:
+        if not file.filename.lower().endswith(".pdf"):
+            continue
+        pdf_path = UPLOAD_DIR / file.filename
+        file.save(str(pdf_path))
+        saved.append(file.filename)
+        for u in get_unknown_items_correios(pdf_path, mappings):
+            all_unknown.setdefault(u["key"], u)
+    if not saved:
+        return jsonify({"error": "Nenhum PDF válido encontrado"}), 400
+    return jsonify({"filenames": saved, "unknown": list(all_unknown.values())})
+
+
+@app.route("/ml/correios2/process", methods=["POST"])
+def ml_correios2_process():
+    data       = request.json
+    filenames  = data.get("filenames", [])
+    label_date = data.get("label_date", "")
+    if not filenames:
+        return jsonify({"error": "Nenhum arquivo especificado"}), 400
+    mappings    = load_mappings()
+    all_unknown = {}
+    for filename in filenames:
+        pdf_path = UPLOAD_DIR / filename
+        if not pdf_path.exists():
+            return jsonify({"error": f"Arquivo não encontrado: {filename}"}), 404
+        for u in get_unknown_items_correios(pdf_path, mappings):
+            all_unknown.setdefault(u["key"], u)
+    if all_unknown:
+        return jsonify({"error": "Ainda há produtos não classificados",
+                        "unknown": list(all_unknown.values())}), 400
+    return jsonify(split_ml_correios2_pdf(filenames, mappings, label_date=label_date))
+
+
+@app.route("/ml/correios2/download-all", methods=["POST"])
+def ml_correios2_download_all():
+    data      = request.json
+    filenames = data.get("filenames", [])
+    today     = date.today().strftime("%d.%m.%y")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for fname in filenames:
+            path = OUTPUT_DIR / fname
+            if path.exists():
+                stem = fname.replace(".pdf", "").replace("mlc2_", "").replace("_", " ")
+                zf.write(str(path), f"ML Correios {stem} {today}.pdf")
+    buf.seek(0)
+    return send_file(buf, as_attachment=True,
+                     download_name=f"ml_correios_etiquetas_{today}.zip",
+                     mimetype="application/zip")
+
+
 @app.route("/order-locator", methods=["POST"])
 def order_locator():
     """Search tracking numbers in the index. Returns found/not-found per number."""
@@ -2528,23 +2840,6 @@ def _split_ml_full(src_bytes, labels_per_page=3, num_cols=4):
     out_doc.close()
     src_doc.close()
     return result
-
-
-@app.route("/cortar-ml", methods=["POST"])
-def cortar_ml_full():
-    f = request.files.get("pdf")
-    if not f or not f.filename.lower().endswith(".pdf"):
-        return jsonify({"error": "Envie um arquivo PDF válido"}), 400
-    try:
-        result = _split_ml_full(f.read(), labels_per_page=3, num_cols=4)
-    except Exception as e:
-        return jsonify({"error": f"Erro ao processar PDF: {e}"}), 500
-    buf = io.BytesIO(result)
-    buf.seek(0)
-    safe_name = re.sub(r"[^\w.\-]", "_", f.filename.rsplit(".", 1)[0])
-    return send_file(buf, mimetype="application/pdf",
-                     as_attachment=True,
-                     download_name=f"ml_cortado_{safe_name}.pdf")
 
 
 @app.route("/cortar", methods=["POST"])
