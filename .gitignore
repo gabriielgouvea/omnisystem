@@ -38,6 +38,7 @@ debug_*.json
 tracking_log.json
 tracking_index.json
 ml_tokens.json
+ml_oauth_state.json
 *.docx
 test_*.pdf
 conferido.png

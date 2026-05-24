@@ -3453,6 +3453,7 @@ _ML_REDIRECT_URI  = "https://www.sistemaomni.com.br/api-teste/ml/callback"
 _ML_AUTH_URL      = "https://auth.mercadolivre.com.br/authorization"
 _ML_TOKEN_URL     = "https://api.mercadolibre.com/oauth/token"
 _ML_API_BASE      = "https://api.mercadolibre.com"
+_ML_STATE_FILE    = BASE_DIR / "ml_oauth_state.json"
 
 
 def _ml_load_tokens():
@@ -3517,7 +3518,7 @@ def _ml_api(seller_id, path, params=None, retry=True):
 @app.route("/api-teste/ml/auth")
 def api_teste_ml_auth():
     state = secrets.token_hex(10)
-    session["ml_oauth_state"] = state
+    _ML_STATE_FILE.write_text(json.dumps({"state": state, "ts": _time.time()}), encoding="utf-8")
     params = _urllib_parse.urlencode({
         "response_type": "code",
         "client_id":     _ML_CLIENT_ID,
@@ -3531,7 +3532,17 @@ def api_teste_ml_auth():
 def api_teste_ml_callback():
     code  = request.args.get("code")
     state = request.args.get("state")
-    if not code or state != session.pop("ml_oauth_state", None):
+    # Valida state via arquivo (funciona com múltiplos workers gunicorn)
+    saved_state = None
+    if _ML_STATE_FILE.exists():
+        try:
+            saved = json.loads(_ML_STATE_FILE.read_text(encoding="utf-8"))
+            if _time.time() - saved.get("ts", 0) < 300:
+                saved_state = saved.get("state")
+        except Exception:
+            pass
+        _ML_STATE_FILE.unlink(missing_ok=True)
+    if not code or state != saved_state:
         return redirect("/?ml_err=1")
     token_data, err = _ml_exchange_token(
         "authorization_code", code=code, redirect_uri=_ML_REDIRECT_URI
