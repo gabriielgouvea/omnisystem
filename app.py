@@ -3601,37 +3601,67 @@ def api_teste_ml_data_items():
     sid = request.args.get("seller_id")
     d, e = _ml_api(sid, f"/users/{sid}/items/search", {"status": "active", "limit": 20})
     if e: return jsonify({"error": e}), 400
+    item_ids = d.get("results", [])
+    if item_ids:
+        ids_str = ",".join(item_ids[:20])
+        details, _ = _ml_api(sid, "/items", {
+            "ids": ids_str,
+            "attributes": "id,title,price,available_quantity,sold_quantity,status,thumbnail"
+        })
+        if details and isinstance(details, list):
+            d["item_details"] = [x.get("body", x) for x in details]
     return jsonify(d)
 
 
 @app.route("/api-teste/ml/data/billing")
 def api_teste_ml_data_billing():
     sid = request.args.get("seller_id")
-    d, e = _ml_api(sid, "/billing/monthly/periods")
+    # Pega últimos 50 pedidos e agrupa por mês
+    d, e = _ml_api(sid, "/orders/search", {"seller": sid, "sort": "date_desc", "limit": 50})
     if e: return jsonify({"error": e}), 400
-    return jsonify(d)
+    orders = d.get("results", [])
+    months = {}
+    for o in orders:
+        dt = o.get("date_created", "")[:7]  # YYYY-MM
+        if not dt: continue
+        if dt not in months:
+            months[dt] = {"mes": dt, "pedidos": 0, "total": 0.0, "pago": 0.0}
+        months[dt]["pedidos"] += 1
+        months[dt]["total"] += o.get("total_amount", 0) or 0
+        months[dt]["pago"]  += o.get("paid_amount", 0) or 0
+    return jsonify({"meses": sorted(months.values(), key=lambda x: x["mes"], reverse=True),
+                    "total_orders": d.get("paging", {}).get("total", 0)})
 
 
 @app.route("/api-teste/ml/data/ads")
 def api_teste_ml_data_ads():
     sid = request.args.get("seller_id")
-    d, e = _ml_api(sid, "/advertising/product_ads/advertisers", {"user_id": sid})
-    if e: return jsonify({"error": e}), 400
+    d, e = _ml_api(sid, f"/advertising/product_ads/advertisers/{sid}")
+    if e:
+        d2, e2 = _ml_api(sid, "/advertising/product_ads/advertisers", {"user_id": sid})
+        if e2: return jsonify({"error": e}), 400
+        return jsonify(d2)
     return jsonify(d)
 
 
 @app.route("/api-teste/ml/data/reputation")
 def api_teste_ml_data_reputation():
     sid = request.args.get("seller_id")
-    d, e = _ml_api(sid, f"/users/{sid}/seller_reputation")
+    d, e = _ml_api(sid, f"/users/{sid}")
     if e: return jsonify({"error": e}), 400
-    return jsonify(d)
+    return jsonify({"seller_reputation": d.get("seller_reputation", {}),
+                    "status": d.get("status", {}),
+                    "points": d.get("points", 0),
+                    "raw": d.get("seller_reputation", {})})
 
 
 @app.route("/api-teste/ml/data/payments")
 def api_teste_ml_data_payments():
     sid = request.args.get("seller_id")
-    d, e = _ml_api(sid, "/collections/search", {"sort": "date_created_desc", "limit": 20})
+    d, e = _ml_api(sid, "/orders/search", {
+        "seller": sid, "sort": "date_desc", "limit": 20,
+        "payment.status": "approved"
+    })
     if e: return jsonify({"error": e}), 400
     return jsonify(d)
 
