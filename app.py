@@ -3447,7 +3447,7 @@ import urllib.parse   as _urllib_parse
 import urllib.error   as _urllib_err
 
 _ML_CLIENT_ID     = "6915156252689047"
-_ML_CLIENT_SECRET = "9lN5228liAvl7mrY8ldGe1Jp2jJrqvsp"
+_ML_CLIENT_SECRET = "9lN5228liAvl7mrY8IdGe1Jp2jJrqvsp"
 _ML_TOKEN_FILE    = BASE_DIR / "ml_tokens.json"
 _ML_REDIRECT_URI  = "https://www.sistemaomni.com.br/api-teste/ml/callback"
 _ML_AUTH_URL      = "https://auth.mercadolivre.com.br/authorization"
