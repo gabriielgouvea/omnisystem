@@ -3531,27 +3531,25 @@ def api_teste_ml_auth():
 @app.route("/api-teste/ml/callback")
 def api_teste_ml_callback():
     code  = request.args.get("code")
-    state = request.args.get("state")
-    # Valida state via arquivo (funciona com múltiplos workers gunicorn)
-    saved_state = None
-    if _ML_STATE_FILE.exists():
-        try:
-            saved = json.loads(_ML_STATE_FILE.read_text(encoding="utf-8"))
-            if _time.time() - saved.get("ts", 0) < 300:
-                saved_state = saved.get("state")
-        except Exception:
-            pass
-        _ML_STATE_FILE.unlink(missing_ok=True)
-    if not code or state != saved_state:
+    error = request.args.get("error")
+    _ML_STATE_FILE.unlink(missing_ok=True)
+
+    if error or not code:
+        (BASE_DIR / "ml_debug.log").write_text(f"callback error: error={error} code={code}", encoding="utf-8")
         return redirect("/?ml_err=1")
+
     token_data, err = _ml_exchange_token(
         "authorization_code", code=code, redirect_uri=_ML_REDIRECT_URI
     )
     if not token_data:
+        (BASE_DIR / "ml_debug.log").write_text(f"token exchange failed: {err}", encoding="utf-8")
         return redirect("/?ml_err=1")
+
     seller_id = str(token_data.get("user_id", ""))
     if not seller_id:
+        (BASE_DIR / "ml_debug.log").write_text(f"no user_id in token: {token_data}", encoding="utf-8")
         return redirect("/?ml_err=1")
+
     tokens = _ml_load_tokens()
     tokens[seller_id] = token_data
     user_data, _ = _ml_api(seller_id, f"/users/{seller_id}")
@@ -3559,6 +3557,7 @@ def api_teste_ml_callback():
         tokens[seller_id]["nickname"] = user_data.get("nickname", "")
         tokens[seller_id]["email"]    = user_data.get("email", "")
     _ml_save_tokens(tokens)
+    (BASE_DIR / "ml_debug.log").write_text(f"ok: seller_id={seller_id}", encoding="utf-8")
     return redirect("/?ml_ok=1")
 
 
