@@ -3440,6 +3440,192 @@ def api_grupos_excluir():
     return jsonify({"ok": True})
 
 
+# ── API TESTE — Mercado Livre Integration ─────────────────────────────────────
+
+import urllib.request as _urllib_req
+import urllib.parse   as _urllib_parse
+import urllib.error   as _urllib_err
+
+_ML_CLIENT_ID     = "6915156252689047"
+_ML_CLIENT_SECRET = "9lN5228liAvl7mrY8ldGe1Jp2jJrqvsp"
+_ML_TOKEN_FILE    = BASE_DIR / "ml_tokens.json"
+_ML_REDIRECT_URI  = "https://www.sistemaomni.com.br/api-teste/ml/callback"
+_ML_AUTH_URL      = "https://auth.mercadolivre.com.br/authorization"
+_ML_TOKEN_URL     = "https://api.mercadolibre.com/oauth/token"
+_ML_API_BASE      = "https://api.mercadolibre.com"
+
+
+def _ml_load_tokens():
+    if _ML_TOKEN_FILE.exists():
+        return json.loads(_ML_TOKEN_FILE.read_text(encoding="utf-8"))
+    return {}
+
+
+def _ml_save_tokens(tokens):
+    _ML_TOKEN_FILE.write_text(json.dumps(tokens, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _ml_exchange_token(grant_type, **kwargs):
+    payload = _urllib_parse.urlencode({
+        "grant_type":    grant_type,
+        "client_id":     _ML_CLIENT_ID,
+        "client_secret": _ML_CLIENT_SECRET,
+        **kwargs,
+    }).encode()
+    req = _urllib_req.Request(
+        _ML_TOKEN_URL, data=payload, method="POST",
+        headers={"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json"}
+    )
+    try:
+        with _urllib_req.urlopen(req, timeout=10) as r:
+            return json.loads(r.read()), None
+    except _urllib_err.HTTPError as e:
+        return None, f"HTTP {e.code}: {e.read().decode()}"
+    except Exception as e:
+        return None, str(e)
+
+
+def _ml_api(seller_id, path, params=None, retry=True):
+    tokens = _ml_load_tokens()
+    t = tokens.get(str(seller_id), {})
+    access_token = t.get("access_token")
+    if not access_token:
+        return None, "Conta não conectada"
+    url = _ML_API_BASE + path
+    if params:
+        url += "?" + _urllib_parse.urlencode(params)
+    req = _urllib_req.Request(url, headers={"Authorization": f"Bearer {access_token}"})
+    try:
+        with _urllib_req.urlopen(req, timeout=15) as r:
+            return json.loads(r.read()), None
+    except _urllib_err.HTTPError as e:
+        if e.code == 401 and retry:
+            refresh = t.get("refresh_token")
+            if refresh:
+                new_data, _ = _ml_exchange_token("refresh_token", refresh_token=refresh)
+                if new_data:
+                    tokens[str(seller_id)].update(new_data)
+                    _ml_save_tokens(tokens)
+                    return _ml_api(seller_id, path, params, retry=False)
+        try:    body = e.read().decode()
+        except: body = ""
+        return None, f"HTTP {e.code}: {body}"
+    except Exception as e:
+        return None, str(e)
+
+
+@app.route("/api-teste/ml/auth")
+def api_teste_ml_auth():
+    state = secrets.token_hex(10)
+    session["ml_oauth_state"] = state
+    params = _urllib_parse.urlencode({
+        "response_type": "code",
+        "client_id":     _ML_CLIENT_ID,
+        "redirect_uri":  _ML_REDIRECT_URI,
+        "state":         state,
+    })
+    return redirect(f"{_ML_AUTH_URL}?{params}")
+
+
+@app.route("/api-teste/ml/callback")
+def api_teste_ml_callback():
+    code  = request.args.get("code")
+    state = request.args.get("state")
+    if not code or state != session.pop("ml_oauth_state", None):
+        return redirect("/?ml_err=1")
+    token_data, err = _ml_exchange_token(
+        "authorization_code", code=code, redirect_uri=_ML_REDIRECT_URI
+    )
+    if not token_data:
+        return redirect("/?ml_err=1")
+    seller_id = str(token_data.get("user_id", ""))
+    if not seller_id:
+        return redirect("/?ml_err=1")
+    tokens = _ml_load_tokens()
+    tokens[seller_id] = token_data
+    user_data, _ = _ml_api(seller_id, f"/users/{seller_id}")
+    if user_data:
+        tokens[seller_id]["nickname"] = user_data.get("nickname", "")
+        tokens[seller_id]["email"]    = user_data.get("email", "")
+    _ml_save_tokens(tokens)
+    return redirect("/?ml_ok=1")
+
+
+@app.route("/api-teste/ml/accounts")
+def api_teste_ml_accounts():
+    tokens = _ml_load_tokens()
+    accounts = [{"seller_id": sid,
+                 "nickname":  t.get("nickname", sid),
+                 "email":     t.get("email", "")}
+                for sid, t in tokens.items()]
+    return jsonify({"accounts": accounts})
+
+
+@app.route("/api-teste/ml/disconnect", methods=["POST"])
+def api_teste_ml_disconnect():
+    sid = str(request.json.get("seller_id", ""))
+    tokens = _ml_load_tokens()
+    tokens.pop(sid, None)
+    _ml_save_tokens(tokens)
+    return jsonify({"ok": True})
+
+
+@app.route("/api-teste/ml/data/user")
+def api_teste_ml_data_user():
+    sid = request.args.get("seller_id")
+    d, e = _ml_api(sid, f"/users/{sid}")
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
+@app.route("/api-teste/ml/data/orders")
+def api_teste_ml_data_orders():
+    sid = request.args.get("seller_id")
+    d, e = _ml_api(sid, "/orders/search", {"seller": sid, "sort": "date_desc", "limit": 20})
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
+@app.route("/api-teste/ml/data/items")
+def api_teste_ml_data_items():
+    sid = request.args.get("seller_id")
+    d, e = _ml_api(sid, f"/users/{sid}/items/search", {"status": "active", "limit": 20})
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
+@app.route("/api-teste/ml/data/billing")
+def api_teste_ml_data_billing():
+    sid = request.args.get("seller_id")
+    d, e = _ml_api(sid, "/billing/monthly/periods")
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
+@app.route("/api-teste/ml/data/ads")
+def api_teste_ml_data_ads():
+    sid = request.args.get("seller_id")
+    d, e = _ml_api(sid, "/advertising/product_ads/advertisers", {"user_id": sid})
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
+@app.route("/api-teste/ml/data/reputation")
+def api_teste_ml_data_reputation():
+    sid = request.args.get("seller_id")
+    d, e = _ml_api(sid, f"/users/{sid}/seller_reputation")
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
+@app.route("/api-teste/ml/data/payments")
+def api_teste_ml_data_payments():
+    sid = request.args.get("seller_id")
+    d, e = _ml_api(sid, "/collections/search", {"sort": "date_created_desc", "limit": 20})
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
 if __name__ == "__main__":
     import webbrowser, threading, time
     threading.Thread(target=lambda: (time.sleep(1), webbrowser.open("http://localhost:5000")),

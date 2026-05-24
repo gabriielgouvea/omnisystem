@@ -37,6 +37,7 @@ debug_*.py
 debug_*.json
 tracking_log.json
 tracking_index.json
+ml_tokens.json
 *.docx
 test_*.pdf
 conferido.png
