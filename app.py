@@ -3670,7 +3670,7 @@ def api_teste_ml_data_payments():
 import hmac as _hmac
 
 _SHP_PARTNER_ID  = 1234628
-_SHP_PARTNER_KEY = "shpk776267475a4d7663756c624b6a45584f4d64784c594a624d6f6d78416e6e"
+_SHP_PARTNER_KEY = "776267475a4d7663756c624b6a45584f4d64784c594a624d6f6d78416e6e"
 _SHP_TOKEN_FILE  = BASE_DIR / "shopee_tokens.json"
 _SHP_REDIRECT    = "https://www.sistemaomni.com.br/api-teste/shopee/callback"
 _SHP_BASE        = "https://partner.test-stable.shopeemobile.com"
@@ -3754,6 +3754,9 @@ def api_teste_shopee_auth():
     path = "/api/v2/shop/auth_partner"
     ts = int(_time.time())
     sign = _shp_sign(path, ts)
+    base_str = f"{_SHP_PARTNER_ID}{path}{ts}"
+    (BASE_DIR / "shp_debug.log").write_text(
+        f"auth: partner_id={_SHP_PARTNER_ID} ts={ts} base={base_str} sign={sign}", encoding="utf-8")
     params = _urllib_parse.urlencode({
         "partner_id": _SHP_PARTNER_ID, "timestamp": ts, "sign": sign,
         "redirect": _SHP_REDIRECT,
