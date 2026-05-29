@@ -3666,6 +3666,214 @@ def api_teste_ml_data_payments():
     return jsonify(d)
 
 
+# ── Shopee API Integration ────────────────────────────────────────────────────
+import hmac as _hmac
+
+_SHP_PARTNER_ID  = 1234628
+_SHP_PARTNER_KEY = "shpk776267475a4d7663756c624b6a45584f4d64784c594a624d6f6d78416e6e"
+_SHP_TOKEN_FILE  = BASE_DIR / "shopee_tokens.json"
+_SHP_REDIRECT    = "https://www.sistemaomni.com.br/api-teste/shopee/callback"
+_SHP_BASE        = "https://partner.test-stable.shopeemobile.com"
+
+
+def _shp_sign(path, timestamp, access_token="", shop_id=""):
+    base = f"{_SHP_PARTNER_ID}{path}{timestamp}{access_token}{shop_id}"
+    return _hmac.new(_SHP_PARTNER_KEY.encode(), base.encode(), hashlib.sha256).hexdigest()
+
+
+def _shp_load_tokens():
+    if _SHP_TOKEN_FILE.exists():
+        return json.loads(_SHP_TOKEN_FILE.read_text(encoding="utf-8"))
+    return {}
+
+
+def _shp_save_tokens(tokens):
+    _SHP_TOKEN_FILE.write_text(json.dumps(tokens, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _shp_refresh_token(shop_id, refresh_token):
+    path = "/api/v2/auth/access_token/get"
+    ts = int(_time.time())
+    sign = _shp_sign(path, ts)
+    url = _SHP_BASE + path + "?" + _urllib_parse.urlencode({
+        "partner_id": _SHP_PARTNER_ID, "timestamp": ts, "sign": sign,
+    })
+    payload = json.dumps({"refresh_token": refresh_token, "shop_id": shop_id, "partner_id": _SHP_PARTNER_ID}).encode()
+    req = _urllib_req.Request(url, data=payload, method="POST", headers={"Content-Type": "application/json"})
+    try:
+        with _urllib_req.urlopen(req, timeout=10) as r:
+            data = json.loads(r.read())
+            tokens = _shp_load_tokens()
+            if str(shop_id) in tokens:
+                tokens[str(shop_id)].update(data)
+                _shp_save_tokens(tokens)
+            return data, None
+    except _urllib_err.HTTPError as e:
+        try: body = e.read().decode()
+        except: body = ""
+        return None, f"HTTP {e.code}: {body}"
+    except Exception as e:
+        return None, str(e)
+
+
+def _shp_api(shop_id, path, params=None, retry=True):
+    tokens = _shp_load_tokens()
+    t = tokens.get(str(shop_id), {})
+    access_token = t.get("access_token")
+    if not access_token:
+        return None, "Loja não conectada"
+    ts = int(_time.time())
+    sign = _shp_sign(path, ts, access_token, str(shop_id))
+    query = {
+        "partner_id": _SHP_PARTNER_ID, "timestamp": ts,
+        "access_token": access_token, "shop_id": shop_id, "sign": sign,
+    }
+    if params:
+        query.update(params)
+    url = _SHP_BASE + path + "?" + _urllib_parse.urlencode(query)
+    req = _urllib_req.Request(url, headers={"Content-Type": "application/json"})
+    try:
+        with _urllib_req.urlopen(req, timeout=15) as r:
+            return json.loads(r.read()), None
+    except _urllib_err.HTTPError as e:
+        try: body = e.read().decode()
+        except: body = ""
+        if retry:
+            rf = t.get("refresh_token")
+            if rf:
+                new_data, _ = _shp_refresh_token(shop_id, rf)
+                if new_data:
+                    return _shp_api(shop_id, path, params, retry=False)
+        return None, f"HTTP {e.code}: {body}"
+    except Exception as e:
+        return None, str(e)
+
+
+@app.route("/api-teste/shopee/auth")
+def api_teste_shopee_auth():
+    path = "/api/v2/shop/auth_partner"
+    ts = int(_time.time())
+    sign = _shp_sign(path, ts)
+    params = _urllib_parse.urlencode({
+        "partner_id": _SHP_PARTNER_ID, "timestamp": ts, "sign": sign,
+        "redirect": _SHP_REDIRECT,
+    })
+    return redirect(f"{_SHP_BASE}{path}?{params}")
+
+
+@app.route("/api-teste/shopee/callback")
+def api_teste_shopee_callback():
+    code    = request.args.get("code")
+    shop_id = request.args.get("shop_id")
+    error   = request.args.get("error")
+    if error or not code or not shop_id:
+        (BASE_DIR / "shp_debug.log").write_text(
+            f"callback: error={error} code={code} shop_id={shop_id}", encoding="utf-8")
+        return redirect("/?shp_err=1")
+    shop_id = int(shop_id)
+    path = "/api/v2/auth/token/get"
+    ts = int(_time.time())
+    sign = _shp_sign(path, ts)
+    url = _SHP_BASE + path + "?" + _urllib_parse.urlencode({
+        "partner_id": _SHP_PARTNER_ID, "timestamp": ts, "sign": sign,
+    })
+    payload = json.dumps({"code": code, "shop_id": shop_id, "partner_id": _SHP_PARTNER_ID}).encode()
+    req = _urllib_req.Request(url, data=payload, method="POST", headers={"Content-Type": "application/json"})
+    try:
+        with _urllib_req.urlopen(req, timeout=10) as r:
+            token_data = json.loads(r.read())
+    except _urllib_err.HTTPError as e:
+        try: body = e.read().decode()
+        except: body = ""
+        (BASE_DIR / "shp_debug.log").write_text(f"token error: HTTP {e.code} {body}", encoding="utf-8")
+        return redirect("/?shp_err=1")
+    except Exception as e:
+        (BASE_DIR / "shp_debug.log").write_text(f"token error: {e}", encoding="utf-8")
+        return redirect("/?shp_err=1")
+    tokens = _shp_load_tokens()
+    token_data["shop_id"] = shop_id
+    tokens[str(shop_id)] = token_data
+    _shp_save_tokens(tokens)
+    shop_info, _ = _shp_api(shop_id, "/api/v2/shop/get_shop_info")
+    if shop_info and shop_info.get("response"):
+        tokens[str(shop_id)]["shop_name"] = shop_info["response"].get("shop_name", str(shop_id))
+        _shp_save_tokens(tokens)
+    (BASE_DIR / "shp_debug.log").write_text(f"ok: shop_id={shop_id}", encoding="utf-8")
+    return redirect("/?shp_ok=1")
+
+
+@app.route("/api-teste/shopee/accounts")
+def api_teste_shopee_accounts():
+    tokens = _shp_load_tokens()
+    accounts = [{"shop_id": sid, "shop_name": t.get("shop_name", f"Loja {sid}")}
+                for sid, t in tokens.items()]
+    return jsonify({"accounts": accounts})
+
+
+@app.route("/api-teste/shopee/disconnect", methods=["POST"])
+def api_teste_shopee_disconnect():
+    sid = str(request.json.get("shop_id", ""))
+    tokens = _shp_load_tokens()
+    tokens.pop(sid, None)
+    _shp_save_tokens(tokens)
+    return jsonify({"ok": True})
+
+
+@app.route("/api-teste/shopee/data/shop")
+def api_teste_shopee_data_shop():
+    sid = int(request.args.get("shop_id"))
+    d, e = _shp_api(sid, "/api/v2/shop/get_shop_info")
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
+@app.route("/api-teste/shopee/data/orders")
+def api_teste_shopee_data_orders():
+    sid = int(request.args.get("shop_id"))
+    ts_now  = int(_time.time())
+    ts_from = ts_now - 30 * 24 * 3600
+    d, e = _shp_api(sid, "/api/v2/order/get_order_list", {
+        "time_range_field": "create_time",
+        "time_from": ts_from, "time_to": ts_now, "page_size": 20,
+    })
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
+@app.route("/api-teste/shopee/data/products")
+def api_teste_shopee_data_products():
+    sid = int(request.args.get("shop_id"))
+    d, e = _shp_api(sid, "/api/v2/product/get_item_list", {
+        "offset": 0, "page_size": 20, "item_status": "NORMAL",
+    })
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
+@app.route("/api-teste/shopee/data/finance")
+def api_teste_shopee_data_finance():
+    sid = int(request.args.get("shop_id"))
+    d, e = _shp_api(sid, "/api/v2/payment/get_wallet_balance")
+    if e:
+        ts_now  = int(_time.time())
+        ts_from = ts_now - 30 * 24 * 3600
+        d2, e2 = _shp_api(sid, "/api/v2/payment/get_payment_list", {
+            "page_no": 1, "page_size": 20,
+            "create_time_from": ts_from, "create_time_to": ts_now,
+        })
+        if e2: return jsonify({"error": e}), 400
+        return jsonify(d2)
+    return jsonify(d)
+
+
+@app.route("/api-teste/shopee/data/performance")
+def api_teste_shopee_data_performance():
+    sid = int(request.args.get("shop_id"))
+    d, e = _shp_api(sid, "/api/v2/shop_performance/get_shop_performance")
+    if e: return jsonify({"error": e}), 400
+    return jsonify(d)
+
+
 if __name__ == "__main__":
     import webbrowser, threading, time
     threading.Thread(target=lambda: (time.sleep(1), webbrowser.open("http://localhost:5000")),

@@ -39,6 +39,8 @@ tracking_log.json
 tracking_index.json
 ml_tokens.json
 ml_oauth_state.json
+shopee_tokens.json
+shp_debug.log
 *.docx
 test_*.pdf
 conferido.png

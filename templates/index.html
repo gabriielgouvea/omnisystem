@@ -122,6 +122,10 @@
     .at-account-chip { display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px; }
     .at-loading { color:var(--muted);font-size:.82rem;padding:24px;text-align:center; }
     .at-error { color:var(--red);font-size:.82rem;padding:16px;background:rgba(255,80,80,.06);border-radius:8px;border:1px solid rgba(255,80,80,.2); }
+    .at-platform-btn { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 16px;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s; }
+    .at-platform-btn.active { background:var(--accent);color:#fff;border-color:var(--accent); }
+    .at-shp-tab { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:5px 14px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s; }
+    .at-shp-tab.active,.at-shp-tab:hover { background:#ee4d2d;color:#fff;border-color:#ee4d2d; }
 
     /* ── Separação sub-nav ── */
     .sep-subnav {
@@ -1790,63 +1794,111 @@
   <!-- ═══════════════ PAGE API TESTE ═══════════════ -->
   <div id="page-api-teste" class="page-section" style="flex-direction:column;gap:0;padding:0;overflow:hidden;">
     <div style="padding:20px 24px 0;flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
         <h2 style="margin:0;font-size:1.2rem;font-weight:800;">🧪 API TESTE</h2>
-        <span style="background:#fff3cd;color:#856404;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid #ffc107;">APENAS LOCAL</span>
       </div>
-      <p style="margin:0 0 14px;font-size:.78rem;color:var(--muted);">Integração com a API do Mercado Livre. Dados reais das suas contas conectadas.</p>
 
-      <!-- Contas conectadas -->
-      <div class="at-card" style="margin-bottom:14px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <span style="font-weight:700;font-size:.85rem;">Contas conectadas</span>
-          <a href="/api-teste/ml/auth" style="background:var(--accent);color:#fff;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:700;text-decoration:none;">+ Conectar conta ML</a>
+      <!-- Platform switcher -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button id="at-platform-ml" class="at-platform-btn active" onclick="atSwitchPlatform('ml')">🟡 Mercado Livre</button>
+        <button id="at-platform-shp" class="at-platform-btn" onclick="atSwitchPlatform('shopee')">🟠 Shopee</button>
+      </div>
+
+      <!-- ── ML section ── -->
+      <div id="at-ml-section">
+        <div class="at-card" style="margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-weight:700;font-size:.85rem;">Contas conectadas — ML</span>
+            <a href="/api-teste/ml/auth" style="background:var(--accent);color:#fff;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:700;text-decoration:none;">+ Conectar conta ML</a>
+          </div>
+          <div id="at-accounts-list"><div class="at-loading">Carregando...</div></div>
         </div>
-        <div id="at-accounts-list"><div class="at-loading">Carregando...</div></div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <select id="at-seller-select" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:.82rem;color:var(--text);cursor:pointer;min-width:180px;">
+            <option value="">Selecione uma conta</option>
+          </select>
+          <button id="at-load-btn" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:.82rem;font-weight:700;cursor:pointer;">Carregar dados</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="at-tab active" data-tab="perfil">👤 Perfil</button>
+          <button class="at-tab" data-tab="pedidos">📦 Pedidos</button>
+          <button class="at-tab" data-tab="anuncios">🏷 Anúncios</button>
+          <button class="at-tab" data-tab="faturamento">💰 Faturamento</button>
+          <button class="at-tab" data-tab="ads">📣 Ads</button>
+          <button class="at-tab" data-tab="reputacao">⭐ Reputação</button>
+          <button class="at-tab" data-tab="pagamentos">💳 Pagamentos</button>
+        </div>
       </div>
 
-      <!-- Selector + botão -->
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-        <select id="at-seller-select" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:.82rem;color:var(--text);cursor:pointer;min-width:180px;">
-          <option value="">Selecione uma conta</option>
-        </select>
-        <button id="at-load-btn" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:.82rem;font-weight:700;cursor:pointer;">Carregar dados</button>
-      </div>
-
-      <!-- Sub-tabs -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
-        <button class="at-tab active" data-tab="perfil">👤 Perfil</button>
-        <button class="at-tab" data-tab="pedidos">📦 Pedidos</button>
-        <button class="at-tab" data-tab="anuncios">🏷 Anúncios</button>
-        <button class="at-tab" data-tab="faturamento">💰 Faturamento</button>
-        <button class="at-tab" data-tab="ads">📣 Ads</button>
-        <button class="at-tab" data-tab="reputacao">⭐ Reputação</button>
-        <button class="at-tab" data-tab="pagamentos">💳 Pagamentos</button>
+      <!-- ── Shopee section ── -->
+      <div id="at-shp-section" style="display:none;">
+        <div class="at-card" style="margin-bottom:14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-weight:700;font-size:.85rem;">Lojas conectadas — Shopee</span>
+            <a href="/api-teste/shopee/auth" style="background:#ee4d2d;color:#fff;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:700;text-decoration:none;">+ Conectar loja Shopee</a>
+          </div>
+          <div id="at-shp-accounts-list"><div class="at-loading">Carregando...</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+          <select id="at-shp-select" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:.82rem;color:var(--text);cursor:pointer;min-width:180px;">
+            <option value="">Selecione uma loja</option>
+          </select>
+          <button id="at-shp-load-btn" style="background:#ee4d2d;color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:.82rem;font-weight:700;cursor:pointer;">Carregar dados</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+          <button class="at-shp-tab active" data-tab="loja">🏪 Loja</button>
+          <button class="at-shp-tab" data-tab="pedidos">📦 Pedidos</button>
+          <button class="at-shp-tab" data-tab="produtos">🛍 Produtos</button>
+          <button class="at-shp-tab" data-tab="financas">💰 Finanças</button>
+          <button class="at-shp-tab" data-tab="desempenho">📊 Desempenho</button>
+        </div>
       </div>
     </div>
 
     <!-- Conteúdo das tabs -->
     <div style="flex:1;overflow-y:auto;padding:0 24px 24px;">
-      <div id="at-tab-perfil" class="at-pane">
-        <div id="at-perfil-content"><div class="at-placeholder">Selecione uma conta e clique em "Carregar dados"</div></div>
+      <!-- ML panes -->
+      <div id="at-ml-content">
+        <div id="at-tab-perfil" class="at-pane">
+          <div id="at-perfil-content"><div class="at-placeholder">Selecione uma conta e clique em "Carregar dados"</div></div>
+        </div>
+        <div id="at-tab-pedidos" class="at-pane" style="display:none;">
+          <div id="at-pedidos-content"><div class="at-placeholder">Aguardando...</div></div>
+        </div>
+        <div id="at-tab-anuncios" class="at-pane" style="display:none;">
+          <div id="at-anuncios-content"><div class="at-placeholder">Aguardando...</div></div>
+        </div>
+        <div id="at-tab-faturamento" class="at-pane" style="display:none;">
+          <div id="at-faturamento-content"><div class="at-placeholder">Aguardando...</div></div>
+        </div>
+        <div id="at-tab-ads" class="at-pane" style="display:none;">
+          <div id="at-ads-content"><div class="at-placeholder">Aguardando...</div></div>
+        </div>
+        <div id="at-tab-reputacao" class="at-pane" style="display:none;">
+          <div id="at-reputacao-content"><div class="at-placeholder">Aguardando...</div></div>
+        </div>
+        <div id="at-tab-pagamentos" class="at-pane" style="display:none;">
+          <div id="at-pagamentos-content"><div class="at-placeholder">Aguardando...</div></div>
+        </div>
       </div>
-      <div id="at-tab-pedidos" class="at-pane" style="display:none;">
-        <div id="at-pedidos-content"><div class="at-placeholder">Aguardando...</div></div>
-      </div>
-      <div id="at-tab-anuncios" class="at-pane" style="display:none;">
-        <div id="at-anuncios-content"><div class="at-placeholder">Aguardando...</div></div>
-      </div>
-      <div id="at-tab-faturamento" class="at-pane" style="display:none;">
-        <div id="at-faturamento-content"><div class="at-placeholder">Aguardando...</div></div>
-      </div>
-      <div id="at-tab-ads" class="at-pane" style="display:none;">
-        <div id="at-ads-content"><div class="at-placeholder">Aguardando...</div></div>
-      </div>
-      <div id="at-tab-reputacao" class="at-pane" style="display:none;">
-        <div id="at-reputacao-content"><div class="at-placeholder">Aguardando...</div></div>
-      </div>
-      <div id="at-tab-pagamentos" class="at-pane" style="display:none;">
-        <div id="at-pagamentos-content"><div class="at-placeholder">Aguardando...</div></div>
+
+      <!-- Shopee panes -->
+      <div id="at-shp-content" style="display:none;">
+        <div id="at-shp-tab-loja" class="at-shp-pane">
+          <div id="at-shp-loja-content"><div class="at-placeholder">Selecione uma loja e clique em "Carregar dados"</div></div>
+        </div>
+        <div id="at-shp-tab-pedidos" class="at-shp-pane" style="display:none;">
+          <div id="at-shp-pedidos-content"><div class="at-placeholder">Aguardando...</div></div>
+        </div>
+        <div id="at-shp-tab-produtos" class="at-shp-pane" style="display:none;">
+          <div id="at-shp-produtos-content"><div class="at-placeholder">Aguardando...</div></div>
+        </div>
+        <div id="at-shp-tab-financas" class="at-shp-pane" style="display:none;">
+          <div id="at-shp-financas-content"><div class="at-placeholder">Aguardando...</div></div>
+        </div>
+        <div id="at-shp-tab-desempenho" class="at-shp-pane" style="display:none;">
+          <div id="at-shp-desempenho-content"><div class="at-placeholder">Aguardando...</div></div>
+        </div>
       </div>
     </div>
   </div><!-- /page-api-teste -->
@@ -6109,6 +6161,17 @@ function toggleMobileMenu() {
     btn.classList.add('open');
   }
 }
+// ── API TESTE — platform switcher ──────────────────────────────────────────
+function atSwitchPlatform(p) {
+  const isML = p === "ml";
+  document.getElementById("at-ml-section").style.display = isML ? "" : "none";
+  document.getElementById("at-ml-content").style.display = isML ? "" : "none";
+  document.getElementById("at-shp-section").style.display = isML ? "none" : "";
+  document.getElementById("at-shp-content").style.display = isML ? "none" : "";
+  document.getElementById("at-platform-ml").classList.toggle("active", isML);
+  document.getElementById("at-platform-shp").classList.toggle("active", !isML);
+}
+
 // ── API TESTE — ML Integration ─────────────────────────────────────────────
 (function () {
   const sellerSelect = document.getElementById("at-seller-select");
@@ -6357,6 +6420,203 @@ function toggleMobileMenu() {
   // Carrega contas ao iniciar a página
   atLoadAccounts();
   document.getElementById("nav-api-teste").addEventListener("click", atLoadAccounts);
+})();
+
+// ── API TESTE — Shopee Integration ─────────────────────────────────────────
+(function () {
+  const shpSelect  = document.getElementById("at-shp-select");
+  const shpLoadBtn = document.getElementById("at-shp-load-btn");
+
+  // Redireciona para a página se voltou do OAuth Shopee
+  const urlP2 = new URLSearchParams(location.search);
+  if (urlP2.get("shp_ok") || urlP2.get("shp_err")) {
+    showPage("page-api-teste");
+    atSwitchPlatform("shopee");
+    history.replaceState({}, "", "/");
+    if (urlP2.get("shp_err")) {
+      document.getElementById("at-shp-accounts-list").innerHTML =
+        '<div class="at-error">❌ Erro ao conectar loja. Tente novamente.</div>';
+    }
+  }
+
+  // Tab switching Shopee
+  document.querySelectorAll(".at-shp-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".at-shp-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.querySelectorAll(".at-shp-pane").forEach(p => p.style.display = "none");
+      document.getElementById("at-shp-tab-" + btn.dataset.tab).style.display = "block";
+    });
+  });
+
+  function shpLoadAccounts() {
+    fetch("/api-teste/shopee/accounts").then(r => r.json()).then(data => {
+      const list = document.getElementById("at-shp-accounts-list");
+      list.innerHTML = "";
+      shpSelect.innerHTML = '<option value="">Selecione uma loja</option>';
+      if (!data.accounts || data.accounts.length === 0) {
+        list.innerHTML = '<div style="color:var(--muted);font-size:.8rem;padding:4px 0;">Nenhuma loja conectada. Clique em "+ Conectar loja Shopee".</div>';
+        return;
+      }
+      data.accounts.forEach(acc => {
+        const chip = document.createElement("div");
+        chip.className = "at-account-chip";
+        chip.innerHTML = `
+          <div style="width:34px;height:34px;border-radius:50%;background:#ee4d2d;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:.85rem;flex-shrink:0;">${(acc.shop_name||"?")[0].toUpperCase()}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:.82rem;">${acc.shop_name||acc.shop_id}</div>
+            <div style="font-size:.72rem;color:var(--muted);">ID: ${acc.shop_id}</div>
+          </div>
+          <button onclick="shpDisconnect('${acc.shop_id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem;padding:4px 8px;border-radius:6px;" title="Desconectar">✕</button>`;
+        list.appendChild(chip);
+        const opt = document.createElement("option");
+        opt.value = acc.shop_id;
+        opt.textContent = acc.shop_name || acc.shop_id;
+        shpSelect.appendChild(opt);
+      });
+      if (data.accounts.length === 1) shpSelect.value = data.accounts[0].shop_id;
+    }).catch(() => {
+      document.getElementById("at-shp-accounts-list").innerHTML = '<div class="at-error">Erro ao carregar lojas.</div>';
+    });
+  }
+
+  window.shpDisconnect = function(sid) {
+    if (!confirm("Desconectar esta loja?")) return;
+    fetch("/api-teste/shopee/disconnect", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({shop_id:parseInt(sid)||sid})})
+      .then(() => shpLoadAccounts());
+  };
+
+  shpLoadBtn.addEventListener("click", () => {
+    const sid = shpSelect.value;
+    if (!sid) { alert("Selecione uma loja primeiro."); return; }
+    shpFetchAll(sid);
+  });
+
+  function shpFetchAll(sid) {
+    shpFetchLoja(sid); shpFetchPedidos(sid); shpFetchProdutos(sid);
+    shpFetchFinancas(sid); shpFetchDesempenho(sid);
+  }
+
+  function shpLoading(id) { document.getElementById(id).innerHTML = '<div class="at-loading">⏳ Carregando...</div>'; }
+  function shpError(id, msg) { document.getElementById(id).innerHTML = `<div class="at-error">❌ ${msg}</div>`; }
+  function shpJson(d) { return `<div class="at-card"><div class="at-card-title" style="font-size:.75rem;color:var(--muted);">JSON completo</div><pre class="at-json">${JSON.stringify(d,null,2)}</pre></div>`; }
+  function fmtMoney2(v) { return "R$ "+(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2}); }
+  function fmtDate2(ts) { return ts ? new Date(ts*1000).toLocaleDateString("pt-BR") : "—"; }
+
+  function shpFetchLoja(sid) {
+    shpLoading("at-shp-loja-content");
+    fetch(`/api-teste/shopee/data/shop?shop_id=${sid}`).then(r=>r.json()).then(d => {
+      if (d.error) { shpError("at-shp-loja-content", d.error); return; }
+      const r = d.response || d;
+      document.getElementById("at-shp-loja-content").innerHTML = `
+        <div class="at-card">
+          <div class="at-card-title">🏪 Informações da Loja</div>
+          <div class="at-row"><span>Nome</span><span>${r.shop_name||"—"}</span></div>
+          <div class="at-row"><span>Shop ID</span><span>${r.shop_id||sid}</span></div>
+          <div class="at-row"><span>Status</span><span>${r.status||"—"}</span></div>
+          <div class="at-row"><span>Descrição</span><span style="font-size:.74rem;max-width:60%;text-align:right;">${r.description||"—"}</span></div>
+          <div class="at-row"><span>Categoria</span><span>${r.shop_category||"—"}</span></div>
+          <div class="at-row"><span>Região</span><span>${r.region||"—"}</span></div>
+          <div class="at-row"><span>Avaliação</span><span>${r.rating_star||"—"} ⭐</span></div>
+          <div class="at-row"><span>Itens</span><span>${(r.item_count||0).toLocaleString("pt-BR")}</span></div>
+        </div>${shpJson(d)}`;
+    }).catch(e => shpError("at-shp-loja-content", e.message));
+  }
+
+  function shpFetchPedidos(sid) {
+    shpLoading("at-shp-pedidos-content");
+    fetch(`/api-teste/shopee/data/orders?shop_id=${sid}`).then(r=>r.json()).then(d => {
+      if (d.error) { shpError("at-shp-pedidos-content", d.error); return; }
+      const r = d.response || d;
+      const orders = r.order_list || r.orders || [];
+      const rows = orders.map(o => `
+        <div class="at-row" style="flex-direction:column;gap:3px;padding:8px 0;">
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-weight:700;color:var(--text);">${o.order_sn||o.ordersn||"—"}</span>
+            <span style="color:var(--muted);font-size:.74rem;">${o.order_status||"—"}</span>
+          </div>
+          <div style="font-size:.74rem;color:var(--muted);">${fmtDate2(o.create_time)} • ${o.shipping_carrier||"—"}</div>
+        </div>`).join("");
+      document.getElementById("at-shp-pedidos-content").innerHTML = `
+        <div class="at-card">
+          <div class="at-card-title">📦 Pedidos (últimos 30 dias) <span style="font-weight:400;color:var(--muted);font-size:.75rem;">/ ${orders.length} registros</span></div>
+          ${rows||'<div class="at-placeholder">Nenhum pedido no período</div>'}
+        </div>${shpJson(d)}`;
+    }).catch(e => shpError("at-shp-pedidos-content", e.message));
+  }
+
+  function shpFetchProdutos(sid) {
+    shpLoading("at-shp-produtos-content");
+    fetch(`/api-teste/shopee/data/products?shop_id=${sid}`).then(r=>r.json()).then(d => {
+      if (d.error) { shpError("at-shp-produtos-content", d.error); return; }
+      const r = d.response || d;
+      const items = r.item || r.items || [];
+      const total = r.total_count || items.length;
+      const rows = items.map(it => `
+        <div class="at-row" style="flex-direction:column;gap:3px;padding:8px 0;">
+          <div style="display:flex;justify-content:space-between;gap:8px;">
+            <span style="font-weight:600;font-size:.82rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.item_name||it.name||it.item_id||"—"}</span>
+            <span style="color:var(--muted);font-size:.74rem;flex-shrink:0;">${it.item_status||it.status||"—"}</span>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted);">ID: ${it.item_id||"—"}</div>
+        </div>`).join("");
+      document.getElementById("at-shp-produtos-content").innerHTML = `
+        <div class="at-card">
+          <div class="at-card-title">🛍 Produtos <span style="font-weight:400;color:var(--muted);font-size:.75rem;">/ total: ${(total||0).toLocaleString("pt-BR")}</span></div>
+          ${rows||'<div class="at-placeholder">Nenhum produto encontrado</div>'}
+        </div>${shpJson(d)}`;
+    }).catch(e => shpError("at-shp-produtos-content", e.message));
+  }
+
+  function shpFetchFinancas(sid) {
+    shpLoading("at-shp-financas-content");
+    fetch(`/api-teste/shopee/data/finance?shop_id=${sid}`).then(r=>r.json()).then(d => {
+      if (d.error) { shpError("at-shp-financas-content", d.error); return; }
+      const r = d.response || d;
+      const balance = r.current_balance !== undefined ? r.current_balance : r.balance;
+      const txs = r.payment_list || r.transactions || [];
+      const rows = txs.map(p => `
+        <div class="at-row" style="flex-direction:column;gap:3px;padding:8px 0;">
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-weight:700;color:var(--accent);">${fmtMoney2(p.amount)}</span>
+            <span style="color:var(--muted);font-size:.74rem;">${fmtDate2(p.pay_time||p.create_time)}</span>
+          </div>
+          <div style="font-size:.74rem;color:var(--muted);">${p.payment_sn||p.order_sn||"—"} • ${p.payment_type||"—"}</div>
+        </div>`).join("");
+      document.getElementById("at-shp-financas-content").innerHTML = `
+        <div class="at-card">
+          <div class="at-card-title">💰 Finanças</div>
+          ${balance !== undefined ? `
+            <div class="at-row" style="background:var(--bg);border-radius:8px;padding:8px;margin-bottom:8px;">
+              <span style="font-weight:700;">Saldo atual</span>
+              <span style="color:var(--accent);font-weight:800;font-size:1rem;">${fmtMoney2(balance)}</span>
+            </div>` : ""}
+          ${rows||'<div class="at-placeholder">Sem transações no período</div>'}
+        </div>${shpJson(d)}`;
+    }).catch(e => shpError("at-shp-financas-content", e.message));
+  }
+
+  function shpFetchDesempenho(sid) {
+    shpLoading("at-shp-desempenho-content");
+    fetch(`/api-teste/shopee/data/performance?shop_id=${sid}`).then(r=>r.json()).then(d => {
+      if (d.error) { shpError("at-shp-desempenho-content", d.error); return; }
+      const r = d.response || d;
+      const nfr = r.non_fulfillment_rate;
+      const lsr = r.late_shipment_rate;
+      const rr  = r.response_rate || r.chat_response_rate;
+      document.getElementById("at-shp-desempenho-content").innerHTML = `
+        <div class="at-card">
+          <div class="at-card-title">📊 Desempenho da Loja</div>
+          <div class="at-row"><span>Nível</span><span>${r.overall_performance?.level||r.shop_level||"—"}</span></div>
+          <div class="at-row"><span>Taxa de não-envio</span><span>${nfr?.my_shop_non_fulfillment_rate !== undefined ? (nfr.my_shop_non_fulfillment_rate*100).toFixed(2)+"%" : "—"}</span></div>
+          <div class="at-row"><span>Taxa de resposta</span><span>${rr?.my_shop_response_rate !== undefined ? (rr.my_shop_response_rate*100).toFixed(2)+"%" : "—"}</span></div>
+          <div class="at-row"><span>Envio atrasado</span><span>${lsr?.my_shop_late_shipment_rate !== undefined ? (lsr.my_shop_late_shipment_rate*100).toFixed(2)+"%" : "—"}</span></div>
+        </div>${shpJson(d)}`;
+    }).catch(e => shpError("at-shp-desempenho-content", e.message));
+  }
+
+  shpLoadAccounts();
+  document.getElementById("nav-api-teste").addEventListener("click", shpLoadAccounts);
 })();
 
 function closeMobileMenu() {
