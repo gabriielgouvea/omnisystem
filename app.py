@@ -3678,7 +3678,8 @@ _SHP_BASE        = "https://partner.test-stable.shopeemobile.com"
 
 def _shp_sign(path, timestamp, access_token="", shop_id=""):
     base = f"{_SHP_PARTNER_ID}{path}{timestamp}{access_token}{shop_id}"
-    return _hmac.new(_SHP_PARTNER_KEY.encode(), base.encode(), hashlib.sha256).hexdigest()
+    key = bytes.fromhex(_SHP_PARTNER_KEY)
+    return _hmac.new(key, base.encode(), hashlib.sha256).hexdigest()
 
 
 def _shp_load_tokens():
