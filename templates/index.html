@@ -102,12 +102,12 @@
     .page-section {
       width: 100%; display: flex; flex-direction: column; align-items: center;
     }
-    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes, #page-cortar, #page-caixas, #page-estoque, #page-produtos, #page-movimentacoes, #page-api-teste {
+    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes, #page-cortar, #page-caixas, #page-estoque, #page-produtos, #page-movimentacoes, #page-api-teste, #page-tiktok-dashboard {
       display: none;
     }
     #page-dashboard.active, #page-separacao.active, #page-localizador.active,
     #page-historico.active, #page-ajustes.active, #page-cortar.active, #page-caixas.active,
-    #page-estoque.active, #page-produtos.active, #page-movimentacoes.active, #page-api-teste.active { display: flex; }
+    #page-estoque.active, #page-produtos.active, #page-movimentacoes.active, #page-api-teste.active, #page-tiktok-dashboard.active { display: flex; }
 
     /* ── API TESTE ── */
     .at-tab { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:5px 14px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s; }
@@ -122,6 +122,114 @@
     .at-account-chip { display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px; }
     .at-loading { color:var(--muted);font-size:.82rem;padding:24px;text-align:center; }
     .at-error { color:var(--red);font-size:.82rem;padding:16px;background:rgba(255,80,80,.06);border-radius:8px;border:1px solid rgba(255,80,80,.2); }
+    .tt-upload-zone { border:2px dashed var(--border2);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--bg); }
+    .tt-upload-zone:hover,.tt-upload-zone.drag { border-color:var(--accent);background:rgba(99,102,241,.04); }
+    .tt-upload-zone p { font-size:.82rem;color:var(--muted);margin:6px 0 0; }
+    .tt-file-chip { display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:.74rem;margin:3px; }
+    /* ── TikTok Separação ── */
+    .tt-stat-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:14px; }
+    .tt-stat-card { background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center; }
+    .tt-stat-card .val { font-size:1.4rem;font-weight:800;color:var(--accent); }
+    .tt-stat-card .lbl { font-size:.7rem;color:var(--muted);margin-top:2px; }
+    .tt-row { display:flex;justify-content:space-between;align-items:center;font-size:.8rem;padding:6px 0;border-bottom:1px solid var(--border); }
+    .tt-row:last-child { border-bottom:none; }
+    .tt-badge { background:var(--accent);color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:20px; }
+    .tt-unknown-item { background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px; }
+    .tt-unknown-item select { background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;font-size:.78rem;color:var(--text);width:100%;margin-top:6px; }
+    /* ── TikTok Dashboard ── */
+    .ttd-page { display:flex;flex-direction:column;height:100%;overflow:hidden; }
+    .ttd-header { background:var(--card);border-bottom:1px solid var(--border);padding:20px 28px 0;flex-shrink:0; }
+    .ttd-header-top { display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px; }
+    .ttd-title { color:var(--text);font-size:1.25rem;font-weight:800;display:flex;align-items:center;gap:10px;margin:0; }
+    .ttd-subtitle { color:var(--muted);font-size:.75rem;margin-top:2px; }
+    .ttd-period-row { display:flex;gap:6px;padding-bottom:0; }
+    .ttd-pBtn { background:var(--bg);border:1px solid var(--border);color:var(--muted);font-size:.78rem;font-weight:600;padding:7px 16px;border-radius:8px 8px 0 0;cursor:pointer;transition:all .15s;border-bottom:none; }
+    .ttd-pBtn.active { background:var(--accent);border-color:var(--accent);color:#fff;border-bottom:2px solid var(--accent); }
+    .ttd-pBtn:hover:not(.active) { color:var(--text);border-color:var(--border2); }
+    .ttd-custom-row { display:none;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 28px;background:var(--card);border-bottom:1px solid var(--border); }
+    .ttd-custom-row input[type=date] { background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:.8rem;color:var(--text); }
+    .ttd-filters-row { display:flex;gap:8px;flex-wrap:wrap;padding:12px 28px;background:var(--card);border-bottom:1px solid var(--border);align-items:center; }
+    .ttd-filters-row select { background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:.8rem;color:var(--text);cursor:pointer; }
+    .ttd-filters-row select:focus { outline:none;border-color:var(--accent); }
+    .ttd-body { flex:1;overflow-y:auto;padding:24px 28px 32px; }
+    /* KPI Cards */
+    .ttd-kpi-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:24px; }
+    .ttd-kpi { background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 22px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s; }
+    .ttd-kpi:hover { transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1); }
+    .ttd-kpi::before { content:'';position:absolute;top:0;left:0;width:4px;height:100%;border-radius:16px 0 0 16px; }
+    .ttd-kpi.kpi-orders::before { background:linear-gradient(180deg,#6366f1,#8b5cf6); }
+    .ttd-kpi.kpi-items::before  { background:linear-gradient(180deg,#10b981,#059669); }
+    .ttd-kpi.kpi-prod::before   { background:linear-gradient(180deg,#f59e0b,#d97706); }
+    .ttd-kpi.kpi-kit::before    { background:linear-gradient(180deg,#8b5cf6,#7c3aed); }
+    .ttd-kpi-icon { font-size:1.5rem;margin-bottom:8px;display:block; }
+    .ttd-kpi-val  { font-size:2.4rem;font-weight:900;line-height:1;letter-spacing:-1px;color:var(--text); }
+    .ttd-kpi-lbl  { font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:6px; }
+    .ttd-kpi-sub  { font-size:.78rem;color:var(--muted);margin-top:3px; }
+    /* Cards genéricos */
+    .ttd-card { background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;margin-bottom:20px; }
+    .ttd-card-title { font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:16px; }
+    .ttd-card-title span { color:var(--text);font-size:1rem;font-weight:700;text-transform:none;letter-spacing:0;margin-left:8px; }
+    /* Gráfico de barras diário */
+    .ttd-bar-wrap { overflow-x:auto;padding-bottom:8px; }
+    .ttd-bar-chart { display:flex;align-items:flex-end;gap:6px;height:200px;min-width:100%; }
+    .ttd-bar-col { display:flex;flex-direction:column;align-items:center;flex:1;min-width:40px;gap:4px;cursor:default;position:relative; }
+    .ttd-bar-col:hover .ttd-bar-inner { filter:brightness(1.15); }
+    .ttd-bar-col:hover .ttd-bar-tooltip { opacity:1;pointer-events:none; }
+    .ttd-bar-val { font-size:.72rem;font-weight:800;color:var(--text);transition:color .15s; }
+    .ttd-bar-inner { width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#818cf8,#6366f1);transition:height .4s cubic-bezier(.4,0,.2,1),filter .15s;min-height:4px; }
+    .ttd-bar-lbl { font-size:.65rem;color:var(--muted);white-space:nowrap;font-weight:600; }
+    .ttd-bar-tooltip { position:absolute;bottom:calc(100% + 8px);background:var(--text);color:var(--card);font-size:.72rem;font-weight:700;padding:4px 8px;border-radius:6px;white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;z-index:10; }
+    .ttd-bar-tooltip::after { content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--text); }
+    /* Produto bars */
+    .ttd-prod-row { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border); }
+    .ttd-prod-row:last-child { border-bottom:none; }
+    .ttd-prod-name { font-size:.85rem;font-weight:600;color:var(--text);width:140px;flex-shrink:0; }
+    .ttd-prod-bar-wrap { flex:1;background:var(--bg);border-radius:6px;height:10px;overflow:hidden; }
+    .ttd-prod-bar-fill { height:100%;border-radius:6px;background:linear-gradient(90deg,#6366f1,#8b5cf6);transition:width .5s cubic-bezier(.4,0,.2,1); }
+    .ttd-prod-num { font-size:.9rem;font-weight:800;color:var(--text);min-width:36px;text-align:right; }
+    .ttd-prod-pct { font-size:.72rem;color:var(--muted);min-width:38px;text-align:right; }
+    /* Cor + tamanho */
+    .ttd-cs-grid { display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px; }
+    .ttd-color-row { display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border); }
+    .ttd-color-row:last-child { border-bottom:none; }
+    .ttd-color-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0;background:var(--accent); }
+    .ttd-color-name { flex:1;font-size:.82rem;font-weight:500;color:var(--text);line-height:1.4; }
+    .ttd-color-bar  { width:50px;background:var(--bg);border-radius:4px;height:6px;overflow:hidden;flex-shrink:0; }
+    .ttd-color-fill { height:100%;border-radius:4px;background:linear-gradient(90deg,#f59e0b,#f97316); }
+    .ttd-color-num  { font-size:.85rem;font-weight:800;color:var(--text);min-width:28px;text-align:right; }
+    .ttd-size-grid2 { display:grid;grid-template-columns:repeat(2,1fr);gap:10px; }
+    .ttd-size-box { background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center; }
+    .ttd-size-val { font-size:1.8rem;font-weight:900;color:var(--text);line-height:1; }
+    .ttd-size-lbl { font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px; }
+    .ttd-size-bar  { width:100%;background:var(--border);border-radius:4px;height:4px;margin-top:8px;overflow:hidden; }
+    .ttd-size-fill { height:100%;border-radius:4px;background:linear-gradient(90deg,#10b981,#6366f1); }
+    /* Histórico */
+    .ttd-hist-row { display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border); }
+    .ttd-hist-row:last-child { border-bottom:none; }
+    .ttd-hist-date { font-size:.9rem;font-weight:700;color:var(--text); }
+    .ttd-hist-meta { font-size:.78rem;color:var(--muted);margin-top:3px; }
+    .ttd-hist-del  { background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;padding:5px 10px;border-radius:8px;font-size:.78rem;transition:all .15s; }
+    .ttd-hist-del:hover { border-color:var(--red);color:var(--red); }
+    /* Filtro limpar */
+    .ttd-clear-btn { background:none;border:1px solid var(--border);color:var(--muted);font-size:.78rem;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer;transition:all .15s; }
+    .ttd-clear-btn:hover { border-color:var(--accent);color:var(--accent); }
+    /* Responsive */
+    .ttd-filter-row { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px; }
+    .ttd-filter-row select,.ttd-filter-row input { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:.78rem;color:var(--text); }
+    .ttd-color-size-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px; }
+    @media(max-width:700px){
+      .ttd-cs-grid { grid-template-columns:1fr; }
+      .ttd-kpi-grid { grid-template-columns:1fr 1fr; }
+      .ttd-kpi-val  { font-size:1.8rem; }
+      .ttd-header   { padding:16px 16px 0; }
+      .ttd-body,.ttd-filters-row,.ttd-custom-row { padding-left:16px;padding-right:16px; }
+      .ttd-color-size-grid { grid-template-columns:1fr; }
+      .ttd-filter-row select,.ttd-filter-row input { width:100%; }
+      .tt-stat-grid { grid-template-columns:1fr 1fr; }
+      #ttd-mid-grid { grid-template-columns:1fr !important; }
+      .ttd-size-grid2 { grid-template-columns:repeat(4,1fr); }
+      .ttd-prod-pct { display:none; }
+    }
     .at-platform-btn { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 16px;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s; }
     .at-platform-btn.active { background:var(--accent);color:#fff;border-color:var(--accent); }
     .at-shp-tab { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:5px 14px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s; }
@@ -917,7 +1025,7 @@
             </div>
             ML/CORREIOS
           </button>
-          <button class="nav-sub-item dev" id="nav-tiktok">
+          <button class="nav-sub-item" id="nav-tiktok">
             <div class="nav-sub-logo">
               <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
                 <rect width="28" height="28" rx="7" fill="#010101"/>
@@ -953,6 +1061,16 @@
       <div class="sidebar-sep"></div>
       <button class="nav-item" id="nav-api-teste">
         <span class="nav-icon">🧪</span> API TESTE
+      </button>
+      <button class="nav-item" id="nav-tiktok-dash">
+        <span class="nav-icon">
+          <svg viewBox="0 0 20 20" width="18" height="18" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle">
+            <rect width="20" height="20" rx="5" fill="#010101"/>
+            <rect x="8.5" y="3.5" width="1.4" height="9.5" rx=".7" fill="white"/>
+            <path d="M9.9 3.5 C12.8 4.5 14 6.6 12 8.7" fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+            <ellipse cx="6.5" cy="15" rx="2.4" ry="1.6" transform="rotate(-18 6.5 15)" fill="white"/>
+          </svg>
+        </span> Dashboard TikTok
       </button>
       <button class="nav-item" id="nav-ajustes">
         <span class="nav-icon">⚙</span> Ajustes
@@ -1150,7 +1268,7 @@
         </div>
         ML/CORREIOS
       </button>
-      <button class="sep-tab dev" id="sep-tab-tiktok">
+      <button class="sep-tab" id="sep-tab-tiktok">
         <div class="sep-tab-logo">
           <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
             <rect width="28" height="28" rx="7" fill="#010101"/>
@@ -1532,17 +1650,160 @@
 
     </div><!-- /sep-mlc2 -->
 
-    <!-- ─── TikTok placeholder ─── -->
+    <!-- ─── TikTok Shop ─── -->
     <div id="sep-tiktok" style="width:100%;display:none;flex-direction:column;align-items:center;">
-      <div class="card" style="text-align:center;padding:48px 24px;width:100%;max-width:1200px;">
-        <div style="font-size:2.4rem;margin-bottom:14px;">🚧</div>
-        <div style="font-weight:700;font-size:1rem;color:var(--text);margin-bottom:7px;">Em desenvolvimento</div>
-        <div style="font-size:.8rem;color:var(--muted);">Integração com TikTok Shop em breve.</div>
+
+      <!-- Upload -->
+      <div class="card" id="tt-upload-card" style="width:100%;max-width:1200px;">
+        <div class="card-title">TikTok Shop — Carregar Etiquetas</div>
+        <div class="tt-upload-zone" id="tt-dropzone" onclick="document.getElementById('tt-file-input').click()">
+          <input type="file" id="tt-file-input" multiple accept=".pdf" style="display:none;">
+          <div style="font-size:2rem;margin-bottom:8px;">📁</div>
+          <div style="font-weight:700;font-size:.9rem;color:var(--text);">Arraste os PDFs aqui ou clique para selecionar</div>
+          <p>Aceita múltiplos arquivos — cada PDF pode ter vários pedidos (2 páginas por pedido)</p>
+        </div>
+        <div id="tt-file-list" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px;"></div>
+        <div id="tt-upload-status" style="margin-top:10px;font-size:.82rem;display:none;"></div>
+        <button class="btn btn-primary" id="tt-upload-btn" style="margin-top:12px;display:none;">📤 Analisar PDFs</button>
       </div>
+
+      <!-- Produtos desconhecidos -->
+      <div class="card" id="tt-unknowns-card" style="display:none;width:100%;max-width:1200px;">
+        <div class="card-title" style="color:#b87000;">⚠ Classificar Produtos</div>
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">Os títulos abaixo não foram reconhecidos automaticamente. Selecione o tipo de produto para cada um:</p>
+        <div id="tt-unknowns-list"></div>
+        <button class="btn btn-primary" id="tt-confirm-mapping-btn" style="margin-top:14px;">Confirmar e continuar</button>
+      </div>
+
+      <!-- Resumo -->
+      <div class="card" id="tt-summary-card" style="display:none;width:100%;max-width:1200px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+          <div class="card-title" style="margin-bottom:0;">Resumo da Expedição</div>
+          <div id="tt-date-range" style="font-size:.78rem;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:5px 10px;display:none;">📅 <span id="tt-date-range-text"></span></div>
+        </div>
+        <div id="tt-summary-content"></div>
+      </div>
+
+      <!-- Lacrar -->
+      <div class="card lacrar-card" id="tt-lacrar-card" style="display:none;width:100%;max-width:1200px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div style="flex:1;min-width:200px;">
+            <div style="font-weight:700;font-size:.95rem;">Lacrar no Dashboard TikTok?</div>
+            <div style="font-size:.78rem;color:var(--muted);margin-top:4px;">Registra esta expedição para acompanhar totais, produtos, cores e tamanhos ao longo do tempo.</div>
+            <div style="margin-top:12px;display:flex;align-items:center;gap:8px;">
+              <span style="font-size:.75rem;font-weight:700;color:var(--muted);">Data:</span>
+              <input type="date" id="tt-lacrar-date" style="background:var(--bg);border:1.5px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.82rem;font-weight:600;" />
+            </div>
+          </div>
+          <button class="btn btn-primary" id="tt-lacrar-btn">⚡ Lacrar Expedição</button>
+        </div>
+        <div id="tt-lacrar-status" style="display:none;margin-top:12px;font-size:.82rem;color:var(--green);font-weight:600;">
+          ✓ Expedição lacrada! Acesse Dashboard TikTok para visualizar.
+        </div>
+      </div>
+
     </div><!-- /sep-tiktok -->
 
   </div><!-- /page-separacao -->
 
+
+  <!-- ═══════════════ TIKTOK DASHBOARD PAGE ═══════════════ -->
+  <div id="page-tiktok-dashboard" class="page-section ttd-page">
+
+    <!-- Header escuro com logo + período -->
+    <div class="ttd-header">
+      <div class="ttd-header-top">
+        <div>
+          <h2 class="ttd-title">
+            <svg viewBox="0 0 24 24" width="26" height="26"><rect width="24" height="24" rx="6" fill="#010101"/><rect x="10" y="4" width="1.6" height="11" rx=".8" fill="white"/><path d="M11.6 4 C15.2 5.2 16.8 7.8 14.4 10.4" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="7.8" cy="17.8" rx="2.8" ry="1.9" transform="rotate(-18 7.8 17.8)" fill="white"/></svg>
+            Dashboard TikTok Shop
+          </h2>
+          <div class="ttd-subtitle" id="ttd-range-label">Todos os dados registrados</div>
+        </div>
+        <div id="ttd-loading-badge" style="display:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-size:.74rem;padding:5px 12px;border-radius:20px;">⏳ Carregando...</div>
+      </div>
+      <!-- Período tabs -->
+      <div class="ttd-period-row">
+        <button class="ttd-pBtn" data-ttd="7d">7 dias</button>
+        <button class="ttd-pBtn" data-ttd="15d">15 dias</button>
+        <button class="ttd-pBtn" data-ttd="30d">30 dias</button>
+        <button class="ttd-pBtn active" data-ttd="all">Tudo</button>
+        <button class="ttd-pBtn" data-ttd="custom">📅 Personalizado</button>
+      </div>
+    </div>
+
+    <!-- Custom date row -->
+    <div class="ttd-custom-row" id="ttd-custom-dates">
+      <span style="font-size:.8rem;font-weight:600;color:var(--muted);">De:</span>
+      <input type="date" id="ttd-date-from">
+      <span style="font-size:.8rem;color:var(--muted);">até</span>
+      <input type="date" id="ttd-date-to">
+      <button class="btn btn-primary" id="ttd-apply-btn" style="padding:7px 16px;font-size:.8rem;">Aplicar</button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="ttd-filters-row">
+      <select id="ttd-product-filter">
+        <option value="">🛍 Todos os produtos</option>
+        <option value="top_calca">Top + Calça</option>
+        <option value="top_short">Top + Short</option>
+        <option value="bermuda">Bermuda Masculina</option>
+        <option value="kit_camisetas">Kit Camisetas</option>
+      </select>
+      <select id="ttd-color-filter"><option value="">🎨 Todas as cores</option></select>
+      <select id="ttd-size-filter"><option value="">📐 Todos os tamanhos</option></select>
+      <button class="ttd-clear-btn" id="ttd-reset-btn">✕ Limpar filtros</button>
+    </div>
+
+    <!-- Corpo scrollável -->
+    <div class="ttd-body" id="ttd-body">
+
+      <!-- Empty state -->
+      <div id="ttd-empty" style="display:none;text-align:center;padding:64px 24px;">
+        <div style="font-size:3rem;margin-bottom:12px;">📦</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:6px;">Nenhuma expedição registrada</div>
+        <div style="font-size:.82rem;color:var(--muted);">Faça o upload na aba Separação → TikTok Shop.</div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div id="ttd-kpi-grid" class="ttd-kpi-grid" style="display:none;"></div>
+
+      <!-- Gráfico diário -->
+      <div class="ttd-card" id="ttd-by-ship-date-card" style="display:none;">
+        <div class="ttd-card-title">📅 Pedidos enviados por dia</div>
+        <div class="ttd-bar-wrap">
+          <div id="ttd-by-ship-date-chart" class="ttd-bar-chart"></div>
+        </div>
+      </div>
+
+      <!-- Produto + Grid cor/tamanho -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;" id="ttd-mid-grid">
+        <div class="ttd-card" id="ttd-by-product-card" style="display:none;">
+          <div class="ttd-card-title">🛍 Por produto</div>
+          <div id="ttd-by-product"></div>
+        </div>
+        <div class="ttd-card" id="ttd-by-size-card" style="display:none;">
+          <div class="ttd-card-title">📐 Por tamanho</div>
+          <div id="ttd-by-size" class="ttd-size-grid2"></div>
+        </div>
+      </div>
+
+      <!-- Cores -->
+      <div class="ttd-card" id="ttd-by-color-card" style="display:none;">
+        <div class="ttd-card-title">🎨 Por cor</div>
+        <div id="ttd-by-color"></div>
+      </div>
+
+      <!-- Histórico de expedições -->
+      <div class="ttd-card" id="ttd-history-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="ttd-card-title" style="margin-bottom:0;">📋 Histórico de Expedições</div>
+        </div>
+        <div id="ttd-history-list"><div style="color:var(--muted);font-size:.82rem;padding:16px;text-align:center;">Carregando...</div></div>
+      </div>
+
+    </div>
+  </div><!-- /page-tiktok-dashboard -->
 
   <!-- ═══════════════ LOCALIZADOR PAGE ═══════════════ -->
   <div id="page-localizador" class="page-section">
@@ -2198,8 +2459,8 @@ function showToast(msg, color) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-cortar","page-caixas","page-ajustes","page-estoque","page-produtos","page-movimentacoes","page-api-teste"];
-const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-cortar","nav-caixas","nav-ajustes","nav-estoque","nav-produtos","nav-movimentacoes","nav-api-teste"];
+const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-cortar","page-caixas","page-ajustes","page-estoque","page-produtos","page-movimentacoes","page-api-teste","page-tiktok-dashboard"];
+const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-cortar","nav-caixas","nav-ajustes","nav-estoque","nav-produtos","nav-movimentacoes","nav-api-teste","nav-tiktok-dash"];
 
 function showPage(page) {
   PAGES.forEach(id => {
@@ -2268,13 +2529,15 @@ document.getElementById("nav-mlc2").addEventListener("click", () => {
   showSepTab("mlc2");
 });
 document.getElementById("nav-tiktok").addEventListener("click", () => {
-  showToast("Em desenvolvimento 🚧");
+  showPage("page-separacao");
+  showSepTab("tiktok");
 });
+document.getElementById("nav-tiktok-dash").addEventListener("click", () => showPage("page-tiktok-dashboard"));
 
 document.getElementById("sep-tab-shopee").addEventListener("click", () => showSepTab("shopee"));
 document.getElementById("sep-tab-ml").addEventListener("click",     () => showSepTab("ml"));
 document.getElementById("sep-tab-mlc2").addEventListener("click",   () => showSepTab("mlc2"));
-document.getElementById("sep-tab-tiktok").addEventListener("click", () => showToast("Em desenvolvimento 🚧"));
+document.getElementById("sep-tab-tiktok").addEventListener("click", () => showSepTab("tiktok"));
 
 const dupReclassify = {};  // key -> {categoria, kit_size}
 
@@ -3745,16 +4008,29 @@ function _histPlatform(stores) {
 async function loadHistoryEntries() {
   const list = document.getElementById("history-entries-list");
   try {
-    const res = await fetch("/history/entries");
-    const { entries } = await res.json();
+    const [resMain, resTT] = await Promise.all([
+      fetch("/history/entries"),
+      fetch("/tiktok/history"),
+    ]);
+    const { entries: mainEntries } = await resMain.json();
+    const { entries: ttRaw }       = await resTT.json();
+
+    // Tag TikTok entries and merge
+    const ttEntries = (ttRaw || []).map(e => ({ ...e, _type: "tiktok" }));
+    const allEntries = [
+      ...mainEntries.map(e => ({ ...e, _type: "main" })),
+      ...ttEntries,
+    ].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+    const entries = allEntries;
     list.innerHTML = "";
     if (!entries.length) {
       list.innerHTML = '<p style="font-size:.82rem;color:var(--muted);text-align:center;padding:20px;">Nenhuma expedição registrada.</p>';
       return;
     }
     let lastDate = null;
-    entries.forEach(entry => {
-      const [y, m, d] = entry.date.split("-");
+    for (const entry of entries) {
+      const [y, m, d] = (entry.date || "----").split("-");
       const dateFmt = `${d}/${m}/${y}`;
 
       // ── Separador de dia ──
@@ -3775,6 +4051,36 @@ async function loadHistoryEntries() {
           }
         }
         lastDate = entry.date;
+      }
+
+      // ── TikTok entry ──
+      if (entry._type === "tiktok") {
+        const TT_PROD = { top_calca:"Top + Calça", top_short:"Top + Short", bermuda:"Bermuda Masculina", kit_camisetas:"Kit Camisetas" };
+        const prodSummary = Object.entries(entry.by_product || {}).sort((a,b)=>b[1]-a[1])
+          .map(([k,v]) => `${v}× ${TT_PROD[k]||k}`).join(" · ");
+        const ttLogoHtml = `<svg viewBox="0 0 20 20" width="18" height="18" style="vertical-align:middle;flex-shrink:0"><rect width="20" height="20" rx="5" fill="#010101"/><rect x="8.5" y="3.5" width="1.4" height="9.5" rx=".7" fill="white"/><path d="M9.9 3.5 C12.8 4.5 14 6.6 12 8.7" fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round"/><ellipse cx="6.5" cy="15" rx="2.4" ry="1.6" transform="rotate(-18 6.5 15)" fill="white"/></svg>`;
+        const ttRow = document.createElement("div");
+        ttRow.className = "hist-row";
+        ttRow.innerHTML = `
+          <div class="hist-info">
+            <div class="hist-date" style="display:flex;align-items:center;gap:8px;">${dateFmt} ${ttLogoHtml} <span style="font-size:.7rem;color:var(--muted);font-weight:600;">TikTok Shop</span></div>
+            <div class="hist-meta">${entry.total_orders} pedidos · ${entry.total_items} itens${prodSummary ? " · " + prodSummary : ""}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0;">
+            <button class="btn" style="padding:3px 10px;font-size:.7rem;background:var(--red);color:#fff;border-color:var(--red);" data-ttid="${esc(entry.id)}">Excluir</button>
+          </div>`;
+        ttRow.querySelector("[data-ttid]").addEventListener("click", function() {
+          const ttid = this.dataset.ttid;
+          showConfirmAction("Excluir Expedição TikTok", `Excluir a expedição TikTok de <b>${dateFmt}</b>? Esta ação não pode ser desfeita.`, () => {
+            requirePin("Excluir Expedição TikTok", async () => {
+              await fetch("/tiktok/history/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({id:ttid}) });
+              showToast("Expedição TikTok excluída", "var(--red)");
+              loadHistoryEntries();
+            });
+          }, "Sim, excluir", "var(--red)");
+        });
+        list.appendChild(ttRow);
+        continue;
       }
 
       // ── Plataforma ──
@@ -3892,7 +4198,7 @@ async function loadHistoryEntries() {
           btn.disabled = false; btn.textContent = "📄 Ver PDFs";
         }
       });
-    });
+    } // end for...of
   } catch(e) { list.innerHTML = '<p style="font-size:.8rem;color:var(--red);">Erro ao carregar histórico.</p>'; }
 }
 document.getElementById("refresh-history-btn").addEventListener("click", loadHistoryEntries);
@@ -6619,11 +6925,901 @@ function atSwitchPlatform(p) {
   document.getElementById("nav-api-teste").addEventListener("click", shpLoadAccounts);
 })();
 
+// ── TikTok Shop — Separação ────────────────────────────────────────────────
+(function () {
+  const TT_PRODUCT_LABELS = {
+    top_calca:     "Top + Calça",
+    top_short:     "Top + Short",
+    bermuda:       "Bermuda Masculina",
+    kit_camisetas: "Kit Camisetas",
+  };
+  let ttFilenames = [];
+  let ttOrders    = [];
+  let ttSummary   = null;
+
+  // ── Drag-and-drop ──
+  const dz    = document.getElementById("tt-dropzone");
+  const input = document.getElementById("tt-file-input");
+  dz.addEventListener("dragover",  e => { e.preventDefault(); dz.classList.add("drag"); });
+  dz.addEventListener("dragleave", () => dz.classList.remove("drag"));
+  dz.addEventListener("drop", e => {
+    e.preventDefault(); dz.classList.remove("drag");
+    handleFiles(Array.from(e.dataTransfer.files));
+  });
+  input.addEventListener("change", () => handleFiles(Array.from(input.files)));
+
+  function handleFiles(files) {
+    const pdfs = files.filter(f => f.name.toLowerCase().endsWith(".pdf"));
+    if (!pdfs.length) { showToast("Selecione arquivos PDF.", "var(--red)"); return; }
+    const list = document.getElementById("tt-file-list");
+    list.innerHTML = pdfs.map(f => `<span class="tt-file-chip">📄 ${f.name}</span>`).join("");
+    document.getElementById("tt-upload-status").style.display = "none";
+    document.getElementById("tt-upload-btn").style.display   = "inline-block";
+    document.getElementById("tt-upload-btn")._files = pdfs;
+  }
+
+  // ── Upload e análise ──
+  document.getElementById("tt-upload-btn").addEventListener("click", async () => {
+    const files = document.getElementById("tt-upload-btn")._files;
+    if (!files || !files.length) return;
+    const btn = document.getElementById("tt-upload-btn");
+    btn.disabled = true; btn.textContent = "Analisando...";
+    const fd = new FormData();
+    files.forEach(f => fd.append("pdfs", f));
+    try {
+      const r = await fetch("/tiktok/upload", { method: "POST", body: fd });
+      const d = await r.json();
+      btn.disabled = false; btn.textContent = "📤 Analisar PDFs";
+      if (d.error) { showToast(d.error, "var(--red)"); return; }
+      ttFilenames = d.filenames;
+      const st = document.getElementById("tt-upload-status");
+      st.style.display = "block";
+      st.innerHTML = `<span style="color:var(--green);font-weight:600;">✓ ${d.total_orders} pedidos encontrados (${d.total_items} itens)</span>`;
+      if (d.unknowns && d.unknowns.length) {
+        renderUnknowns(d.unknowns);
+      } else {
+        document.getElementById("tt-unknowns-card").style.display = "none";
+        await processAndRender();
+      }
+    } catch (e) {
+      btn.disabled = false; btn.textContent = "📤 Analisar PDFs";
+      showToast("Erro: " + e.message, "var(--red)");
+    }
+  });
+
+  // ── Produtos desconhecidos ──
+  function renderUnknowns(unknowns) {
+    const card = document.getElementById("tt-unknowns-card");
+    const list = document.getElementById("tt-unknowns-list");
+    list.innerHTML = unknowns.map(u => `
+      <div class="tt-unknown-item">
+        <div style="font-size:.82rem;font-weight:600;color:var(--text);">${u.label}</div>
+        <select data-key="${u.key}">
+          <option value="">— selecione —</option>
+          <option value="top_calca">Top + Calça</option>
+          <option value="top_short">Top + Short</option>
+          <option value="bermuda">Bermuda Masculina</option>
+          <option value="kit_camisetas">Kit Camisetas</option>
+        </select>
+      </div>`).join("");
+    card.style.display = "block";
+    document.getElementById("tt-summary-card").style.display  = "none";
+    document.getElementById("tt-lacrar-card").style.display   = "none";
+  }
+
+  document.getElementById("tt-confirm-mapping-btn").addEventListener("click", async () => {
+    const selects = document.querySelectorAll("#tt-unknowns-list select");
+    const mappings = {};
+    let missing = false;
+    selects.forEach(s => {
+      if (!s.value) { missing = true; return; }
+      mappings[s.dataset.key] = s.value;
+    });
+    if (missing) { showToast("Classifique todos os produtos antes de continuar.", "var(--red)"); return; }
+    await fetch("/tiktok/save-mapping", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ mappings }),
+    });
+    document.getElementById("tt-unknowns-card").style.display = "none";
+    await processAndRender();
+  });
+
+  // ── Processar e exibir resumo ──
+  async function processAndRender() {
+    const r = await fetch("/tiktok/process", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ filenames: ttFilenames }),
+    });
+    const d = await r.json();
+    if (d.error) {
+      if (d.unknowns) { renderUnknowns(d.unknowns); return; }
+      showToast(d.error, "var(--red)"); return;
+    }
+    ttOrders  = d.orders;
+    ttSummary = d;
+    renderSummary(d);
+  }
+
+  function renderSummary(d) {
+    const card    = document.getElementById("tt-summary-card");
+    const content = document.getElementById("tt-summary-content");
+
+    const byProd = d.by_product || {};
+    const byCor  = d.by_color   || {};
+    const bySz   = d.by_size    || {};
+
+    const prodRows = Object.entries(byProd)
+      .map(([k,v]) => `<div class="tt-row"><span>${TT_PRODUCT_LABELS[k]||k}</span><span class="tt-badge">${v}</span></div>`).join("");
+    const corRows = Object.entries(byCor).sort((a,b)=>b[1]-a[1])
+      .map(([k,v]) => `<div class="tt-row"><span>${k}</span><span style="font-weight:600;">${v}</span></div>`).join("");
+    const szRows = Object.entries(bySz)
+      .map(([k,v]) => `<div class="tt-row"><span>${k}</span><span style="font-weight:600;">${v}</span></div>`).join("");
+
+    content.innerHTML = `
+      <div class="tt-stat-grid">
+        <div class="tt-stat-card"><div class="val">${d.total_orders}</div><div class="lbl">Pedidos</div></div>
+        <div class="tt-stat-card"><div class="val">${d.total_items}</div><div class="lbl">Itens totais</div></div>
+        ${Object.entries(byProd).map(([k,v])=>`<div class="tt-stat-card"><div class="val">${v}</div><div class="lbl">${TT_PRODUCT_LABELS[k]||k}</div></div>`).join("")}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="at-card">
+          <div class="at-card-title">Por cor</div>
+          ${corRows || '<div style="color:var(--muted);font-size:.8rem;">—</div>'}
+        </div>
+        <div class="at-card">
+          <div class="at-card-title">Por tamanho</div>
+          ${szRows || '<div style="color:var(--muted);font-size:.8rem;">—</div>'}
+        </div>
+      </div>
+      <div class="at-card" style="margin-top:12px;">
+        <div class="at-card-title">Por produto</div>
+        ${prodRows || '<div style="color:var(--muted);font-size:.8rem;">—</div>'}
+      </div>`;
+
+    card.style.display = "block";
+    const lacrar = document.getElementById("tt-lacrar-card");
+    lacrar.style.display = "block";
+    document.getElementById("tt-lacrar-date").value = new Date().toISOString().split("T")[0];
+    document.getElementById("tt-lacrar-status").style.display = "none";
+  }
+
+  // ── Lacrar ──
+  document.getElementById("tt-lacrar-btn").addEventListener("click", () => {
+    if (!ttSummary) return;
+    openPinModal(async () => {
+      const btn = document.getElementById("tt-lacrar-btn");
+      btn.disabled = true;
+      const r = await fetch("/tiktok/lacrar", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          ...ttSummary,
+          filenames: ttFilenames,
+          date: document.getElementById("tt-lacrar-date").value,
+        }),
+      });
+      const d = await r.json();
+      btn.disabled = false;
+      if (d.error) { showToast(d.error, "var(--red)"); return; }
+      document.getElementById("tt-lacrar-status").style.display = "block";
+      btn.style.display = "none";
+      ttFilenames = []; ttOrders = []; ttSummary = null;
+      showToast("Expedição lacrada!", "var(--green)");
+    });
+  });
+})();
+
+// ── TikTok Dashboard ────────────────────────────────────────────────────────
+(function () {
+  const TT_PROD = { top_calca:"Top + Calça", top_short:"Top + Short", bermuda:"Bermuda Masculina", kit_camisetas:"Kit Camisetas" };
+  const TT_PROD_ICONS = { top_calca:"👗", top_short:"🩳", bermuda:"🩲", kit_camisetas:"👕" };
+  const COLOR_PALETTE = ["#6366f1","#f59e0b","#10b981","#ef4444","#8b5cf6","#ec4899","#14b8a6","#f97316","#3b82f6","#a855f7"];
+
+  function $(id) { return document.getElementById(id); }
+  function fmtD(s) { if (!s) return "—"; const [y,m,d] = s.split("-"); return `${d}/${m}`; }
+  function fmtDLong(s) { if (!s) return "—"; const [y,m,d] = s.split("-"); return `${d}/${m}/${y}`; }
+  function esc2(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  let _activePeriod = "all";
+
+  function setPeriod(p) {
+    _activePeriod = p;
+    document.querySelectorAll(".ttd-pBtn").forEach(b => b.classList.toggle("active", b.dataset.ttd === p));
+    const customRow = $("ttd-custom-dates");
+    customRow.style.display = (p === "custom") ? "flex" : "none";
+    if (p !== "custom") {
+      const now = new Date();
+      const toDate = now.toISOString().split("T")[0];
+      if (p === "7d")  { const f = new Date(now); f.setDate(f.getDate()-7);  $("ttd-date-from").value = f.toISOString().split("T")[0]; $("ttd-date-to").value = toDate; }
+      if (p === "15d") { const f = new Date(now); f.setDate(f.getDate()-15); $("ttd-date-from").value = f.toISOString().split("T")[0]; $("ttd-date-to").value = toDate; }
+      if (p === "30d") { const f = new Date(now); f.setDate(f.getDate()-30); $("ttd-date-from").value = f.toISOString().split("T")[0]; $("ttd-date-to").value = toDate; }
+      if (p === "all") { $("ttd-date-from").value = ""; $("ttd-date-to").value = ""; }
+      loadDashboard();
+    }
+  }
+
+  document.querySelectorAll(".ttd-pBtn").forEach(b => b.addEventListener("click", () => setPeriod(b.dataset.ttd)));
+
+  async function loadDashboard() {
+    const from = $("ttd-date-from").value;
+    const to   = $("ttd-date-to").value;
+    const pt   = $("ttd-product-filter").value;
+    const col  = $("ttd-color-filter").value;
+    const sz   = $("ttd-size-filter").value;
+
+    $("ttd-loading-badge").style.display = "flex";
+    const params = new URLSearchParams();
+    if (from) params.set("date_from", from);
+    if (to)   params.set("date_to",   to);
+    if (pt)   params.set("product_type", pt);
+    if (col)  params.set("color", col);
+    if (sz)   params.set("size",  sz);
+
+    let d;
+    try { const r = await fetch("/tiktok/dashboard-data?" + params); d = await r.json(); }
+    catch(e) { $("ttd-loading-badge").style.display = "none"; return; }
+    $("ttd-loading-badge").style.display = "none";
+
+    // Update range label
+    if (from && to) $("ttd-range-label").textContent = `${fmtDLong(from)} → ${fmtDLong(to)}`;
+    else if (_activePeriod === "all") $("ttd-range-label").textContent = "Todos os dados registrados";
+    else $("ttd-range-label").textContent = `Últimos ${_activePeriod}`;
+
+    // Populate filter selects
+    const colSel = $("ttd-color-filter"), szSel = $("ttd-size-filter");
+    const pCol = colSel.value, pSz = szSel.value;
+    colSel.innerHTML = '<option value="">🎨 Todas as cores</option>' + (d.all_colors||[]).map(c=>`<option value="${esc2(c)}"${c===pCol?' selected':''}>${esc2(c)}</option>`).join("");
+    szSel.innerHTML  = '<option value="">📐 Todos os tamanhos</option>' + (d.all_sizes||[]).map(s=>`<option value="${esc2(s)}"${s===pSz?' selected':''}>${esc2(s)}</option>`).join("");
+
+    const hasData = d.total_orders > 0;
+    $("ttd-empty").style.display = hasData ? "none" : "block";
+
+    // ── KPI Cards ──────────────────────────────────────────────────────────
+    const kpiGrid = $("ttd-kpi-grid");
+    if (!hasData) { kpiGrid.style.display = "none"; }
+    else {
+      kpiGrid.style.display = "grid";
+      const byProd = d.by_product || {};
+      const totalItems = d.total_items || 0;
+      let kpiHtml = `
+        <div class="ttd-kpi kpi-orders">
+          <span class="ttd-kpi-icon">📦</span>
+          <div class="ttd-kpi-val">${d.total_orders.toLocaleString("pt-BR")}</div>
+          <div class="ttd-kpi-lbl">Pedidos enviados</div>
+          <div class="ttd-kpi-sub">${totalItems} itens no total</div>
+        </div>`;
+      Object.entries(byProd).sort((a,b)=>b[1]-a[1]).forEach(([k,v], i) => {
+        const cls = i === 0 ? "kpi-prod" : i === 1 ? "kpi-items" : "kpi-kit";
+        const pct = totalItems ? Math.round(v/totalItems*100) : 0;
+        kpiHtml += `
+          <div class="ttd-kpi ${cls}">
+            <span class="ttd-kpi-icon">${TT_PROD_ICONS[k]||"🛍"}</span>
+            <div class="ttd-kpi-val">${v.toLocaleString("pt-BR")}</div>
+            <div class="ttd-kpi-lbl">${TT_PROD[k]||k}</div>
+            <div class="ttd-kpi-sub">${pct}% do total de itens</div>
+          </div>`;
+      });
+      kpiGrid.innerHTML = kpiHtml;
+    }
+
+    // ── Gráfico de barras por dia ────────────────────────────────────────
+    const shipCard = $("ttd-by-ship-date-card");
+    const shipEntries = Object.entries(d.by_ship_date||{});
+    if (hasData && shipEntries.length) {
+      shipCard.style.display = "block";
+      const maxV = Math.max(...shipEntries.map(([,v])=>v), 1);
+      const chart = $("ttd-by-ship-date-chart");
+      chart.innerHTML = shipEntries.map(([date,v]) => {
+        const pct = Math.round(v/maxV*100);
+        const [y,m,dd] = date.split("-");
+        return `<div class="ttd-bar-col">
+          <div class="ttd-bar-tooltip">${dd}/${m}: ${v} pedidos</div>
+          <div class="ttd-bar-val">${v}</div>
+          <div class="ttd-bar-inner" style="height:${Math.max(pct,2)}%"></div>
+          <div class="ttd-bar-lbl">${dd}/${m}</div>
+        </div>`;
+      }).join("");
+    } else { shipCard.style.display = "none"; }
+
+    // ── Por produto ────────────────────────────────────────────────────
+    const bpCard = $("ttd-by-product-card");
+    const prodEntries = Object.entries(d.by_product||{}).sort((a,b)=>b[1]-a[1]);
+    if (hasData && prodEntries.length) {
+      const totalProd = prodEntries.reduce((s,[,v])=>s+v,0);
+      $("ttd-by-product").innerHTML = prodEntries.map(([k,v]) => {
+        const pct = totalProd ? Math.round(v/totalProd*100) : 0;
+        return `<div class="ttd-prod-row">
+          <div class="ttd-prod-name">${TT_PROD[k]||k}</div>
+          <div class="ttd-prod-bar-wrap"><div class="ttd-prod-bar-fill" style="width:${pct}%"></div></div>
+          <div class="ttd-prod-num">${v}</div>
+          <div class="ttd-prod-pct">${pct}%</div>
+        </div>`;
+      }).join("");
+      bpCard.style.display = "block";
+    } else { bpCard.style.display = "none"; }
+
+    // ── Por tamanho ────────────────────────────────────────────────────
+    const bsCard = $("ttd-by-size-card");
+    const sizeEntries = Object.entries(d.by_size||{}).sort((a,b) => {
+      const order = ["PP","P","M","G","GG","EG","XG","EGG","GGG"];
+      return (order.indexOf(a[0]) - order.indexOf(b[0]));
+    });
+    if (hasData && sizeEntries.length) {
+      const totalSz = sizeEntries.reduce((s,[,v])=>s+v,0);
+      const maxSz = Math.max(...sizeEntries.map(([,v])=>v), 1);
+      $("ttd-by-size").innerHTML = sizeEntries.map(([k,v]) => {
+        const pct = Math.round(v/maxSz*100);
+        return `<div class="ttd-size-box">
+          <div class="ttd-size-val">${v}</div>
+          <div class="ttd-size-lbl">${k}</div>
+          <div class="ttd-size-bar"><div class="ttd-size-fill" style="width:${pct}%"></div></div>
+        </div>`;
+      }).join("");
+      bsCard.style.display = "block";
+    } else { bsCard.style.display = "none"; }
+
+    // Ajuste do grid de meio (se só 1 card, ocupa tudo)
+    const midGrid = $("ttd-mid-grid");
+    if (bpCard.style.display === "none" || bsCard.style.display === "none") {
+      midGrid.style.gridTemplateColumns = "1fr";
+    } else {
+      midGrid.style.gridTemplateColumns = "";
+    }
+
+    // ── Por cor ────────────────────────────────────────────────────────
+    const bcCard = $("ttd-by-color-card");
+    const colorEntries = Object.entries(d.by_color||{});
+    if (hasData && colorEntries.length) {
+      const totalCor = colorEntries.reduce((s,[,v])=>s+v,0);
+      const maxCor = Math.max(...colorEntries.map(([,v])=>v), 1);
+      $("ttd-by-color").innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0 24px;">` +
+        colorEntries.map(([k,v], i) => {
+          const isKit = k.split(" - ").length >= 3;
+          const pct   = Math.round(v/maxCor*100);
+          const dot   = COLOR_PALETTE[i % COLOR_PALETTE.length];
+          const kitBadge = isKit ? `<span style="font-size:.62rem;font-weight:700;color:#8b5cf6;background:rgba(139,92,246,.12);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">Kit</span>` : "";
+          return `<div class="ttd-color-row">
+            <div class="ttd-color-dot" style="background:${dot}"></div>
+            <div class="ttd-color-name">${esc2(k)}${kitBadge}</div>
+            <div class="ttd-color-bar"><div class="ttd-color-fill" style="width:${pct}%;background:${dot}"></div></div>
+            <div class="ttd-color-num">${v}</div>
+          </div>`;
+        }).join("") + `</div>`;
+      bcCard.style.display = "block";
+    } else { bcCard.style.display = "none"; }
+
+    loadTTHistory();
+  }
+
+  async function loadTTHistory() {
+    const r = await fetch("/tiktok/history");
+    const d = await r.json();
+    const list = $("ttd-history-list");
+    const entries = d.entries || [];
+    if (!entries.length) {
+      list.innerHTML = '<p style="font-size:.82rem;color:var(--muted);text-align:center;padding:20px;">Nenhuma expedição registrada.</p>';
+      return;
+    }
+    list.innerHTML = entries.map(e => {
+      const prodInfo = Object.entries(e.by_product||{}).sort((a,b)=>b[1]-a[1])
+        .map(([k,v])=>`<span style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-size:.74rem;font-weight:600;">${v}× ${TT_PROD[k]||k}</span>`).join(" ");
+      return `<div class="ttd-hist-row">
+        <div>
+          <div class="ttd-hist-date">📦 ${fmtDLong(e.date)}</div>
+          <div class="ttd-hist-meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;">
+            <span><b>${e.total_orders}</b> pedidos</span>
+            <span>•</span>
+            <span><b>${e.total_items}</b> itens</span>
+            ${prodInfo ? '<span>•</span>' + prodInfo : ''}
+          </div>
+        </div>
+        <button class="ttd-hist-del" onclick="ttDeleteEntry('${e.id}')">🗑 Excluir</button>
+      </div>`;
+    }).join("");
+  }
+
+  window.ttDeleteEntry = function(id) {
+    showConfirmAction("Excluir Expedição", "Tem certeza que deseja excluir esta expedição? Os dados sumirão do dashboard.", () => {
+      requirePin("Excluir Expedição TikTok", async () => {
+        await fetch("/tiktok/history/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({id}) });
+        showToast("Expedição excluída", "var(--red)");
+        loadDashboard();
+      });
+    }, "Sim, excluir", "var(--red)");
+  };
+
+  $("ttd-apply-btn").addEventListener("click", loadDashboard);
+  $("ttd-reset-btn").addEventListener("click", () => {
+    ["ttd-date-from","ttd-date-to"].forEach(id => $(id).value = "");
+    $("ttd-product-filter").value = "";
+    $("ttd-color-filter").value   = "";
+    $("ttd-size-filter").value    = "";
+    setPeriod("all");
+  });
+  $("nav-tiktok-dash").addEventListener("click", loadDashboard);
+  ["ttd-product-filter","ttd-color-filter","ttd-size-filter"].forEach(id => $(id).addEventListener("change", loadDashboard));
+
+  loadDashboard();
+})();
+
 function closeMobileMenu() {
   document.querySelector('.sidebar').classList.remove('mobile-open');
   document.getElementById('sidebarOverlay').classList.remove('visible');
   document.getElementById('hamburgerBtn').classList.remove('open');
 }
+// Fecha o menu ao navegar
+document.querySelectorAll('.nav-item, .nav-sub-item').forEach(el => {
+  el.addEventListener('click', () => {
+    if (window.innerWidth <= 768) closeMobileMenu();
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── TikTok Shop ───────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+(function () {
+  const TT_PRODUCTS = {
+    top_calca:     "Top + Calça",
+    top_short:     "Top + Short",
+    bermuda:       "Bermuda Masculina",
+    kit_camisetas: "Kit Camisetas",
+  };
+
+  let ttFiles     = [];   // filenames saved on server
+  let ttOrders    = [];
+  let ttSummary   = {};   // {total_orders, total_items, by_product, by_color, by_size}
+  let ttUnknowns  = [];   // [{title, key}]
+  let ttPendingMappings = {};
+
+  // ── helpers ────────────────────────────────────────────────────────────────
+  function ttEl(id) { return document.getElementById(id); }
+
+  function ttSetStatus(msg, type) {
+    const el = ttEl("tt-upload-status");
+    el.style.display = msg ? "block" : "none";
+    el.style.color   = type === "error" ? "var(--red)" : "var(--green)";
+    el.textContent   = msg;
+  }
+
+  function ttReset() {
+    ttFiles = []; ttOrders = []; ttSummary = {}; ttUnknowns = []; ttPendingMappings = {};
+    ttEl("tt-file-list").innerHTML = "";
+    ttEl("tt-upload-btn").style.display = "none";
+    ttEl("tt-unknowns-card").style.display   = "none";
+    ttEl("tt-summary-card").style.display    = "none";
+    ttEl("tt-lacrar-card").style.display     = "none";
+    ttEl("tt-lacrar-status").style.display   = "none";
+    ttSetStatus("", "");
+    const fi = ttEl("tt-file-input");
+    fi.value = "";
+  }
+
+  // ── file selection ─────────────────────────────────────────────────────────
+  const dropzone  = ttEl("tt-dropzone");
+  const fileInput = ttEl("tt-file-input");
+
+  dropzone.addEventListener("dragover",  e => { e.preventDefault(); dropzone.classList.add("drag"); });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag"));
+  dropzone.addEventListener("drop", e => {
+    e.preventDefault(); dropzone.classList.remove("drag");
+    if (e.dataTransfer.files.length) ttHandleFiles(Array.from(e.dataTransfer.files));
+  });
+  fileInput.addEventListener("change", () => { if (fileInput.files.length) ttHandleFiles(Array.from(fileInput.files)); });
+
+  function ttHandleFiles(fileList) {
+    ttReset();
+    const list = ttEl("tt-file-list");
+    Array.from(fileList).forEach(f => {
+      const chip = document.createElement("div");
+      chip.style.cssText = "display:inline-flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:.75rem;";
+      chip.textContent = "📄 " + f.name;
+      list.appendChild(chip);
+    });
+    ttEl("tt-upload-btn").style.display = "block";
+    ttEl("tt-upload-btn")._files = fileList;
+  }
+
+  // ── upload & analyse ───────────────────────────────────────────────────────
+  ttEl("tt-upload-btn").addEventListener("click", async () => {
+    const fileList = ttEl("tt-upload-btn")._files;
+    if (!fileList || !fileList.length) return;
+    const btn = ttEl("tt-upload-btn");
+    btn.disabled = true; btn.textContent = "Analisando...";
+    ttSetStatus("Enviando PDFs...", "");
+
+    const form = new FormData();
+    Array.from(fileList).forEach(f => form.append("pdfs", f));
+
+    try {
+      const res  = await fetch("/tiktok/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (data.error) { ttSetStatus(data.error, "error"); btn.disabled = false; btn.textContent = "📤 Analisar PDFs"; return; }
+
+      ttFiles    = data.filenames;
+      ttUnknowns = data.unknowns || [];
+      ttSetStatus(`${data.total_orders} pedido(s) encontrado(s) — ${data.total_items} item(s).`, "");
+
+      if (ttUnknowns.length) {
+        ttShowUnknowns(ttUnknowns);
+      } else {
+        await ttProcess();
+      }
+    } catch(e) {
+      ttSetStatus("Erro ao enviar: " + e.message, "error");
+    }
+    btn.disabled = false; btn.textContent = "📤 Analisar PDFs";
+  });
+
+  // ── unknowns ───────────────────────────────────────────────────────────────
+  function ttShowUnknowns(unknowns) {
+    const card = ttEl("tt-unknowns-card");
+    const list = ttEl("tt-unknowns-list");
+    list.innerHTML = "";
+    ttPendingMappings = {};
+
+    unknowns.forEach(u => {
+      ttPendingMappings[u.key] = "top_calca";
+      const row = document.createElement("div");
+      row.style.cssText = "background:var(--bg);border:1px solid #e8a000;border-radius:9px;padding:11px 13px;margin-bottom:8px;";
+      const opts = Object.entries(TT_PRODUCTS).map(([v, l]) =>
+        `<option value="${v}">${l}</option>`
+      ).join("");
+      row.innerHTML = `
+        <div style="font-size:.82rem;font-weight:600;margin-bottom:8px;">${esc(u.title)}</div>
+        <select data-key="${esc(u.key)}" style="background:var(--card);border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:.82rem;color:var(--text);width:100%;">${opts}</select>`;
+      row.querySelector("select").addEventListener("change", function() {
+        ttPendingMappings[this.dataset.key] = this.value;
+      });
+      list.appendChild(row);
+    });
+
+    card.style.display = "block";
+  }
+
+  ttEl("tt-confirm-mapping-btn").addEventListener("click", async () => {
+    const btn = ttEl("tt-confirm-mapping-btn");
+    btn.disabled = true; btn.textContent = "Salvando...";
+    try {
+      await fetch("/tiktok/save-mapping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mappings: ttPendingMappings }),
+      });
+      ttEl("tt-unknowns-card").style.display = "none";
+      await ttProcess();
+    } catch(e) {
+      showToast("Erro ao salvar mapeamento", "var(--red)");
+    }
+    btn.disabled = false; btn.textContent = "Confirmar e continuar";
+  });
+
+  // ── process ────────────────────────────────────────────────────────────────
+  async function ttProcess() {
+    ttSetStatus("Processando pedidos...", "");
+    try {
+      const res  = await fetch("/tiktok/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filenames: ttFiles }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        if (data.unknowns) { ttUnknowns = data.unknowns; ttShowUnknowns(data.unknowns); return; }
+        ttSetStatus(data.error, "error"); return;
+      }
+      ttOrders  = data.orders;
+      ttSummary = { total_orders: data.total_orders, total_items: data.total_items, by_product: data.by_product, by_color: data.by_color, by_size: data.by_size };
+      ttSetStatus("", "");
+      ttShowSummary(data);
+    } catch(e) {
+      ttSetStatus("Erro ao processar: " + e.message, "error");
+    }
+  }
+
+  // ── summary ────────────────────────────────────────────────────────────────
+  function ttShowSummary(data) {
+    const card    = ttEl("tt-summary-card");
+    const content = ttEl("tt-summary-content");
+
+    let html = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px;">
+        <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:var(--accent);">${data.total_orders}</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:2px;">Pedidos</div>
+        </div>
+        <div style="background:var(--bg);border-radius:10px;padding:14px;text-align:center;">
+          <div style="font-size:1.6rem;font-weight:800;color:var(--green);">${data.total_items}</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:2px;">Itens</div>
+        </div>
+      </div>`;
+
+    if (Object.keys(data.by_product).length) {
+      html += `<div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Por produto</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">`;
+      Object.entries(data.by_product).sort((a,b) => b[1]-a[1]).forEach(([k,v]) => {
+        html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:.82rem;"><span style="font-weight:700;">${v}×</span> ${TT_PRODUCTS[k]||k}</div>`;
+      });
+      html += `</div>`;
+    }
+
+    if (Object.keys(data.by_color).length) {
+      html += `<div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Por cor</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">`;
+      Object.entries(data.by_color).sort((a,b) => b[1]-a[1]).forEach(([k,v]) => {
+        const isKit = k.split(" - ").length >= 3;
+        const label = esc(k) + (isKit ? ' <span style="font-size:.68rem;font-weight:700;color:#8b5cf6;background:rgba(139,92,246,.1);border-radius:4px;padding:1px 5px;">(Kit Camisetas)</span>' : "");
+        html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:.82rem;"><span style="font-weight:700;">${v}×</span> ${label}</div>`;
+      });
+      html += `</div>`;
+    }
+
+    if (Object.keys(data.by_size).length) {
+      html += `<div style="font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;">Por tamanho</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">`;
+      Object.entries(data.by_size).forEach(([k,v]) => {
+        html += `<div style="background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:.82rem;"><span style="font-weight:700;">${v}×</span> ${esc(k)}</div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Date range badge
+    if (data.date_range && data.date_range.from) {
+      const fmtD = s => { const [y,m,d] = s.split("-"); return `${d}/${m}/${y}`; };
+      const txt = data.date_range.from === data.date_range.to
+        ? fmtD(data.date_range.from)
+        : `${fmtD(data.date_range.from)} até ${fmtD(data.date_range.to)}`;
+      ttEl("tt-date-range-text").textContent = txt;
+      ttEl("tt-date-range").style.display = "block";
+    }
+
+    content.innerHTML = html;
+    card.style.display = "block";
+
+    const lacrarCard = ttEl("tt-lacrar-card");
+    lacrarCard.style.display = "block";
+    // Usa a data mais recente das etiquetas; fallback para hoje
+    const defaultDate = (data.date_range && data.date_range.to) ? data.date_range.to : new Date().toISOString().split("T")[0];
+    ttEl("tt-lacrar-date").value = defaultDate;
+    ttEl("tt-lacrar-status").style.display = "none";
+  }
+
+  // ── lacrar ─────────────────────────────────────────────────────────────────
+  ttEl("tt-lacrar-btn").addEventListener("click", () => {
+    requirePin("Lacrar Expedição TikTok", async () => {
+      const btn = ttEl("tt-lacrar-btn");
+      btn.disabled = true; btn.textContent = "Lacrando...";
+      try {
+        const res  = await fetch("/tiktok/lacrar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date:         ttEl("tt-lacrar-date").value,
+            filenames:    ttFiles,
+            orders:       ttOrders,
+            total_orders: ttSummary.total_orders,
+            total_items:  ttSummary.total_items,
+            by_product:   ttSummary.by_product,
+            by_color:     ttSummary.by_color,
+            by_size:      ttSummary.by_size,
+          }),
+        });
+        const data = await res.json();
+        if (data.error) { showToast(data.error, "var(--red)"); btn.disabled = false; btn.textContent = "⚡ Lacrar Expedição"; return; }
+        ttEl("tt-lacrar-status").style.display = "block";
+        btn.style.display = "none";
+        showToast("Expedição lacrada!", "var(--green)");
+      } catch(e) {
+        showToast("Erro ao lacrar: " + e.message, "var(--red)");
+        btn.disabled = false; btn.textContent = "⚡ Lacrar Expedição";
+      }
+    });
+  });
+
+  // ── dashboard ──────────────────────────────────────────────────────────────
+  function ttLoadDashboard() {
+    const from = ttEl("ttd-date-from").value;
+    const to   = ttEl("ttd-date-to").value;
+    const pt   = ttEl("ttd-product-filter").value;
+    const col  = ttEl("ttd-color-filter").value;
+    const sz   = ttEl("ttd-size-filter").value;
+
+    const params = new URLSearchParams();
+    if (from) params.set("date_from", from);
+    if (to)   params.set("date_to",   to);
+    if (pt)   params.set("product_type", pt);
+    if (col)  params.set("color", col);
+    if (sz)   params.set("size",  sz);
+
+    fetch("/tiktok/dashboard-data?" + params.toString())
+      .then(r => r.json())
+      .then(data => {
+        // populate color/size filters
+        const colSel = ttEl("ttd-color-filter");
+        const szSel  = ttEl("ttd-size-filter");
+        const prevCol = colSel.value, prevSz = szSel.value;
+        colSel.innerHTML = '<option value="">Todas as cores</option>';
+        szSel.innerHTML  = '<option value="">Todos os tamanhos</option>';
+        (data.all_colors||[]).forEach(c => { const o = document.createElement("option"); o.value = c; o.textContent = c; colSel.appendChild(o); });
+        (data.all_sizes||[]).forEach(s => { const o = document.createElement("option"); o.value = s; o.textContent = s; szSel.appendChild(o); });
+        colSel.value = prevCol; szSel.value = prevSz;
+
+        const hasData = data.total_orders > 0;
+        ttEl("ttd-empty").style.display = hasData ? "none" : "block";
+
+        // stat cards
+        const grid = ttEl("ttd-stat-grid");
+        grid.innerHTML = hasData ? `
+          <div class="tt-stat-card"><div class="val">${data.total_orders}</div><div class="lbl">Pedidos</div></div>
+          <div class="tt-stat-card"><div class="val">${data.total_items}</div><div class="lbl">Itens</div></div>` : "";
+
+        // by product
+        const byProdCard = ttEl("ttd-by-product-card");
+        if (hasData && Object.keys(data.by_product||{}).length) {
+          const total = Object.values(data.by_product).reduce((s,v)=>s+v,0);
+          ttEl("ttd-by-product").innerHTML = Object.entries(data.by_product).sort((a,b)=>b[1]-a[1]).map(([k,v]) => `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
+              <div style="width:130px;font-size:.8rem;font-weight:600;">${TT_PRODUCTS[k]||k}</div>
+              <div style="flex:1;background:var(--bg);border-radius:4px;height:8px;overflow:hidden;">
+                <div style="width:${Math.round(v/total*100)}%;background:var(--accent);height:100%;border-radius:4px;"></div>
+              </div>
+              <div style="font-size:.82rem;font-weight:700;min-width:32px;text-align:right;">${v}</div>
+            </div>`).join("");
+          byProdCard.style.display = "block";
+        } else { byProdCard.style.display = "none"; }
+
+        // by ship date (bar chart)
+        const byShipCard = ttEl("ttd-by-ship-date-card");
+        if (hasData && Object.keys(data.by_ship_date||{}).length) {
+          byShipCard.style.display = "block";
+          const labels = Object.keys(data.by_ship_date).map(d => { const [y,m,dd]=d.split("-"); return `${dd}/${m}`; });
+          const values = Object.values(data.by_ship_date);
+          const maxV   = Math.max(...values, 1);
+          // simple CSS bar chart (no canvas dependency)
+          ttEl("ttd-by-ship-date-chart").innerHTML = `
+            <div style="display:flex;align-items:flex-end;gap:4px;height:160px;overflow-x:auto;padding-bottom:4px;">
+              ${Object.entries(data.by_ship_date).map(([d,v]) => {
+                const [y,m,dd] = d.split("-");
+                const pct = Math.round(v/maxV*100);
+                return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:32px;gap:3px;">
+                  <div style="font-size:.68rem;font-weight:700;color:var(--text);">${v}</div>
+                  <div style="width:100%;background:var(--accent);border-radius:4px 4px 0 0;height:${Math.max(pct,4)}%;transition:height .3s;"></div>
+                  <div style="font-size:.62rem;color:var(--muted);white-space:nowrap;">${dd}/${m}</div>
+                </div>`;
+              }).join("")}
+            </div>`;
+        } else { byShipCard.style.display = "none"; }
+
+        // by color
+        const byColCard = ttEl("ttd-by-color-card");
+        if (hasData && Object.keys(data.by_color||{}).length) {
+          const total = Object.values(data.by_color).reduce((s,v)=>s+v,0);
+          ttEl("ttd-by-color").innerHTML = Object.entries(data.by_color).map(([k,v]) => {
+            const isKit = k.split(" - ").length >= 3;
+            const label = esc(k) + (isKit ? ' <span style="font-size:.68rem;font-weight:700;color:#8b5cf6;background:rgba(139,92,246,.1);border-radius:4px;padding:1px 5px;vertical-align:middle;">(Kit Camisetas)</span>' : "");
+            return `
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+              <div style="flex:1;min-width:0;font-size:.78rem;font-weight:600;line-height:1.4;">${label}</div>
+              <div style="width:60px;background:var(--bg);border-radius:4px;height:7px;overflow:hidden;flex-shrink:0;">
+                <div style="width:${Math.round(v/total*100)}%;background:#f97316;height:100%;border-radius:4px;"></div>
+              </div>
+              <div style="font-size:.78rem;font-weight:700;min-width:20px;text-align:right;flex-shrink:0;">${v}</div>
+            </div>`;
+          }).join("");
+          byColCard.style.display = "block";
+        } else { byColCard.style.display = "none"; }
+
+        // by size
+        const bySzCard = ttEl("ttd-by-size-card");
+        if (hasData && Object.keys(data.by_size||{}).length) {
+          const total = Object.values(data.by_size).reduce((s,v)=>s+v,0);
+          ttEl("ttd-by-size").innerHTML = Object.entries(data.by_size).map(([k,v]) => `
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+              <div style="width:50px;font-size:.78rem;font-weight:600;">${esc(k)}</div>
+              <div style="flex:1;background:var(--bg);border-radius:4px;height:7px;overflow:hidden;">
+                <div style="width:${Math.round(v/total*100)}%;background:#8b5cf6;height:100%;border-radius:4px;"></div>
+              </div>
+              <div style="font-size:.78rem;font-weight:700;min-width:28px;text-align:right;">${v}</div>
+            </div>`).join("");
+          bySzCard.style.display = "block";
+        } else { bySzCard.style.display = "none"; }
+
+        // by date
+        const byDateCard = ttEl("ttd-by-date-card");
+        if (hasData && Object.keys(data.by_date||{}).length) {
+          ttEl("ttd-by-date").innerHTML = Object.entries(data.by_date).map(([d,v]) => `
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <div style="width:110px;font-size:.78rem;font-weight:600;">${d}</div>
+              <div style="font-size:.78rem;font-weight:700;">${v} pedidos</div>
+            </div>`).join("");
+          byDateCard.style.display = "block";
+        } else { byDateCard.style.display = "none"; }
+
+        // history
+        ttLoadHistory();
+      })
+      .catch(() => showToast("Erro ao carregar dashboard TikTok", "var(--red)"));
+  }
+
+  function ttLoadHistory() {
+    fetch("/tiktok/history")
+      .then(r => r.json())
+      .then(data => {
+        const list = ttEl("ttd-history-list");
+        if (!data.entries || !data.entries.length) {
+          list.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:16px;text-align:center;">Nenhuma expedição registrada.</div>';
+          return;
+        }
+        list.innerHTML = data.entries.map(e => {
+          const prodSummary = Object.entries(e.by_product||{}).sort((a,b)=>b[1]-a[1])
+            .map(([k,v]) => `${v}× ${TT_PRODUCTS[k]||k}`).join(" &nbsp;·&nbsp; ");
+          return `
+          <div style="background:var(--bg);border-radius:9px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:.85rem;margin-bottom:3px;">${e.date}</div>
+              <div style="font-size:.75rem;color:var(--muted);">${e.total_orders} pedidos &nbsp;·&nbsp; ${e.total_items} itens ${prodSummary ? "&nbsp;·&nbsp; " + prodSummary : ""}</div>
+            </div>
+            <button onclick="ttDeleteEntry('${e.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem;padding:4px 8px;border-radius:6px;opacity:.7;" title="Excluir">✕</button>
+          </div>`;
+        }).join("");
+      });
+  }
+
+  window.ttDeleteEntry = function(id) {
+    requirePin("Excluir expedição TikTok", async () => {
+      try {
+        await fetch("/tiktok/history/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        showToast("Expedição excluída", "var(--green)");
+        ttLoadDashboard();
+      } catch(e) {
+        showToast("Erro ao excluir", "var(--red)");
+      }
+    });
+  };
+
+  // Period buttons
+  document.getElementById("ttd-period-btns").addEventListener("click", e => {
+    const btn = e.target.closest("[data-ttd]");
+    if (!btn) return;
+    document.querySelectorAll("#ttd-period-btns .period-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const p = btn.dataset.ttd;
+    const cd = ttEl("ttd-custom-dates");
+    if (p === "custom") {
+      cd.style.display = "flex";
+      return;
+    }
+    cd.style.display = "none";
+    const today = new Date();
+    const fmt = d => d.toISOString().split("T")[0];
+    let from = "", to = fmt(today);
+    if (p === "7d")  { const d = new Date(today); d.setDate(d.getDate()-6);  from = fmt(d); }
+    if (p === "15d") { const d = new Date(today); d.setDate(d.getDate()-14); from = fmt(d); }
+    if (p === "30d") { const d = new Date(today); d.setDate(d.getDate()-29); from = fmt(d); }
+    ttEl("ttd-date-from").value = from;
+    ttEl("ttd-date-to").value   = to;
+    ttLoadDashboard();
+  });
+
+  ttEl("ttd-apply-btn").addEventListener("click", () => { ttLoadDashboard(); });
+  ttEl("ttd-reset-btn").addEventListener("click", () => {
+    document.querySelectorAll("#ttd-period-btns .period-btn").forEach(b => b.classList.remove("active"));
+    document.querySelector("#ttd-period-btns [data-ttd='all']").classList.add("active");
+    ttEl("ttd-custom-dates").style.display = "none";
+    ttEl("ttd-date-from").value = "";
+    ttEl("ttd-date-to").value   = "";
+    ttEl("ttd-product-filter").value = "";
+    ttEl("ttd-color-filter").value   = "";
+    ttEl("ttd-size-filter").value    = "";
+    ttLoadDashboard();
+  });
+
+  // carrega dashboard ao entrar na página
+  const origShowPage = window.showPage || showPage;
+  document.getElementById("nav-tiktok-dash").addEventListener("click", ttLoadDashboard);
+
+})();
+// ── fim TikTok Shop ───────────────────────────────────────────────────────────
+
 // Fecha o menu ao navegar
 document.querySelectorAll('.nav-item, .nav-sub-item').forEach(el => {
   el.addEventListener('click', () => {

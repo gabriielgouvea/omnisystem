@@ -3666,6 +3666,445 @@ def api_teste_ml_data_payments():
     return jsonify(d)
 
 
+# ── TikTok Shop ─────────────────────────────────────────────────────────────────
+
+_TT_HISTORY_FILE  = BASE_DIR / "tiktok_history.json"
+_TT_MAPPINGS_FILE = BASE_DIR / "tiktok_mappings.json"
+_TT_SIZES = ["GGG", "EGG", "GG", "EG", "XG", "PP", "G", "M", "P"]
+_TT_PRODUCT_LABELS = {
+    "top_calca":     "Top + Calça",
+    "top_short":     "Top + Short",
+    "bermuda":       "Bermuda Masculina",
+    "kit_camisetas": "Kit Camisetas",
+}
+
+
+def _tt_load_history():
+    if _TT_HISTORY_FILE.exists():
+        return json.loads(_TT_HISTORY_FILE.read_text(encoding="utf-8"))
+    return []
+
+def _tt_save_history(h):
+    _TT_HISTORY_FILE.write_text(json.dumps(h, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def _tt_load_mappings():
+    if _TT_MAPPINGS_FILE.exists():
+        return json.loads(_TT_MAPPINGS_FILE.read_text(encoding="utf-8"))
+    return {}
+
+def _tt_save_mappings(m):
+    _TT_MAPPINGS_FILE.write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def _tt_normalize(title):
+    return re.sub(r'\s+', ' ', title.lower().strip())
+
+def _tt_auto_detect(name):
+    t = name.lower()
+    if "bermuda" in t:
+        return "bermuda"
+    if "camiseta" in t:
+        return "kit_camisetas"
+    if "short" in t:
+        return "top_short"
+    if "calça" in t or "calca" in t:
+        return "top_calca"
+    return None
+
+def _tt_parse_label_page(page):
+    """Extrai a data de envio da página de etiqueta TikTok.
+    O formato no PDF é:  Data de envio:\n2026-04-24 15:49
+    A data fica na linha SEGUINTE ao label."""
+    lines = [l.strip() for l in page.get_text().split('\n')]
+    for i, line in enumerate(lines):
+        if "Data de envio" in line:
+            # Tenta a mesma linha (depois do ":")
+            after = line.split(":")[-1].strip() if ":" in line else ""
+            m = re.search(r'(\d{4}-\d{2}-\d{2})', after)
+            if m:
+                return m.group(1)
+            # A data está na próxima linha
+            for j in range(i + 1, min(i + 4, len(lines))):
+                m = re.search(r'(\d{4}-\d{2}-\d{2})', lines[j])
+                if m:
+                    return m.group(1)
+    return ""
+
+def _tt_parse_packing_list(page):
+    wlist = [(round(x0,1), round(y0,1), w) for x0,y0,x1,y1,w,*_ in page.get_text("words")]
+
+    # Locate header row: "Product Name SKU Seller SKU Qty"
+    header_y = None
+    col_xs   = {}
+    for i, (x0, y0, w) in enumerate(wlist):
+        if w == "Product":
+            for j in range(i+1, min(i+6, len(wlist))):
+                x2, y2, w2 = wlist[j]
+                if w2 == "Name" and abs(y2 - y0) < 3:
+                    header_y = y0
+                    col_xs["produto"] = x0
+                    break
+        if header_y:
+            break
+    if header_y is None:
+        return None
+
+    sku_count = 0
+    for x0, y0, w in wlist:
+        if abs(y0 - header_y) > 3:
+            continue
+        if w == "SKU":
+            sku_count += 1
+            if sku_count == 1:
+                col_xs["sku"] = x0
+            elif "sku_code" not in col_xs:
+                col_xs["sku_code"] = x0
+        elif w == "Seller" and "sku_code" not in col_xs:
+            col_xs["sku_code"] = x0
+        elif w == "Qty":
+            col_xs["qty"] = x0
+
+    for k in ["produto", "sku", "qty"]:
+        if k not in col_xs:
+            return None
+    if "sku_code" not in col_xs:
+        col_xs["sku_code"] = col_xs["qty"] - 60
+
+    col_order = sorted((v, k) for k, v in col_xs.items()
+                       if k in ["produto", "sku", "sku_code", "qty"])
+
+    def col_of(x):
+        r = col_order[0][1]
+        for cx, cn in col_order:
+            if x >= cx - 8:
+                r = cn
+        return r
+
+    # Metadata
+    meta = {"tracking": "", "order_id": "", "date": ""}
+    for line in page.get_text().split('\n'):
+        line = line.strip()
+        if line.startswith("Tracking number:"):
+            meta["tracking"] = line.split(":", 1)[1].strip()
+        elif line.startswith("Order ID:") and not meta["order_id"]:
+            meta["order_id"] = line.split(":", 1)[1].strip()
+        elif line.startswith("Created Time:"):
+            meta["date"] = line.split(":", 1)[1].strip()
+
+    data = [{"x": x0, "y": y0, "word": w, "col": col_of(x0)}
+            for x0, y0, w in wlist if y0 > header_y + 2]
+
+    y_groups = {}
+    for d in data:
+        yk = round(d["y"] / 2) * 2
+        y_groups.setdefault(yk, []).append(d)
+
+    items, current = [], None
+    for yk in sorted(y_groups):
+        row = y_groups[yk]
+        by_col = {}
+        for d in row:
+            by_col.setdefault(d["col"], []).append(d["word"])
+        if any(d["word"] in ["Total:", "TikTok"] for d in row):
+            if current:
+                items.append(current)
+                current = None
+            break
+        if "qty" in by_col:
+            if current:
+                items.append(current)
+            qty_raw = by_col["qty"][0]
+            current = {
+                "produto":    " ".join(by_col.get("produto", [])),
+                "sku_raw":    " ".join(by_col.get("sku", [])),
+                "seller_sku": " ".join(by_col.get("sku_code", [])),
+                "qty":        int(qty_raw) if qty_raw.isdigit() else 1,
+            }
+        elif current:
+            if "produto" in by_col:
+                current["produto"] += " " + " ".join(by_col["produto"])
+            if "sku" in by_col:
+                extra = " ".join(by_col["sku"])
+                current["sku_raw"] = (current["sku_raw"] + " " + extra).strip() if current["sku_raw"] else extra
+            if "sku_code" in by_col and not current["seller_sku"]:
+                current["seller_sku"] = " ".join(by_col["sku_code"])
+    if current:
+        items.append(current)
+
+    for item in items:
+        sku = item.pop("sku_raw", "").strip()
+        seller = item.get("seller_sku", "").strip()
+        if "," in sku:
+            cp, sp = sku.rsplit(",", 1)
+            item["color"] = cp.strip()
+            raw_size = sp.strip().upper()
+            item["size"] = raw_size.split()[0] if raw_size else ""
+        else:
+            item["color"] = sku
+            item["size"]  = ""
+        # Remove seller_sku contamination from color/size
+        if seller:
+            for field in ("color", "size"):
+                val = item.get(field, "")
+                if val.upper().endswith(seller.upper()):
+                    item[field] = val[:-len(seller)].strip(" -").strip()
+                elif seller.upper() in val.upper():
+                    item[field] = re.sub(re.escape(seller), "", val, flags=re.IGNORECASE).strip(" -").strip()
+
+    meta["items"] = items
+    return meta
+
+
+def _tt_parse_pdfs(filenames):
+    orders = []
+    for fname in filenames:
+        path = UPLOAD_DIR / fname
+        if not path.exists():
+            continue
+        doc = fitz.open(str(path))
+        for i in range(0, len(doc) - 1, 2):
+            ship_date  = _tt_parse_label_page(doc[i])
+            order_data = _tt_parse_packing_list(doc[i + 1])
+            if not order_data:
+                continue
+            for item in order_data.get("items", []):
+                orders.append({
+                    "tracking":   order_data.get("tracking", ""),
+                    "order_id":   order_data.get("order_id", ""),
+                    "created":    order_data.get("date", ""),
+                    "ship_date":  ship_date,
+                    "produto":    item.get("produto", "").strip(),
+                    "color":      item.get("color", ""),
+                    "size":       item.get("size", ""),
+                    "seller_sku": item.get("seller_sku", ""),
+                    "qty":        item.get("qty", 1),
+                })
+        doc.close()
+    return orders
+
+
+def _tt_get_unknowns(orders, mappings):
+    seen, unknowns = set(), []
+    for o in orders:
+        name = o.get("produto", "").strip()
+        norm = _tt_normalize(name)
+        if not name or norm in seen:
+            continue
+        seen.add(norm)
+        if norm not in mappings and not _tt_auto_detect(name):
+            unknowns.append({"key": norm, "label": name})
+    return unknowns
+
+
+def _tt_apply_mappings(orders, mappings):
+    for o in orders:
+        norm = _tt_normalize(o.get("produto", ""))
+        o["product_type"] = mappings.get(norm) or _tt_auto_detect(o.get("produto", "")) or "top_calca"
+    return orders
+
+
+@app.route("/tiktok/upload", methods=["POST"])
+def tiktok_upload():
+    files = request.files.getlist("pdfs")
+    if not files or all(f.filename == "" for f in files):
+        return jsonify({"error": "Nenhum arquivo enviado"}), 400
+    saved = []
+    for f in files:
+        if not f.filename.lower().endswith(".pdf"):
+            continue
+        safe  = re.sub(r'[^\w.\-]', '_', f.filename)
+        fname = "tiktok_" + safe
+        f.save(str(UPLOAD_DIR / fname))
+        saved.append(fname)
+    if not saved:
+        return jsonify({"error": "Nenhum PDF válido"}), 400
+    orders   = _tt_parse_pdfs(saved)
+    mappings = _tt_load_mappings()
+    unknowns = _tt_get_unknowns(orders, mappings)
+    return jsonify({
+        "filenames":    saved,
+        "total_orders": len(set(o["order_id"] for o in orders if o["order_id"])),
+        "total_items":  sum(o["qty"] for o in orders),
+        "unknowns":     unknowns,
+    })
+
+
+@app.route("/tiktok/save-mapping", methods=["POST"])
+def tiktok_save_mapping():
+    mappings = _tt_load_mappings()
+    mappings.update(request.json.get("mappings", {}))
+    _tt_save_mappings(mappings)
+    return jsonify({"ok": True})
+
+
+@app.route("/tiktok/process", methods=["POST"])
+def tiktok_process():
+    data      = request.json
+    filenames = data.get("filenames", [])
+    if not filenames:
+        return jsonify({"error": "Nenhum arquivo"}), 400
+    orders   = _tt_parse_pdfs(filenames)
+    mappings = _tt_load_mappings()
+    unknowns = _tt_get_unknowns(orders, mappings)
+    if unknowns:
+        return jsonify({"error": "Produtos não classificados", "unknowns": unknowns}), 400
+    orders = _tt_apply_mappings(orders, mappings)
+    by_product, by_color, by_size, by_ship_date = {}, {}, {}, {}
+    ship_dates = []
+    for o in orders:
+        qty = o.get("qty", 1)
+        pt  = o.get("product_type", "top_calca")
+        c   = (o.get("color") or "").upper()
+        s   = (o.get("size")  or "").upper()
+        sd  = (o.get("ship_date") or "")[:10]   # YYYY-MM-DD
+        by_product[pt]            = by_product.get(pt, 0) + qty
+        if c: by_color[c]         = by_color.get(c, 0) + qty
+        if s: by_size[s]          = by_size.get(s, 0) + qty
+        if sd:
+            by_ship_date[sd]      = by_ship_date.get(sd, 0) + 1
+            ship_dates.append(sd)
+    ship_dates_sorted = sorted(set(ship_dates))
+    date_range = {"from": ship_dates_sorted[0], "to": ship_dates_sorted[-1]} if ship_dates_sorted else {}
+    return jsonify({
+        "orders":        orders,
+        "total_orders":  len(set(o["order_id"] for o in orders if o["order_id"])),
+        "total_items":   sum(o["qty"] for o in orders),
+        "by_product":    by_product,
+        "by_color":      by_color,
+        "by_size":       by_size,
+        "by_ship_date":  dict(sorted(by_ship_date.items())),
+        "date_range":    date_range,
+    })
+
+
+@app.route("/tiktok/lacrar", methods=["POST"])
+def tiktok_lacrar():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+    data       = request.json
+    history    = _tt_load_history()
+    entry_date = data.get("date") or date.today().isoformat()
+    entry = {
+        "id":           datetime.now().strftime("%Y%m%d-%H%M%S"),
+        "date":         entry_date,
+        "timestamp":    datetime.now().isoformat(),
+        "total_orders": data.get("total_orders", 0),
+        "total_items":  data.get("total_items", 0),
+        "by_product":   data.get("by_product", {}),
+        "by_color":     data.get("by_color", {}),
+        "by_size":      data.get("by_size", {}),
+        "orders":       data.get("orders", []),
+    }
+    history.append(entry)
+    _tt_save_history(history)
+    for fname in data.get("filenames", []):
+        p = UPLOAD_DIR / fname
+        if p.exists():
+            try: p.unlink()
+            except: pass
+    return jsonify({"ok": True, "id": entry["id"]})
+
+
+@app.route("/tiktok/dashboard-data")
+def tiktok_dashboard_data():
+    history   = _tt_load_history()
+    date_from = request.args.get("date_from", "")
+    date_to   = request.args.get("date_to", "")
+    filter_pt = request.args.get("product_type", "")
+    filter_c  = request.args.get("color", "").upper()
+    filter_s  = request.args.get("size", "").upper()
+    total_orders, total_items = 0, 0
+    by_product, by_color, by_size, by_date, by_ship_date = {}, {}, {}, {}, {}
+    all_colors, all_sizes = set(), set()
+    for entry in history:
+        d = entry.get("date", "")
+        if date_from and d < date_from: continue
+        if date_to   and d > date_to:   continue
+        for o in entry.get("orders", []):
+            c  = (o.get("color") or "").upper()
+            s  = (o.get("size")  or "").upper()
+            sd = (o.get("ship_date") or "")[:10]
+            if c: all_colors.add(c)
+            if s: all_sizes.add(s)
+        seen_orders = set()
+        for o in entry.get("orders", []):
+            if filter_pt and o.get("product_type") != filter_pt: continue
+            if filter_c  and (o.get("color") or "").upper() != filter_c: continue
+            if filter_s  and (o.get("size")  or "").upper() != filter_s: continue
+            qty = o.get("qty", 1)
+            oid = o.get("order_id") or o.get("tracking", "")
+            total_items  += qty
+            if oid and oid not in seen_orders:
+                seen_orders.add(oid)
+                total_orders += 1
+            elif not oid:
+                total_orders += 1
+            pt  = o.get("product_type", "")
+            c   = (o.get("color") or "").upper()
+            s   = (o.get("size")  or "").upper()
+            sd  = (o.get("ship_date") or "")[:10]
+            by_product[pt]         = by_product.get(pt, 0) + qty
+            if c: by_color[c]      = by_color.get(c, 0) + qty
+            if s: by_size[s]       = by_size.get(s, 0) + qty
+            if sd: by_date[sd]     = by_date.get(sd, 0) + 1
+            if sd: by_ship_date[sd]= by_ship_date.get(sd, 0) + 1
+    return jsonify({
+        "total_orders":  total_orders,
+        "total_items":   total_items,
+        "by_product":    by_product,
+        "by_color":      dict(sorted(by_color.items(), key=lambda x: -x[1])),
+        "by_size":       dict(sorted(by_size.items())),
+        "by_date":       dict(sorted(by_date.items(), reverse=True)),
+        "by_ship_date":  dict(sorted(by_ship_date.items())),
+        "all_colors":    sorted(all_colors),
+        "all_sizes":     sorted(all_sizes),
+    })
+
+
+@app.route("/tiktok/history")
+def tiktok_history_list():
+    history = _tt_load_history()
+    return jsonify({"entries": list(reversed(history))})
+
+
+@app.route("/tiktok/history/delete", methods=["POST"])
+def tiktok_history_delete():
+    if not _valida_pin_session():
+        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+    eid     = request.json.get("id")
+    history = _tt_load_history()
+    history = [e for e in history if e.get("id") != eid]
+    _tt_save_history(history)
+    return jsonify({"ok": True})
+
+
+@app.route("/tiktok/debug-pdf", methods=["POST"])
+def tiktok_debug_pdf():
+    """Endpoint temporário para diagnosticar extração de texto do PDF."""
+    f = request.files.get("pdf")
+    if not f:
+        return jsonify({"error": "Nenhum arquivo"}), 400
+    import tempfile, os
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        f.save(tmp.name)
+        tmp_path = tmp.name
+    doc = fitz.open(tmp_path)
+    result = []
+    for i in range(min(4, len(doc))):
+        page = doc[i]
+        text = page.get_text()
+        words_sample = page.get_text("words")[:30]
+        ship = _tt_parse_label_page(page)
+        result.append({
+            "page": i,
+            "text_first_500": text[:500],
+            "words_sample": [w[4] for w in words_sample],
+            "ship_date_extracted": ship,
+        })
+    doc.close()
+    os.unlink(tmp_path)
+    return jsonify(result)
+
+
 # ── Shopee API Integration ────────────────────────────────────────────────────
 import hmac as _hmac
 
