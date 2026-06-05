@@ -102,12 +102,12 @@
     .page-section {
       width: 100%; display: flex; flex-direction: column; align-items: center;
     }
-    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes, #page-cortar, #page-caixas, #page-estoque, #page-produtos, #page-movimentacoes, #page-api-teste, #page-tiktok-dashboard {
+    #page-dashboard, #page-separacao, #page-localizador, #page-historico, #page-ajustes, #page-cortar, #page-caixas, #page-estoque, #page-produtos, #page-movimentacoes, #page-api-teste, #page-tiktok-dashboard, #page-financeiro {
       display: none;
     }
     #page-dashboard.active, #page-separacao.active, #page-localizador.active,
     #page-historico.active, #page-ajustes.active, #page-cortar.active, #page-caixas.active,
-    #page-estoque.active, #page-produtos.active, #page-movimentacoes.active, #page-api-teste.active, #page-tiktok-dashboard.active { display: flex; }
+    #page-estoque.active, #page-produtos.active, #page-movimentacoes.active, #page-api-teste.active, #page-tiktok-dashboard.active, #page-financeiro.active { display: flex; }
 
     /* ── API TESTE ── */
     .at-tab { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:5px 14px;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s; }
@@ -229,6 +229,35 @@
       #ttd-mid-grid { grid-template-columns:1fr !important; }
       .ttd-size-grid2 { grid-template-columns:repeat(4,1fr); }
       .ttd-prod-pct { display:none; }
+    }
+    /* ── Financeiro ── */
+    .fin-upload-box { background:var(--bg);border:2px dashed var(--border);border-radius:12px;padding:18px 14px;text-align:center;cursor:pointer;transition:all .15s;user-select:none; }
+    .fin-upload-box:hover,.fin-upload-box.has-file { border-color:var(--accent);background:rgba(99,102,241,.04); }
+    .fin-upload-box.has-file { border-style:solid; }
+    .fin-upload-icon { font-size:1.6rem;margin-bottom:6px; }
+    .fin-upload-label { font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:3px; }
+    .fin-upload-hint  { font-size:.68rem;color:var(--muted);font-family:monospace; }
+    .fin-upload-status { font-size:.72rem;margin-top:6px;font-weight:600; }
+    .fin-kpi { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden; }
+    .fin-kpi::before { content:'';position:absolute;top:0;left:0;width:4px;height:100%;border-radius:14px 0 0 14px; }
+    .fin-kpi.kpi-green::before  { background:linear-gradient(180deg,#10b981,#059669); }
+    .fin-kpi.kpi-red::before    { background:linear-gradient(180deg,#ef4444,#dc2626); }
+    .fin-kpi.kpi-blue::before   { background:linear-gradient(180deg,#6366f1,#8b5cf6); }
+    .fin-kpi.kpi-orange::before { background:linear-gradient(180deg,#f59e0b,#d97706); }
+    .fin-kpi.kpi-gray::before   { background:linear-gradient(180deg,#64748b,#475569); }
+    .fin-kpi-icon { font-size:1.2rem;margin-bottom:6px;display:block; }
+    .fin-kpi-val  { font-size:1.9rem;font-weight:900;line-height:1;letter-spacing:-1px; }
+    .fin-kpi-lbl  { font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:5px; }
+    .fin-kpi-sub  { font-size:.75rem;color:var(--muted);margin-top:2px; }
+    .fin-prod-row { display:grid;grid-template-columns:1fr 110px 110px 110px;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border); }
+    .fin-prod-row:last-child { border-bottom:none; }
+    .fin-prod-input { background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:.82rem;color:var(--text);width:100%;box-sizing:border-box; }
+    .fin-result-row { display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:.85rem; }
+    .fin-result-row:last-child { border-bottom:none; }
+    @media(max-width:700px){
+      #fin-step1-grid { grid-template-columns:1fr; }
+      #fin-step2 .fin-grid3 { grid-template-columns:1fr; }
+      .fin-prod-row { grid-template-columns:1fr 90px 90px; }
     }
     .at-platform-btn { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 16px;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s; }
     .at-platform-btn.active { background:var(--accent);color:#fff;border-color:var(--accent); }
@@ -1810,6 +1839,136 @@
     </div>
   </div><!-- /page-tiktok-dashboard -->
 
+  <!-- ═══════════════ FINANCEIRO PAGE ═══════════════ -->
+  <div id="page-financeiro" class="page-section" style="flex-direction:column;gap:0;padding:0;overflow:hidden;">
+    <!-- Header -->
+    <div style="background:var(--card);border-bottom:1px solid var(--border);padding:20px 28px 16px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h2 style="margin:0;font-size:1.2rem;font-weight:800;display:flex;align-items:center;gap:8px;">💰 Financeiro</h2>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:2px;">Fechamento de resultados por período</div>
+        </div>
+        <button class="btn btn-outline" id="fin-produtos-btn" style="font-size:.8rem;padding:7px 16px;">⚙ Gerenciar Produtos</button>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:24px 28px 32px;display:flex;flex-direction:column;gap:20px;max-width:960px;width:100%;box-sizing:border-box;">
+
+      <!-- Step 1: Loja + Período -->
+      <div class="card" id="fin-step1">
+        <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px;">1 · Loja e Período</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end;" id="fin-step1-grid">
+          <div>
+            <div style="font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:5px;">Loja</div>
+            <select id="fin-loja" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:.85rem;color:var(--text);">
+              <option value="">Selecione a loja</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:5px;">De</div>
+            <input type="date" id="fin-de" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:.85rem;color:var(--text);">
+          </div>
+          <div>
+            <div style="font-size:.75rem;font-weight:600;color:var(--muted);margin-bottom:5px;">Até</div>
+            <input type="date" id="fin-ate" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:.85rem;color:var(--text);">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Upload arquivos -->
+      <div class="card" id="fin-step2">
+        <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px;">2 · Arquivos Shopee</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+          <div class="fin-upload-box" id="fin-box-extrato">
+            <div class="fin-upload-icon">📄</div>
+            <div class="fin-upload-label">Extrato de Transações</div>
+            <div class="fin-upload-hint">my_balance_transaction_report.xlsx</div>
+            <input type="file" accept=".xlsx" id="fin-file-extrato" style="display:none;">
+            <div class="fin-upload-status" id="fin-status-extrato"></div>
+          </div>
+          <div class="fin-upload-box" id="fin-box-ads">
+            <div class="fin-upload-icon">📊</div>
+            <div class="fin-upload-label">Relatório de Anúncios</div>
+            <div class="fin-upload-hint">Dados Gerais de Anúncios CPC.csv</div>
+            <input type="file" accept=".csv" id="fin-file-ads" style="display:none;">
+            <div class="fin-upload-status" id="fin-status-ads"></div>
+          </div>
+          <div class="fin-upload-box" id="fin-box-overview">
+            <div class="fin-upload-icon">📦</div>
+            <div class="fin-upload-label">Visão Geral de Produtos <span style="font-size:.65rem;color:var(--muted)">(opcional)</span></div>
+            <div class="fin-upload-hint">productoverview.xlsx</div>
+            <input type="file" accept=".xlsx" id="fin-file-overview" style="display:none;">
+            <div class="fin-upload-status" id="fin-status-overview"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="fin-processar-btn" style="margin-top:16px;padding:10px 24px;font-size:.88rem;display:none;">Processar arquivos →</button>
+        <div id="fin-processar-status" style="display:none;font-size:.8rem;margin-top:8px;color:var(--muted);"></div>
+      </div>
+
+      <!-- Step 3: Revisão + entradas manuais -->
+      <div class="card" id="fin-step3" style="display:none;">
+        <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px;">3 · Revisar e Preencher</div>
+
+        <!-- Resumo extraído -->
+        <div id="fin-resumo-extraido" style="background:var(--bg);border-radius:10px;padding:14px 16px;margin-bottom:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;"></div>
+
+        <!-- Custo de embalagem -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+          <div style="font-size:.85rem;font-weight:600;color:var(--text);">📦 Custo de embalagem por pedido:</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:.85rem;color:var(--muted);">R$</span>
+            <input type="number" id="fin-custo-emb" min="0" step="0.01" placeholder="0,00"
+              style="width:90px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:.85rem;color:var(--text);">
+          </div>
+          <div style="font-size:.78rem;color:var(--muted);" id="fin-emb-total"></div>
+        </div>
+
+        <!-- Produtos -->
+        <div style="font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Custo e quantidade por produto</div>
+        <div id="fin-produtos-rows"></div>
+      </div>
+
+      <!-- Step 4: Resultado -->
+      <div id="fin-step4" style="display:none;">
+        <!-- KPIs -->
+        <div id="fin-kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:20px;"></div>
+        <!-- Breakdown por produto -->
+        <div class="card" id="fin-by-produto-card" style="display:none;">
+          <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px;">📦 Resultado por produto</div>
+          <div id="fin-by-produto"></div>
+        </div>
+        <!-- Botão salvar -->
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <button class="btn btn-primary" id="fin-salvar-btn" style="padding:11px 28px;font-size:.9rem;">💾 Salvar Fechamento</button>
+          <button class="btn btn-outline" id="fin-novo-btn" style="padding:11px 20px;font-size:.9rem;">↺ Novo fechamento</button>
+        </div>
+      </div>
+
+      <!-- Histórico -->
+      <div class="card" id="fin-historico-card">
+        <div style="font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px;">📋 Fechamentos Anteriores</div>
+        <div id="fin-historico-list"><div style="color:var(--muted);font-size:.82rem;text-align:center;padding:16px;">Nenhum fechamento salvo.</div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal Gerenciar Produtos -->
+  <div id="fin-produtos-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:var(--card);border-radius:16px;padding:28px;width:100%;max-width:540px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-size:1rem;font-weight:800;">⚙ Gerenciar Produtos</div>
+        <button onclick="document.getElementById('fin-produtos-modal').style.display='none'" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--muted);">✕</button>
+      </div>
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:14px;">Cadastre os produtos com o custo padrão. Você poderá ajustar o custo em cada fechamento.</div>
+      <div id="fin-modal-produtos-list"></div>
+      <button class="btn btn-outline" id="fin-add-produto-btn" style="margin-top:10px;font-size:.82rem;padding:7px 16px;">+ Adicionar produto</button>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+        <button class="btn btn-primary" id="fin-modal-salvar-btn" style="padding:9px 24px;font-size:.85rem;">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══════════════ LOCALIZADOR PAGE ═══════════════ -->
   <div id="page-localizador" class="page-section">
     <div class="card" id="locator-card" style="width:100%;max-width:1200px;">
@@ -2464,8 +2623,8 @@ function showToast(msg, color) {
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
-const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-cortar","page-caixas","page-ajustes","page-estoque","page-produtos","page-movimentacoes","page-api-teste","page-tiktok-dashboard"];
-const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-cortar","nav-caixas","nav-ajustes","nav-estoque","nav-produtos","nav-movimentacoes","nav-api-teste","nav-tiktok-dash"];
+const PAGES = ["page-dashboard","page-separacao","page-localizador","page-historico","page-cortar","page-caixas","page-ajustes","page-estoque","page-produtos","page-movimentacoes","page-api-teste","page-tiktok-dashboard","page-financeiro"];
+const NAV_IDS = ["nav-dashboard","nav-separacao","nav-localizador","nav-historico","nav-cortar","nav-caixas","nav-ajustes","nav-estoque","nav-produtos","nav-movimentacoes","nav-api-teste","nav-tiktok-dash","nav-financeiro"];
 
 function showPage(page) {
   PAGES.forEach(id => {
@@ -2719,31 +2878,44 @@ function showFormatWarningModal(warnings, onProceed) {
 async function uploadFiles(fileList) {
   resetUI(); currentFiles = []; setStatus("");
   renderFileList(fileList);
-  const form = new FormData();
-  Array.from(fileList).forEach(f => form.append("pdfs", f));
   showLoading(UPLOAD_STEPS);
-  try {
-    const res  = await fetch("/upload", { method: "POST", body: form });
-    const data = await res.json();
-    hideLoading();
-    if (data.error) { setStatus(data.error, "error"); return; }
-    currentFiles = data.filenames;
-    Array.from(fileList).forEach(f => {
-      updateFileBadge(f.name, currentFiles.includes(f.name) ? "ok" : "error",
-                               currentFiles.includes(f.name) ? "✓ Enviado" : "Ignorado");
-    });
-    const n = currentFiles.length;
-    setStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
-    const nextStep = () => {
-      if (data.has_batch_sku_dups) loadSkuDuplicates(data.sku_stores || {});
-      else document.getElementById("sku-dup-card").style.display = "none";
-      if (data.unknown.length > 0) showClassify(data.unknown, data.store_names || []);
-      else document.getElementById("process-card").style.display = "block";
-    };
-    const warnings = data.format_warnings || {};
-    if (Object.keys(warnings).length > 0) showFormatWarningModal(warnings, nextStep);
-    else nextStep();
-  } catch (e) { hideLoading(); setStatus("Erro ao enviar: " + e.message, "error"); }
+
+  // Envia um PDF por vez — evita limite de tamanho do servidor
+  let allUnknown = [], allStoreNames = [], allSkuStores = {}, allFormatWarnings = {};
+  let hasBatchSkuDups = false;
+
+  for (const f of Array.from(fileList)) {
+    updateFileBadge(f.name, "pending", "Enviando…");
+    const form = new FormData();
+    form.append("pdfs", f);
+    try {
+      const res  = await fetch("/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (data.error) { updateFileBadge(f.name, "error", "Erro: " + data.error); continue; }
+      currentFiles.push(...(data.filenames || []));
+      allUnknown.push(...(data.unknown || []));
+      allStoreNames.push(...(data.store_names || []));
+      if (data.has_batch_sku_dups) { hasBatchSkuDups = true; Object.assign(allSkuStores, data.sku_stores || {}); }
+      Object.assign(allFormatWarnings, data.format_warnings || {});
+      updateFileBadge(f.name, "ok", "✓ Enviado");
+    } catch(e) {
+      updateFileBadge(f.name, "error", "Erro");
+    }
+  }
+
+  hideLoading();
+  const n = currentFiles.length;
+  if (!n) { setStatus("Nenhum PDF válido enviado.", "error"); return; }
+  setStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
+
+  const nextStep = () => {
+    if (hasBatchSkuDups) loadSkuDuplicates(allSkuStores);
+    else document.getElementById("sku-dup-card").style.display = "none";
+    if (allUnknown.length > 0) showClassify(allUnknown, allStoreNames);
+    else document.getElementById("process-card").style.display = "block";
+  };
+  if (Object.keys(allFormatWarnings).length > 0) showFormatWarningModal(allFormatWarnings, nextStep);
+  else nextStep();
 }
 
 async function uploadRetiradaFiles(fileList) {
@@ -3117,6 +3289,35 @@ function renderSecurityAlerts(data, prefix) {
       }
     ));
     bar.appendChild(chip);
+  }
+
+  // 2b. BRs duplicados dentro do batch
+  {
+    const bd = alerts.batch_tracking_dups || [];
+    if (bd.length) {
+      const chip = document.createElement("button");
+      chip.className = "val-chip err";
+      chip.textContent = `⚠ ${bd.length} BR${bd.length>1?"s":""} duplicado${bd.length>1?"s":""} no batch`;
+      chip.addEventListener("click", () => openSecModal(
+        `BRs duplicados no mesmo envio (${bd.length})`,
+        el => {
+          bd.forEach(c => {
+            const block = document.createElement("div");
+            block.className = "smi-block";
+            block.innerHTML = `
+              <div class="smi-head">⚠ ${esc(c.tracking)}</div>
+              <div class="smi-sub">
+                Aparece em <b>${esc(c.file1)}</b> (pág. ${c.page1})<br>
+                e também em <b>${esc(c.file2)}</b> (pág. ${c.page2})<br>
+                <span style="color:var(--red);font-weight:600;">Este pedido será processado apenas uma vez.</span>
+              </div>`;
+            el.appendChild(block);
+          });
+        },
+        null
+      ));
+      bar.appendChild(chip);
+    }
   }
 
   // 3. Conflito de SKU+Título
@@ -4672,25 +4873,32 @@ function mlParsePdfKey(key) {
 async function mlUploadFiles(fileList) {
   mlResetUI(); mlCurrentFiles = []; mlSetStatus("");
   mlRenderFileList(fileList);
-  const form = new FormData();
-  Array.from(fileList).forEach(f => form.append("pdfs", f));
   showLoading(UPLOAD_STEPS);
-  try {
-    const res  = await fetch("/ml/upload", { method: "POST", body: form });
-    const data = await res.json();
-    hideLoading();
-    if (data.error) { mlSetStatus(data.error, "error"); return; }
-    mlCurrentFiles = data.filenames;
-    Array.from(fileList).forEach(f => {
-      mlUpdateFileBadge(f.name,
-        mlCurrentFiles.includes(f.name) ? "ok"      : "error",
-        mlCurrentFiles.includes(f.name) ? "✓ Enviado" : "Ignorado");
-    });
-    const n = mlCurrentFiles.length;
-    mlSetStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
-    if (data.unknown.length > 0) mlShowClassify(data.unknown);
-    else document.getElementById("ml-process-card").style.display = "block";
-  } catch (e) { hideLoading(); mlSetStatus("Erro ao enviar: " + e.message, "error"); }
+
+  // Envia um PDF por vez — evita limite de tamanho do servidor
+  let allUnknown = [];
+  for (const f of Array.from(fileList)) {
+    mlUpdateFileBadge(f.name, "pending", "Enviando…");
+    const form = new FormData();
+    form.append("pdfs", f);
+    try {
+      const res  = await fetch("/ml/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (data.error) { mlUpdateFileBadge(f.name, "error", "Erro"); continue; }
+      mlCurrentFiles.push(...(data.filenames || []));
+      allUnknown.push(...(data.unknown || []));
+      mlUpdateFileBadge(f.name, "ok", "✓ Enviado");
+    } catch(e) {
+      mlUpdateFileBadge(f.name, "error", "Erro");
+    }
+  }
+
+  hideLoading();
+  const n = mlCurrentFiles.length;
+  if (!n) { mlSetStatus("Nenhum PDF válido enviado.", "error"); return; }
+  mlSetStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
+  if (allUnknown.length > 0) mlShowClassify(allUnknown);
+  else document.getElementById("ml-process-card").style.display = "block";
 }
 
 // ── ML Classify ───────────────────────────────────────────────────────────────
@@ -7345,6 +7553,410 @@ function atSwitchPlatform(p) {
   ["ttd-product-filter","ttd-color-filter","ttd-size-filter"].forEach(id => $(id).addEventListener("change", loadDashboard));
 
   loadDashboard();
+})();
+
+// ── Financeiro ───────────────────────────────────────────────────────────────
+(function () {
+  function $f(id) { return document.getElementById(id); }
+  function fmtR(v) { return "R$ " + Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function fmtD(s) { if (!s) return "—"; const [y,m,d]=s.split("-"); return `${d}/${m}/${y}`; }
+
+  let _extratoData = null, _adsData = null, _ovData = null, _produtosData = [];
+  let _finResult   = null;
+
+  // ── Carregar lojas ──────────────────────────────────────────────────────
+  fetch("/financeiro/lojas").then(r=>r.json()).then(d=>{
+    const sel = $f("fin-loja");
+    (d.lojas||[]).forEach(l => {
+      const o = document.createElement("option");
+      o.value = l.id; o.textContent = l.nome; sel.appendChild(o);
+    });
+  });
+
+  // ── Upload boxes ────────────────────────────────────────────────────────
+  function setupUploadBox(boxId, inputId, statusId, onFile) {
+    const box   = $f(boxId);
+    const input = $f(inputId);
+    box.addEventListener("click", () => input.click());
+    box.addEventListener("dragover",  e => { e.preventDefault(); box.classList.add("has-file"); });
+    box.addEventListener("dragleave", () => { if (!input.files.length) box.classList.remove("has-file"); });
+    box.addEventListener("drop", e => {
+      e.preventDefault();
+      if (e.dataTransfer.files[0]) { input.files = e.dataTransfer.files; triggerChange(input); }
+    });
+    input.addEventListener("change", () => triggerChange(input));
+    function triggerChange(inp) {
+      if (!inp.files.length) return;
+      const f = inp.files[0];
+      box.classList.add("has-file");
+      $f(statusId).textContent = "✅ " + f.name;
+      $f(statusId).style.color = "var(--green)";
+      onFile(f);
+      checkReadyToProcess();
+    }
+  }
+
+  setupUploadBox("fin-box-extrato",  "fin-file-extrato",  "fin-status-extrato",  f => _extratoReady = f);
+  setupUploadBox("fin-box-ads",      "fin-file-ads",      "fin-status-ads",      f => _adsReady = f);
+  setupUploadBox("fin-box-overview", "fin-file-overview", "fin-status-overview", f => _ovReady = f);
+  let _extratoReady = null, _adsReady = null, _ovReady = null;
+
+  function checkReadyToProcess() {
+    $f("fin-processar-btn").style.display = (_extratoReady && _adsReady) ? "inline-flex" : "none";
+  }
+
+  // ── Processar arquivos ──────────────────────────────────────────────────
+  $f("fin-processar-btn").addEventListener("click", async () => {
+    const btn = $f("fin-processar-btn");
+    const status = $f("fin-processar-status");
+    btn.disabled = true; btn.textContent = "Processando...";
+    status.style.display = "block"; status.textContent = "Lendo arquivos...";
+
+    const form = new FormData();
+    form.append("extrato",  _extratoReady);
+    form.append("ads_csv",  _adsReady);
+    if (_ovReady) form.append("overview", _ovReady);
+
+    try {
+      const r = await fetch("/financeiro/processar", { method:"POST", body: form });
+      const d = await r.json();
+      if (d.error) { status.textContent = "Erro: " + d.error; status.style.color="var(--red)"; btn.disabled=false; btn.textContent="Processar arquivos →"; return; }
+      _extratoData = d.extrato;
+      _adsData     = d.ads;
+      _ovData      = d.overview || [];
+      _produtosData = d.produtos || [];
+      status.style.display = "none";
+      renderStep3();
+    } catch(e) {
+      status.textContent = "Erro: " + e.message; status.style.color="var(--red)";
+    }
+    btn.disabled = false; btn.textContent = "Processar arquivos →";
+  });
+
+  // ── Step 3: revisão ─────────────────────────────────────────────────────
+  function renderStep3() {
+    $f("fin-step3").style.display = "block";
+    $f("fin-step4").style.display = "none";
+
+    // Resumo extraído
+    const ext = _extratoData;
+    $f("fin-resumo-extraido").innerHTML = `
+      <div style="text-align:center;">
+        <div style="font-size:1.4rem;font-weight:900;color:var(--accent);">${fmtR(ext.receita_liquida)}</div>
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:3px;">Receita Líquida</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${ext.n_pedidos} pedidos</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.4rem;font-weight:900;color:var(--red);">${fmtR(ext.reembolsos)}</div>
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:3px;">Reembolsos</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${ext.n_reembolsos} pedidos cancelados</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:1.4rem;font-weight:900;color:var(--red);">${fmtR(_adsData.total_ads)}</div>
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:3px;">Gastos com Anúncios</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${_adsData.por_produto.length} campanhas</div>
+      </div>
+      ${ext.compensacoes ? `<div style="text-align:center;">
+        <div style="font-size:1.4rem;font-weight:900;color:var(--green);">${fmtR(ext.compensacoes)}</div>
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-top:3px;">Compensações Shopee</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">objetos perdidos / ajustes</div>
+      </div>` : ""}`;
+
+    // Custo embalagem listener
+    $f("fin-custo-emb").addEventListener("input", () => {
+      const v = parseFloat($f("fin-custo-emb").value) || 0;
+      $f("fin-emb-total").textContent = v ? `= ${fmtR(v * _extratoData.n_pedidos)} no total (${_extratoData.n_pedidos} pedidos)` : "";
+    });
+
+    // Produtos rows
+    // Tenta combinar: produtos cadastrados + dados de overview + dados de ads
+    const rows = buildProdutosRows();
+    const container = $f("fin-produtos-rows");
+    container.innerHTML = `
+      <div class="fin-prod-row" style="font-size:.7rem;font-weight:700;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);">
+        <div>Produto</div>
+        <div>Qtd vendida</div>
+        <div>Custo unitário (R$)</div>
+        <div>Ads (R$)</div>
+      </div>` +
+      rows.map((p, i) => `
+        <div class="fin-prod-row">
+          <div style="font-size:.82rem;font-weight:600;color:var(--text);">${p.nome}</div>
+          <input class="fin-prod-input fin-qty" data-i="${i}" type="number" min="0" placeholder="0" value="${p.qty||""}" style="text-align:center;">
+          <input class="fin-prod-input fin-custo" data-i="${i}" type="number" min="0" step="0.01" placeholder="0,00" value="${p.custo||""}" style="text-align:center;">
+          <input class="fin-prod-input fin-ads" data-i="${i}" type="number" min="0" step="0.01" value="${p.ads||0}" style="text-align:center;">
+        </div>`).join("");
+
+    container._rows = rows;
+    $f("fin-step3").querySelector("button") || addCalcButton();
+    ensureCalcButton();
+  }
+
+  function buildProdutosRows() {
+    // Começa com produtos cadastrados
+    const rows = _produtosData.map(p => ({
+      nome:  p.nome,
+      custo: p.custo || "",
+      qty:   "",
+      ads:   0,
+    }));
+
+    // Enriquece com dados de overview (quantidade)
+    _ovData.forEach(ov => {
+      const match = rows.find(r => r.nome.toLowerCase().includes(ov.nome.toLowerCase().substring(0,20)));
+      if (match) match.qty = ov.qty || "";
+    });
+
+    // Enriquece com ads (gasto por produto)
+    _adsData.por_produto.forEach(ad => {
+      const match = rows.find(r => {
+        const rn = r.nome.toLowerCase();
+        const an = ad.nome.toLowerCase();
+        return rn.includes(an.substring(0,15)) || an.includes(rn.substring(0,15));
+      });
+      if (match) { match.ads = (match.ads||0) + ad.ads; }
+      else {
+        // produto de anúncio não cadastrado — adiciona
+        rows.push({ nome: ad.nome.substring(0,60), custo:"", qty: ad.itens||"", ads: ad.ads });
+      }
+    });
+    return rows;
+  }
+
+  function ensureCalcButton() {
+    if ($f("fin-calc-btn")) return;
+    const btn = document.createElement("button");
+    btn.id = "fin-calc-btn";
+    btn.className = "btn btn-primary";
+    btn.style.cssText = "margin-top:18px;padding:10px 28px;font-size:.9rem;";
+    btn.textContent = "Calcular resultado →";
+    btn.addEventListener("click", calcularResultado);
+    $f("fin-step3").appendChild(btn);
+  }
+
+  // ── Calcular ─────────────────────────────────────────────────────────────
+  function calcularResultado() {
+    const rows = $f("fin-produtos-rows")._rows || [];
+    const qtys  = document.querySelectorAll(".fin-qty");
+    const custos = document.querySelectorAll(".fin-custo");
+    const adss   = document.querySelectorAll(".fin-ads");
+
+    let custoTotal = 0, adsTotalProd = 0;
+    const detalhesProd = [];
+
+    rows.forEach((r, i) => {
+      const qty   = parseFloat(qtys[i]?.value)  || 0;
+      const custo = parseFloat(custos[i]?.value) || 0;
+      const ads   = parseFloat(adss[i]?.value)   || 0;
+      const custoProd = qty * custo;
+      custoTotal   += custoProd;
+      adsTotalProd += ads;
+      detalhesProd.push({ nome:r.nome, qty, custo, ads, custoProd });
+    });
+
+    const embUnit  = parseFloat($f("fin-custo-emb").value) || 0;
+    const embTotal = embUnit * (_extratoData.n_pedidos || 0);
+
+    const receita        = _extratoData.receita_liquida;
+    const totalAds       = _adsData.total_ads;
+    const lucro          = receita - totalAds - custoTotal - embTotal;
+    const margem         = receita ? (lucro / receita * 100) : 0;
+
+    _finResult = {
+      receita_liquida: receita,
+      reembolsos:      _extratoData.reembolsos,
+      compensacoes:    _extratoData.compensacoes,
+      total_ads:       totalAds,
+      custo_produtos:  custoTotal,
+      custo_embalagem: embTotal,
+      lucro,
+      margem,
+      n_pedidos:       _extratoData.n_pedidos,
+      detalhes:        { produtos: detalhesProd },
+    };
+
+    renderResultado(_finResult);
+  }
+
+  // ── Resultado ────────────────────────────────────────────────────────────
+  function renderResultado(res) {
+    $f("fin-step4").style.display = "block";
+    $f("fin-step4").scrollIntoView({ behavior:"smooth" });
+
+    const lucroColor = res.lucro >= 0 ? "var(--green)" : "var(--red)";
+
+    $f("fin-kpi-grid").innerHTML = `
+      <div class="fin-kpi kpi-blue">
+        <span class="fin-kpi-icon">💰</span>
+        <div class="fin-kpi-val" style="color:var(--accent);">${fmtR(res.receita_liquida)}</div>
+        <div class="fin-kpi-lbl">Receita Líquida</div>
+        <div class="fin-kpi-sub">${res.n_pedidos} pedidos · ${fmtR(res.reembolsos)} reembolsos</div>
+      </div>
+      <div class="fin-kpi kpi-red">
+        <span class="fin-kpi-icon">📣</span>
+        <div class="fin-kpi-val" style="color:var(--red);">${fmtR(res.total_ads)}</div>
+        <div class="fin-kpi-lbl">Gastos com Anúncios</div>
+        <div class="fin-kpi-sub">${res.receita_liquida ? (res.total_ads/res.receita_liquida*100).toFixed(1)+"% da receita" : "—"}</div>
+      </div>
+      <div class="fin-kpi kpi-orange">
+        <span class="fin-kpi-icon">📦</span>
+        <div class="fin-kpi-val" style="color:#f59e0b;">${fmtR(res.custo_produtos + res.custo_embalagem)}</div>
+        <div class="fin-kpi-lbl">Custo Total (prod + emb)</div>
+        <div class="fin-kpi-sub">${fmtR(res.custo_produtos)} produtos · ${fmtR(res.custo_embalagem)} embalagem</div>
+      </div>
+      <div class="fin-kpi ${res.lucro >= 0 ? 'kpi-green' : 'kpi-red'}">
+        <span class="fin-kpi-icon">${res.lucro >= 0 ? "🟢" : "🔴"}</span>
+        <div class="fin-kpi-val" style="color:${lucroColor};">${fmtR(res.lucro)}</div>
+        <div class="fin-kpi-lbl">Lucro Líquido</div>
+        <div class="fin-kpi-sub">Margem: ${res.margem.toFixed(1)}%</div>
+      </div>`;
+
+    // Por produto
+    const prods = (res.detalhes.produtos || []).filter(p => p.qty > 0 || p.ads > 0);
+    if (prods.length) {
+      $f("fin-by-produto").innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px 90px;gap:8px;font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);padding-bottom:8px;border-bottom:2px solid var(--border);">
+          <div>Produto</div><div style="text-align:right;">Qtd</div><div style="text-align:right;">Ads</div><div style="text-align:right;">Custo prod</div><div style="text-align:right;">Custo emb</div><div style="text-align:right;">Resultado</div>
+        </div>` +
+        prods.map(p => {
+          const embProd = res.n_pedidos && res.custo_embalagem ? (p.qty / (res.detalhes.produtos.reduce((s,x)=>s+x.qty,0)||1)) * res.custo_embalagem : 0;
+          const result  = -(p.ads + p.custoProd + embProd);
+          return `<div style="display:grid;grid-template-columns:1fr 80px 80px 80px 80px 90px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:.8rem;">
+            <div style="font-weight:600;">${p.nome.substring(0,50)}</div>
+            <div style="text-align:right;">${p.qty}</div>
+            <div style="text-align:right;color:var(--red);">${fmtR(p.ads)}</div>
+            <div style="text-align:right;color:var(--red);">${fmtR(p.custoProd)}</div>
+            <div style="text-align:right;color:var(--red);">${fmtR(embProd)}</div>
+            <div style="text-align:right;font-weight:800;color:${result>=0?"var(--green)":"var(--red)"};">${fmtR(result)}</div>
+          </div>`;
+        }).join("");
+      $f("fin-by-produto-card").style.display = "block";
+    }
+  }
+
+  // ── Salvar fechamento ────────────────────────────────────────────────────
+  $f("fin-salvar-btn").addEventListener("click", async () => {
+    if (!_finResult) return;
+    const btn = $f("fin-salvar-btn");
+    btn.disabled = true; btn.textContent = "Salvando...";
+    const payload = {
+      ..._finResult,
+      loja:        $f("fin-loja").value,
+      periodo_de:  $f("fin-de").value,
+      periodo_ate: $f("fin-ate").value,
+    };
+    const r = await fetch("/financeiro/salvar", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
+    const d = await r.json();
+    if (d.ok) { showToast("Fechamento salvo!", "var(--green)"); loadFinHistorico(); }
+    btn.disabled = false; btn.textContent = "💾 Salvar Fechamento";
+  });
+
+  $f("fin-novo-btn").addEventListener("click", () => {
+    _extratoData=null; _adsData=null; _ovData=null; _finResult=null;
+    _extratoReady=null; _adsReady=null; _ovReady=null;
+    ["fin-file-extrato","fin-file-ads","fin-file-overview"].forEach(id => { $f(id).value=""; });
+    ["fin-status-extrato","fin-status-ads","fin-status-overview"].forEach(id => { $f(id).textContent=""; });
+    ["fin-box-extrato","fin-box-ads","fin-box-overview"].forEach(id => $f(id).classList.remove("has-file"));
+    $f("fin-processar-btn").style.display = "none";
+    $f("fin-step3").style.display = "none";
+    $f("fin-step4").style.display = "none";
+    const cb = $f("fin-calc-btn"); if (cb) cb.remove();
+  });
+
+  // ── Histórico ────────────────────────────────────────────────────────────
+  async function loadFinHistorico() {
+    const r = await fetch("/financeiro/historico");
+    const d = await r.json();
+    const list = $f("fin-historico-list");
+    const entries = d.historico || [];
+    if (!entries.length) {
+      list.innerHTML = '<div style="color:var(--muted);font-size:.82rem;text-align:center;padding:16px;">Nenhum fechamento salvo.</div>';
+      return;
+    }
+    list.innerHTML = entries.map(e => {
+      const lucroColor = e.lucro >= 0 ? "var(--green)" : "var(--red)";
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:700;font-size:.88rem;">${fmtD(e.periodo_de)} → ${fmtD(e.periodo_ate)} <span style="font-size:.72rem;color:var(--muted);font-weight:400;margin-left:6px;">${e.loja||""}</span></div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap;">
+            <span>💰 Receita: <b>${fmtR(e.receita_liquida)}</b></span>
+            <span>📣 Ads: <b>${fmtR(e.total_ads)}</b></span>
+            <span>📦 Custos: <b>${fmtR(e.custo_produtos + e.custo_embalagem)}</b></span>
+            <span style="color:${lucroColor};font-weight:800;">Lucro: ${fmtR(e.lucro)}</span>
+          </div>
+        </div>
+        <button onclick="finDeleteEntry('${e.id}')" style="background:none;border:1px solid var(--border);color:var(--muted);cursor:pointer;padding:5px 10px;border-radius:8px;font-size:.75rem;" title="Excluir">🗑</button>
+      </div>`;
+    }).join("");
+  }
+
+  window.finDeleteEntry = function(id) {
+    showConfirmAction("Excluir fechamento", "Excluir este fechamento do histórico?", () => {
+      fetch("/financeiro/historico/delete", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({id}) })
+        .then(() => { showToast("Fechamento excluído", "var(--red)"); loadFinHistorico(); });
+    }, "Sim, excluir", "var(--red)");
+  };
+
+  // ── Modal Produtos ────────────────────────────────────────────────────────
+  $f("fin-produtos-btn").addEventListener("click", () => {
+    renderModalProdutos();
+    $f("fin-produtos-modal").style.display = "flex";
+  });
+
+  function renderModalProdutos() {
+    const produtos = _produtosData.length ? _produtosData : [];
+    fetch("/financeiro/produtos").then(r=>r.json()).then(d => {
+      _produtosData = d.produtos || [];
+      const list = $f("fin-modal-produtos-list");
+      list.innerHTML = _produtosData.map((p, i) => `
+        <div style="display:grid;grid-template-columns:1fr 120px 28px;gap:8px;align-items:center;margin-bottom:8px;">
+          <input class="fin-prod-input mp-nome" data-i="${i}" value="${p.nome||""}" placeholder="Nome do produto" style="font-size:.82rem;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span style="font-size:.75rem;color:var(--muted);">R$</span>
+            <input class="fin-prod-input mp-custo" data-i="${i}" type="number" min="0" step="0.01" value="${p.custo||""}" placeholder="0,00" style="font-size:.82rem;text-align:right;">
+          </div>
+          <button onclick="this.closest('div').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;">✕</button>
+        </div>`).join("");
+    });
+  }
+
+  $f("fin-add-produto-btn").addEventListener("click", () => {
+    const list = $f("fin-modal-produtos-list");
+    const i = list.children.length;
+    const div = document.createElement("div");
+    div.style.cssText = "display:grid;grid-template-columns:1fr 120px 28px;gap:8px;align-items:center;margin-bottom:8px;";
+    div.innerHTML = `
+      <input class="fin-prod-input mp-nome" data-i="${i}" placeholder="Nome do produto" style="font-size:.82rem;">
+      <div style="display:flex;align-items:center;gap:4px;">
+        <span style="font-size:.75rem;color:var(--muted);">R$</span>
+        <input class="fin-prod-input mp-custo" data-i="${i}" type="number" min="0" step="0.01" placeholder="0,00" style="font-size:.82rem;text-align:right;">
+      </div>
+      <button onclick="this.closest('div').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:1rem;">✕</button>`;
+    list.appendChild(div);
+  });
+
+  $f("fin-modal-salvar-btn").addEventListener("click", async () => {
+    const nomes  = document.querySelectorAll(".mp-nome");
+    const custos = document.querySelectorAll(".mp-custo");
+    const produtos = [];
+    nomes.forEach((n, i) => {
+      const nome  = n.value.trim();
+      const custo = parseFloat(custos[i]?.value) || 0;
+      if (nome) produtos.push({ nome, custo });
+    });
+    await fetch("/financeiro/produtos", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({produtos}) });
+    _produtosData = produtos;
+    $f("fin-produtos-modal").style.display = "none";
+    showToast("Produtos salvos!", "var(--green)");
+  });
+
+  // ── Inicializar ───────────────────────────────────────────────────────────
+  document.getElementById("nav-financeiro").addEventListener("click", () => {
+    showPage("page-financeiro");
+    loadFinHistorico();
+  });
+
+  loadFinHistorico();
 })();
 
 function closeMobileMenu() {

@@ -1,4 +1,4 @@
-import hashlib
+﻿import hashlib
 import io
 import json
 import os
@@ -37,6 +37,12 @@ else:
     SECRET_KEY_FILE.write_text(_key)
     app.secret_key = _key
 
+app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200 MB
+
+@app.errorhandler(413)
+def too_large(e):
+    return jsonify({"error": "Arquivo muito grande. Limite: 200MB"}), 413
+
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 ARCHIVE_DIR.mkdir(exist_ok=True)
@@ -52,55 +58,55 @@ STANDARD_ORDER = ["pura", "turbo", "dux", "roupa"]
 BR_STATES = {"AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG",
              "PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"}
 
-# Full state names → abbreviation (longer names listed first to avoid partial matches)
+# Full state names â†’ abbreviation (longer names listed first to avoid partial matches)
 BR_STATE_NAMES = [
     ("MATO GROSSO DO SUL", "MS"), ("MATO GROSSO", "MT"),
-    ("ESPIRITO SANTO", "ES"),     ("ESPÍRITO SANTO", "ES"),
+    ("ESPIRITO SANTO", "ES"),     ("ESPÃRITO SANTO", "ES"),
     ("RIO GRANDE DO NORTE", "RN"),("RIO GRANDE DO SUL", "RS"),
     ("RIO DE JANEIRO", "RJ"),     ("SANTA CATARINA", "SC"),
-    ("SAO PAULO", "SP"),          ("SÃO PAULO", "SP"),
+    ("SAO PAULO", "SP"),          ("SÃƒO PAULO", "SP"),
     ("MINAS GERAIS", "MG"),       ("DISTRITO FEDERAL", "DF"),
     ("ACRE", "AC"),               ("ALAGOAS", "AL"),
-    ("AMAPA", "AP"),              ("AMAPÁ", "AP"),
+    ("AMAPA", "AP"),              ("AMAPÃ", "AP"),
     ("AMAZONAS", "AM"),           ("BAHIA", "BA"),
-    ("CEARA", "CE"),              ("CEARÁ", "CE"),
-    ("GOIAS", "GO"),              ("GOIÁS", "GO"),
-    ("MARANHAO", "MA"),           ("MARANHÃO", "MA"),
-    ("PARA", "PA"),               ("PARÁ", "PA"),
-    ("PARAIBA", "PB"),            ("PARAÍBA", "PB"),
-    ("PARANA", "PR"),             ("PARANÁ", "PR"),
+    ("CEARA", "CE"),              ("CEARÃ", "CE"),
+    ("GOIAS", "GO"),              ("GOIÃS", "GO"),
+    ("MARANHAO", "MA"),           ("MARANHÃƒO", "MA"),
+    ("PARA", "PA"),               ("PARÃ", "PA"),
+    ("PARAIBA", "PB"),            ("PARAÃBA", "PB"),
+    ("PARANA", "PR"),             ("PARANÃ", "PR"),
     ("PERNAMBUCO", "PE"),
-    ("PIAUI", "PI"),              ("PIAUÍ", "PI"),
-    ("RONDONIA", "RO"),           ("RONDÔNIA", "RO"),
+    ("PIAUI", "PI"),              ("PIAUÃ", "PI"),
+    ("RONDONIA", "RO"),           ("RONDÃ”NIA", "RO"),
     ("RORAIMA", "RR"),            ("SERGIPE", "SE"),
     ("TOCANTINS", "TO"),
 ]
 
 BR_HOLIDAYS_FIXED = {
-    (1,  1): "Confraternização Universal",
+    (1,  1): "ConfraternizaÃ§Ã£o Universal",
     (4, 21): "Tiradentes",
     (5,  1): "Dia do Trabalho",
-    (9,  7): "Independência do Brasil",
+    (9,  7): "IndependÃªncia do Brasil",
     (10,12): "Nossa Senhora Aparecida",
     (11, 2): "Finados",
-    (11,15): "Proclamação da República",
+    (11,15): "ProclamaÃ§Ã£o da RepÃºblica",
     (12,25): "Natal",
 }
 
 # Easter-based variable holidays pre-computed for 2025-2028
 # Easter: 2025=Apr 20, 2026=Apr 5, 2027=Mar 28, 2028=Apr 16
 BR_HOLIDAYS_VARIABLE = {
-    2025: {(3,3):"Segunda de Carnaval",(3,4):"Terça de Carnaval",(3,5):"Quarta de Cinzas",
-           (4,18):"Paixão de Cristo",(4,20):"Páscoa",(6,19):"Corpus Christi"},
-    2026: {(2,16):"Segunda de Carnaval",(2,17):"Terça de Carnaval",(2,18):"Quarta de Cinzas",
-           (4,3):"Paixão de Cristo",(4,5):"Páscoa",(6,4):"Corpus Christi"},
-    2027: {(3,1):"Segunda de Carnaval",(3,2):"Terça de Carnaval",(3,3):"Quarta de Cinzas",
-           (3,26):"Paixão de Cristo",(3,28):"Páscoa",(5,27):"Corpus Christi"},
-    2028: {(2,28):"Segunda de Carnaval",(2,29):"Terça de Carnaval",(3,1):"Quarta de Cinzas",
-           (4,14):"Paixão de Cristo",(4,16):"Páscoa",(6,15):"Corpus Christi"},
+    2025: {(3,3):"Segunda de Carnaval",(3,4):"TerÃ§a de Carnaval",(3,5):"Quarta de Cinzas",
+           (4,18):"PaixÃ£o de Cristo",(4,20):"PÃ¡scoa",(6,19):"Corpus Christi"},
+    2026: {(2,16):"Segunda de Carnaval",(2,17):"TerÃ§a de Carnaval",(2,18):"Quarta de Cinzas",
+           (4,3):"PaixÃ£o de Cristo",(4,5):"PÃ¡scoa",(6,4):"Corpus Christi"},
+    2027: {(3,1):"Segunda de Carnaval",(3,2):"TerÃ§a de Carnaval",(3,3):"Quarta de Cinzas",
+           (3,26):"PaixÃ£o de Cristo",(3,28):"PÃ¡scoa",(5,27):"Corpus Christi"},
+    2028: {(2,28):"Segunda de Carnaval",(2,29):"TerÃ§a de Carnaval",(3,1):"Quarta de Cinzas",
+           (4,14):"PaixÃ£o de Cristo",(4,16):"PÃ¡scoa",(6,15):"Corpus Christi"},
 }
 
-# ── Mappings ─────────────────────────────────────────────────────────────────
+# â”€â”€ Mappings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def load_mappings():
     if MAPPINGS_FILE.exists():
@@ -223,7 +229,7 @@ def detect_sku_title_conflicts(filenames, mappings):
     return list(conflicts.values())
 
 
-# ── PDF extraction ────────────────────────────────────────────────────────────
+# â”€â”€ PDF extraction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 # Checklist column x-boundaries (consistent across all Shopee label PDFs)
 COL_NUM_MAX     = 50
@@ -301,10 +307,10 @@ def extract_checklist(page):
 
 
 def extract_checklist_combined(page):
-    """Extrai checklist de páginas onde etiqueta e checklist estão lado a lado
+    """Extrai checklist de pÃ¡ginas onde etiqueta e checklist estÃ£o lado a lado
     (formato RETIRADA PELO COMPRADOR da Shopee).
-    Detecta as posições reais das colunas pelo cabeçalho para não depender de
-    offsets fixos (as colunas ficam comprimidas na metade direita da página)."""
+    Detecta as posiÃ§Ãµes reais das colunas pelo cabeÃ§alho para nÃ£o depender de
+    offsets fixos (as colunas ficam comprimidas na metade direita da pÃ¡gina)."""
     words = page.get_text("words")
     # Encontra "Checklist" para ancorar a busca
     checklist_y = None
@@ -315,7 +321,7 @@ def extract_checklist_combined(page):
             break
     if checklist_y is None:
         return []
-    # Encontra "Quantidade" (cabeçalho da última coluna) abaixo do título
+    # Encontra "Quantidade" (cabeÃ§alho da Ãºltima coluna) abaixo do tÃ­tulo
     header_y = None
     qty_header_x = None
     for w in words:
@@ -326,7 +332,7 @@ def extract_checklist_combined(page):
             break
     if header_y is None:
         return []
-    # Mapeia posição X real de cada coluna a partir do cabeçalho
+    # Mapeia posiÃ§Ã£o X real de cada coluna a partir do cabeÃ§alho
     col_xs = {}
     for w in words:
         x0, y0, x1, y1, word, *_ = w
@@ -346,7 +352,7 @@ def extract_checklist_combined(page):
     if "num" not in col_xs or "quantidade" not in col_xs:
         return []
     x_min = col_xs["num"] - 5
-    # Classificador dinâmico: atribui cada x à coluna mais próxima à esquerda
+    # Classificador dinÃ¢mico: atribui cada x Ã  coluna mais prÃ³xima Ã  esquerda
     col_order = sorted((v, k) for k, v in col_xs.items())
     def col_of(x):
         result = col_order[0][1]
@@ -416,7 +422,7 @@ _CEP_RE = re.compile(r'^\d{5}-\d{3}$')
 def extract_destination_state(page):
     """Extract destination state UF from a Shopee label page.
 
-    Shopee labels write the full state name (e.g. 'São Paulo', 'Bahia') in
+    Shopee labels write the full state name (e.g. 'SÃ£o Paulo', 'Bahia') in
     the address. The name may wrap across two lines, so we concatenate all
     words near the CEP into one text block and search for known state names.
     """
@@ -448,7 +454,7 @@ def extract_destination_state(page):
                         return tail
         return None
 
-    # Strategy 1: find destination CEP, combine ALL words in ±50pt window
+    # Strategy 1: find destination CEP, combine ALL words in Â±50pt window
     cep_ys = [y for y, w, _ in wlist if _CEP_RE.match(w)]
     for cy in cep_ys:
         nearby = [w for y, w, _ in wlist if cy - 50 <= y <= cy + 15]
@@ -487,7 +493,7 @@ def extract_store_name(pdf_path):
     return store
 
 
-# ── Classification ────────────────────────────────────────────────────────────
+# â”€â”€ Classification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def classify_page_items(items, mappings):
     unknown, category_units, category_set = [], {}, set()
@@ -539,13 +545,13 @@ def check_label_format(pdf_path):
     issues = []
     if checklist_text_pages > 0 and items_found_pages == 0:
         issues.append(
-            f"{checklist_text_pages} página(s) com 'Checklist' encontradas, "
-            "mas nenhum item extraído — as colunas parecem estar em posições diferentes."
+            f"{checklist_text_pages} pÃ¡gina(s) com 'Checklist' encontradas, "
+            "mas nenhum item extraÃ­do â€” as colunas parecem estar em posiÃ§Ãµes diferentes."
         )
     elif checklist_text_pages > 0 and items_found_pages < checklist_text_pages * 0.4:
         issues.append(
-            f"Só {items_found_pages} de {checklist_text_pages} página(s) com checklist "
-            "foram lidas corretamente — parte do layout pode ter mudado."
+            f"SÃ³ {items_found_pages} de {checklist_text_pages} pÃ¡gina(s) com checklist "
+            "foram lidas corretamente â€” parte do layout pode ter mudado."
         )
     return issues
 
@@ -565,7 +571,7 @@ def get_unknown_items(pdf_path, mappings):
     return list(seen.values())
 
 
-# ── Holiday helpers ──────────────────────────────────────────────────────────
+# â”€â”€ Holiday helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def get_br_holidays(year):
     result = {}
@@ -614,7 +620,7 @@ def _date_range(period, filtered, from_date=None, to_date=None):
     return min(dates), max(dates)
 
 
-# ── Cover page generator ─────────────────────────────────────────────────────
+# â”€â”€ Cover page generator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _SKIP_COVER = {"sem_produto", "sem_checklist", "pagina_em_branco",
                "ml_sem_produto", "ml_sem_checklist", "mlc2_sem_produto"}
@@ -624,12 +630,12 @@ def _cover_title(key):
     m = re.match(r'^([a-z]+)_(\d+)$', k)
     if m:
         return f"{m.group(1).upper()} {m.group(2)}"
-    labels = {"roupas": "ROUPAS", "variacoes": "VARIAÇÕES"}
+    labels = {"roupas": "ROUPAS", "variacoes": "VARIAÃ‡Ã•ES"}
     return labels.get(k, k.upper())
 
 def create_cover_page_bytes(title, pedidos, unidades, source="", label_date=""):
-    """Portrait 4×6 in cover page for thermal/Zebra label printer (black only)."""
-    W, H  = 288, 432  # 4×6 inches @ 72 dpi — portrait
+    """Portrait 4Ã—6 in cover page for thermal/Zebra label printer (black only)."""
+    W, H  = 288, 432  # 4Ã—6 inches @ 72 dpi â€” portrait
     BLACK = (0, 0, 0)
     GRAY  = (0.55, 0.55, 0.55)
     doc   = fitz.open()
@@ -690,7 +696,7 @@ def _prepend_cover(writer, key, label_date=""):
     writer.insert_page(cover_reader.pages[0], index=0)
 
 
-# ── Core split/merge ──────────────────────────────────────────────────────────
+# â”€â”€ Core split/merge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def compute_brand_totals(breakdown):
     brand_orders, brand_units = {}, {}
@@ -724,7 +730,8 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
     store_items        = {}  # store -> {sku_key -> {sku, produto, categoria, kit_size, units}}
     store_label_counts = {}  # store -> number of label pages (1 page = 1 customer order)
     state_counts       = {}  # UF -> number of orders shipped there
-    tracking_numbers   = {}  # tracking_number -> {filename, page}
+    tracking_numbers     = {}  # tracking_number -> {filename, page}
+    batch_tracking_dups  = {}  # tracking_number -> {file1, page1, file2, page2}
     total_pages_all    = 0
     blank_pages_all    = 0
     sem_check_all      = 0
@@ -801,6 +808,19 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
                             "store":    store,
                             "items":    page_items_info,
                         }
+                    else:
+                        # BR duplicado dentro do mesmo batch
+                        prev = tracking_numbers[tn]
+                        if prev["filename"] != filename:
+                            batch_dup_key = tn
+                            if batch_dup_key not in batch_tracking_dups:
+                                batch_tracking_dups[batch_dup_key] = {
+                                    "tracking": tn,
+                                    "file1": prev["filename"],
+                                    "page1": prev["page"],
+                                    "file2": filename,
+                                    "page2": page_num + 1,
+                                }
                 for item in items:
                     mk      = mapping_key(item["produto"], item["sku"])
                     sku_key = item["sku"].strip()
@@ -889,15 +909,16 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
     }
 
     security_alerts = {
-        "tracking_conflicts": tracking_conflicts,
-        "sku_conflicts":      sku_conflicts,
+        "tracking_conflicts":      tracking_conflicts,
+        "sku_conflicts":           sku_conflicts,
+        "batch_tracking_dups":     list(batch_tracking_dups.values()),
     }
 
     return {"output_files": output_files, "page_results": page_results,
             "stats": stats, "errors": [], "security_alerts": security_alerts}
 
 
-# ── Mercado Livre ─────────────────────────────────────────────────────────────
+# â”€â”€ Mercado Livre â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 ML_STORE_NAME = "REPZILLA ML"
 
@@ -1043,17 +1064,18 @@ def get_unknown_items_ml(pdf_path, mappings):
 
 
 def split_ml_pdfs(filenames, mappings, label_date=""):
-    """Process ML PDFs — same return structure as split_pdfs_merged."""
-    writers            = {}
-    page_results       = []
-    store_items        = {}
-    store_label_counts = {}
-    state_counts       = {}
-    tracking_numbers   = {}
-    total_pages_all    = 0
-    unmatched_all      = 0
-    breakdown_all      = {}
-    store              = ML_STORE_NAME
+    """Process ML PDFs â€” same return structure as split_pdfs_merged."""
+    writers              = {}
+    page_results         = []
+    store_items          = {}
+    store_label_counts   = {}
+    state_counts         = {}
+    tracking_numbers     = {}
+    batch_tracking_dups  = {}
+    total_pages_all      = 0
+    unmatched_all        = 0
+    breakdown_all        = {}
+    store                = ML_STORE_NAME
 
     for filename in filenames:
         pdf_path = UPLOAD_DIR / filename
@@ -1103,6 +1125,14 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
             for tn in extract_tracking_numbers(fp):
                 if tn not in tracking_numbers:
                     tracking_numbers[tn] = {"filename": filename, "page": page_num + 1}
+                else:
+                    prev = tracking_numbers[tn]
+                    if prev["filename"] != filename and tn not in batch_tracking_dups:
+                        batch_tracking_dups[tn] = {
+                            "tracking": tn,
+                            "file1": prev["filename"], "page1": prev["page"],
+                            "file2": filename,         "page2": page_num + 1,
+                        }
             page_results.append({
                 "file": filename, "page": page_num + 1, "output": ml_key,
                 "items": [{"produto": it["produto"][:50], "sku": it["sku"],
@@ -1189,20 +1219,21 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
     }
 
     security_alerts = {
-        "tracking_conflicts": tracking_conflicts,
-        "sku_conflicts":      [],
+        "tracking_conflicts":  tracking_conflicts,
+        "sku_conflicts":       [],
+        "batch_tracking_dups": list(batch_tracking_dups.values()),
     }
 
     return {"output_files": output_files, "page_results": page_results,
             "stats": stats, "errors": [], "security_alerts": security_alerts}
 
 
-# ── Auth ──────────────────────────────────────────────────────────────────────
+# â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def hash_pin(pin):
     return hashlib.sha256(pin.encode()).hexdigest()
 
-# ── Auditoria ─────────────────────────────────────────────────────────────────
+# â”€â”€ Auditoria â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def load_auditoria():
     if AUDITORIA_FILE.exists():
@@ -1226,7 +1257,7 @@ def registrar_aud(acao, descricao):
     save_auditoria(hist[:1000])
 
 def _valida_pin_session():
-    """Verifica se um PIN foi confirmado nos últimos 30s e consome o token."""
+    """Verifica se um PIN foi confirmado nos Ãºltimos 30s e consome o token."""
     ts = session.pop("pin_ok_ts", 0)
     return (_time.time() - ts) <= 30
 
@@ -1256,7 +1287,7 @@ def login():
         username = request.form.get("username", "").upper().strip()
         pin = request.form.get("pin", "").strip()
         if username not in users:
-            error = "Usuário inválido."
+            error = "UsuÃ¡rio invÃ¡lido."
         elif users[username]["pin"] is None:
             return redirect(url_for("setup_pin", username=username))
         elif users[username]["pin"] != hash_pin(pin):
@@ -1278,9 +1309,9 @@ def setup_pin():
         pin = request.form.get("pin", "").strip()
         pin_confirm = request.form.get("pin_confirm", "").strip()
         if len(pin) != 4 or not pin.isdigit():
-            error = "O PIN deve ter exatamente 4 números."
+            error = "O PIN deve ter exatamente 4 nÃºmeros."
         elif pin != pin_confirm:
-            error = "Os PINs não coincidem. Tente novamente."
+            error = "Os PINs nÃ£o coincidem. Tente novamente."
         else:
             users[username]["pin"] = hash_pin(pin)
             save_users(users)
@@ -1301,9 +1332,9 @@ def api_confirmar_pin():
     usuario_alvo = (data.get("username") or session.get("user", "")).upper().strip()
     users        = load_users()
     if not usuario_alvo or usuario_alvo not in users:
-        return jsonify({"error": "Usuário inválido"}), 403
+        return jsonify({"error": "UsuÃ¡rio invÃ¡lido"}), 403
     if users[usuario_alvo]["pin"] != hash_pin(pin):
-        registrar_aud("pin_falhou", f"PIN incorreto para usuário {usuario_alvo}")
+        registrar_aud("pin_falhou", f"PIN incorreto para usuÃ¡rio {usuario_alvo}")
         return jsonify({"error": "PIN incorreto"}), 403
     session["pin_ok_ts"]   = _time.time()
     session["audit_user"]  = usuario_alvo
@@ -1314,7 +1345,7 @@ def api_auditoria():
     limit = int(request.args.get("limit", 200))
     return jsonify(load_auditoria()[:limit])
 
-# ── Routes ────────────────────────────────────────────────────────────────────
+# â”€â”€ Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.route("/")
 def index():
@@ -1365,7 +1396,7 @@ def upload():
         doc.close()
 
     if not saved:
-        return jsonify({"error": "Nenhum PDF válido encontrado"}), 400
+        return jsonify({"error": "Nenhum PDF vÃ¡lido encontrado"}), 400
 
     # Base SKUs with 2+ titles in batch where at least one title is NOT yet mapped
     dup_skus = set()
@@ -1418,13 +1449,13 @@ def process():
     for filename in all_fnames:
         pdf_path = UPLOAD_DIR / filename
         if not pdf_path.exists():
-            return jsonify({"error": f"Arquivo não encontrado: {filename}"}), 404
+            return jsonify({"error": f"Arquivo nÃ£o encontrado: {filename}"}), 404
         _fn = get_unknown_items_combined if filename in retirada_set else get_unknown_items
         for u in _fn(pdf_path, mappings):
             all_unknown.setdefault(u["key"], u)
 
     if all_unknown:
-        return jsonify({"error": "Ainda há produtos não classificados",
+        return jsonify({"error": "Ainda hÃ¡ produtos nÃ£o classificados",
                         "unknown": list(all_unknown.values())}), 400
 
     return jsonify(split_pdfs_merged(all_fnames, mappings, label_date=label_date,
@@ -1463,7 +1494,7 @@ def _pdf_with_cover(pdf_path, key, label_date, saved_opc, breakdown):
 
 
 def _archive_pdf_path(entry, filename):
-    """Retorna o caminho do PDF no arquivo da expedição, ou None se não existir."""
+    """Retorna o caminho do PDF no arquivo da expediÃ§Ã£o, ou None se nÃ£o existir."""
     archive_id = entry.get("archive_dir")
     if archive_id:
         p = ARCHIVE_DIR / archive_id / filename
@@ -1476,19 +1507,19 @@ def _archive_pdf_path(entry, filename):
 def history_download(idx, filename):
     history = load_history()
     if not (0 <= idx < len(history)):
-        return jsonify({"error": "Expedição não encontrada"}), 404
+        return jsonify({"error": "ExpediÃ§Ã£o nÃ£o encontrada"}), 404
     if not filename.endswith(".pdf") or "/" in filename or "\\" in filename:
-        return jsonify({"error": "Arquivo inválido"}), 400
+        return jsonify({"error": "Arquivo invÃ¡lido"}), 400
     entry      = history[idx]
     label_date = entry.get("date", "")
     breakdown  = entry.get("totals", {}).get("breakdown", {})
     saved_opc  = entry.get("output_page_counts", {})
     key        = filename.replace(".pdf", "")
 
-    # Usa arquivo da expedição se disponível, senão cai no disco atual
+    # Usa arquivo da expediÃ§Ã£o se disponÃ­vel, senÃ£o cai no disco atual
     pdf_path = _archive_pdf_path(entry, filename) or (OUTPUT_DIR / filename)
     if not pdf_path.exists():
-        return jsonify({"error": "Arquivo não encontrado no disco"}), 404
+        return jsonify({"error": "Arquivo nÃ£o encontrado no disco"}), 404
 
     buf = _pdf_with_cover(pdf_path, key, label_date, saved_opc, breakdown)
     try:
@@ -1506,7 +1537,7 @@ def history_download(idx, filename):
 def history_download_all(idx):
     history = load_history()
     if not (0 <= idx < len(history)):
-        return jsonify({"error": "Expedição não encontrada"}), 404
+        return jsonify({"error": "ExpediÃ§Ã£o nÃ£o encontrada"}), 404
     entry      = history[idx]
     label_date = entry.get("date", "")
     breakdown  = entry.get("totals", {}).get("breakdown", {})
@@ -1617,7 +1648,7 @@ def save_brand_route():
     slug    = data.get("slug", "").strip()
     display = data.get("display", "").strip()
     if not slug or not display:
-        return jsonify({"error": "slug e display são obrigatórios"}), 400
+        return jsonify({"error": "slug e display sÃ£o obrigatÃ³rios"}), 400
     brands = load_brands()
     brands[slug] = display
     save_brands(brands)
@@ -1627,7 +1658,7 @@ def save_brand_route():
 @app.route("/history/add", methods=["POST"])
 def history_add():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data        = request.json
     history     = load_history()
     entry_date  = data.get("date") or date.today().isoformat()
@@ -1646,7 +1677,7 @@ def history_add():
         },
     }
 
-    # Arquivar PDFs desta expedição para downloads históricos corretos
+    # Arquivar PDFs desta expediÃ§Ã£o para downloads histÃ³ricos corretos
     breakdown = data.get("breakdown", {})
     opc       = data.get("output_page_counts", {})
     archive_exp_dir = ARCHIVE_DIR / expedition_id
@@ -1688,7 +1719,7 @@ def history_add():
         save_tracking_index(index)
 
     total = sum(data.get("store_label_counts", {}).values()) or data.get("label_pages", 0)
-    registrar_aud("lacrar", f"Expedição {entry_date} — {total} etiquetas lacradas")
+    registrar_aud("lacrar", f"ExpediÃ§Ã£o {entry_date} â€” {total} etiquetas lacradas")
     return jsonify({"ok": True, "id": entry["id"]})
 
 
@@ -1856,7 +1887,7 @@ def history_daily():
     for y in years:
         holidays.update(get_br_holidays(y))
 
-    WEEKDAYS = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"]
+    WEEKDAYS = ["Segunda","TerÃ§a","Quarta","Quinta","Sexta","SÃ¡bado","Domingo"]
     daily = {}
     cur = start_d
     while cur <= end_d:
@@ -1936,7 +1967,7 @@ def history_product_metrics():
     for y in years:
         holidays.update(get_br_holidays(y))
 
-    WEEKDAYS = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"]
+    WEEKDAYS = ["Segunda","TerÃ§a","Quarta","Quinta","Sexta","SÃ¡bado","Domingo"]
     daily = {}
     cur = start_d
     while cur <= end_d:
@@ -2008,13 +2039,13 @@ def history_entries_list():
 @app.route("/history/delete", methods=["POST"])
 def history_delete():
     if not _valida_pin_session():
-        return jsonify({"ok": False, "error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"ok": False, "error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data          = request.json
     idx           = data.get("index")
     restore_stock = data.get("restore_stock", False)
     history       = load_history()
     if idx is None or not (0 <= idx < len(history)):
-        return jsonify({"ok": False, "error": "index inválido"}), 400
+        return jsonify({"ok": False, "error": "index invÃ¡lido"}), 400
     entry      = history[idx]
     entry_date = entry.get("date", "?")
 
@@ -2039,7 +2070,7 @@ def history_delete():
                 "usuario":       session.get("user", "?"),
                 "tipo":          "estorno_historico",
                 "itens":         movimentos,
-                "justificativa": f"Estorno — expedição {entry_date} excluída",
+                "justificativa": f"Estorno â€” expediÃ§Ã£o {entry_date} excluÃ­da",
                 "contexto":      entry.get("id", ""),
             })
             save_estoque(estoque)
@@ -2047,20 +2078,20 @@ def history_delete():
 
     history.pop(idx)
     save_history(history)
-    registrar_aud("del_hist", f"Expedição de {entry_date} excluída do histórico")
+    registrar_aud("del_hist", f"ExpediÃ§Ã£o de {entry_date} excluÃ­da do histÃ³rico")
     return jsonify({"ok": True})
 
 
 @app.route("/history/delete-store", methods=["POST"])
 def history_delete_store():
     if not _valida_pin_session():
-        return jsonify({"ok": False, "error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"ok": False, "error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data    = request.json
     idx     = data.get("index")
     store   = data.get("store", "")
     history = load_history()
     if idx is None or not (0 <= idx < len(history)):
-        return jsonify({"ok": False, "error": "index inválido"}), 400
+        return jsonify({"ok": False, "error": "index invÃ¡lido"}), 400
     entry = history[idx]
     entry_date = entry.get("date", "?")
     entry.get("store_items", {}).pop(store, None)
@@ -2074,7 +2105,7 @@ def history_delete_store():
         entry.setdefault("totals", {})["label_pages"] = new_lp
         history[idx] = entry
     save_history(history)
-    registrar_aud("del_hist_loja", f"Loja '{store}' removida da expedição {entry_date}")
+    registrar_aud("del_hist_loja", f"Loja '{store}' removida da expediÃ§Ã£o {entry_date}")
     return jsonify({"ok": True})
 
 
@@ -2082,7 +2113,7 @@ def history_delete_store():
 def history_reopen(idx):
     history = load_history()
     if not (0 <= idx < len(history)):
-        return jsonify({"error": "Expedição não encontrada"}), 404
+        return jsonify({"error": "ExpediÃ§Ã£o nÃ£o encontrada"}), 404
     entry    = history[idx]
     breakdown = entry.get("totals", {}).get("breakdown", {})
     label_pages = entry.get("totals", {}).get("label_pages", 0)
@@ -2153,7 +2184,7 @@ def history_reopen(idx):
 @app.route("/metrics/export", methods=["POST"])
 def metrics_export():
     d              = request.json
-    period_label   = d.get("period_label", "Período selecionado")
+    period_label   = d.get("period_label", "PerÃ­odo selecionado")
     summary        = d.get("summary", {})
     store_totals   = d.get("store_totals", {})
     all_prods      = d.get("all_products_data", [])
@@ -2164,7 +2195,7 @@ def metrics_export():
     state_rows = sorted(state_totals.items(), key=lambda x: x[1], reverse=True)
     total_states = sum(v for _, v in state_rows)
 
-    def pct(n, t): return f"{round(n/t*100)}%" if t else "—"
+    def pct(n, t): return f"{round(n/t*100)}%" if t else "â€”"
 
     rows_store = "".join(
         f"<tr><td>{s}</td><td class='n'>{v.get('orders',0)}</td>"
@@ -2179,7 +2210,7 @@ def metrics_export():
         st   = p.get("store_totals", {})
         if not st: continue
         tot  = p.get("total_units", 0)
-        ul   = "peças" if cat == "roupa" else "potes"
+        ul   = "peÃ§as" if cat == "roupa" else "potes"
         rows = "".join(
             f"<tr><td>{s}</td><td class='n'>{v}</td><td class='n'>{pct(v,tot)}</td></tr>"
             for s, v in sorted(st.items(), key=lambda x: x[1], reverse=True)
@@ -2201,7 +2232,7 @@ def metrics_export():
         <table><tr><th>UF</th><th class='n'>Pedidos</th><th class='n'>%</th></tr>{state_rows_html}</table>"""
 
     html = f"""<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
-<title>REPZILLA — Métricas</title>
+<title>REPZILLA â€” MÃ©tricas</title>
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}
 body{{font-family:Arial,sans-serif;color:#1a1a2e;padding:32px;font-size:13px;max-width:860px;margin:auto}}
@@ -2223,19 +2254,19 @@ td{{padding:7px 8px;border-bottom:1px solid #f0f0f8;font-size:13px}}
 .print-btn button{{padding:9px 22px;background:#6c5fff;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer}}
 @media print{{.print-btn{{display:none}}.pb{{page-break-inside:avoid}}}}
 </style></head><body>
-<div class="print-btn"><button onclick="window.print()">🖨️ Salvar como PDF</button></div>
+<div class="print-btn"><button onclick="window.print()">ðŸ–¨ï¸ Salvar como PDF</button></div>
 <h1>REPZILLA</h1>
-<p class="sub">Relatório de Métricas &nbsp;·&nbsp; {period_label}</p>
+<p class="sub">RelatÃ³rio de MÃ©tricas &nbsp;Â·&nbsp; {period_label}</p>
 <div class="sec">Resumo</div>
 <div class="stat-grid">
   <div class="sb"><div class="sv">{summary.get('total_orders',0)}</div><div class="sl">pedidos totais</div></div>
   <div class="sb"><div class="sv">{summary.get('total_units',0)}</div><div class="sl">unidades totais</div></div>
   <div class="sb"><div class="sv">{len(store_totals)}</div><div class="sl">lojas ativas</div></div>
-  <div class="sb"><div class="sv">{summary.get('total_entries',0)}</div><div class="sl">expedições</div></div>
+  <div class="sb"><div class="sv">{summary.get('total_entries',0)}</div><div class="sl">expediÃ§Ãµes</div></div>
 </div>
 <div class="sec">Pedidos por Loja</div>
 <table><tr><th>Loja</th><th class='n'>Pedidos</th><th class='n'>%</th><th class='n'>Unidades</th></tr>{rows_store}</table>
-<div class="sec">Análise por Produto</div>
+<div class="sec">AnÃ¡lise por Produto</div>
 {prod_blocks}
 {state_block}
 </body></html>"""
@@ -2260,7 +2291,7 @@ def ml_upload():
         for u in get_unknown_items_ml(pdf_path, mappings):
             all_unknown.setdefault(u["key"], u)
     if not saved:
-        return jsonify({"error": "Nenhum PDF válido encontrado"}), 400
+        return jsonify({"error": "Nenhum PDF vÃ¡lido encontrado"}), 400
     return jsonify({"filenames": saved, "unknown": list(all_unknown.values())})
 
 
@@ -2276,11 +2307,11 @@ def ml_process():
     for filename in filenames:
         pdf_path = UPLOAD_DIR / filename
         if not pdf_path.exists():
-            return jsonify({"error": f"Arquivo não encontrado: {filename}"}), 404
+            return jsonify({"error": f"Arquivo nÃ£o encontrado: {filename}"}), 404
         for u in get_unknown_items_ml(pdf_path, mappings):
             all_unknown.setdefault(u["key"], u)
     if all_unknown:
-        return jsonify({"error": "Ainda há produtos não classificados",
+        return jsonify({"error": "Ainda hÃ¡ produtos nÃ£o classificados",
                         "unknown": list(all_unknown.values())}), 400
     return jsonify(split_ml_pdfs(filenames, mappings, label_date=label_date))
 
@@ -2326,7 +2357,7 @@ def ml_correios():
 
     if len(out) == 0:
         src.close(); out.close()
-        return jsonify({"error": "Nenhuma página válida encontrada. Verifique o arquivo."}), 400
+        return jsonify({"error": "Nenhuma pÃ¡gina vÃ¡lida encontrada. Verifique o arquivo."}), 400
 
     today    = date.today().strftime("%d.%m.%y")
     fname    = f"ml_correios_{today}.pdf"
@@ -2338,7 +2369,7 @@ def ml_correios():
     return jsonify({"filename": fname, "labels": labels, "total": total})
 
 
-# ── ML Correios 2 — Separação ─────────────────────────────────────────────────
+# â”€â”€ ML Correios 2 â€” SeparaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _CORREIOS_TRACKING_RE = re.compile(r'\b([A-Z]{2}\d{9}BR)\b')
 _CORREIOS_QTY_RE      = re.compile(r'^Quantidade:\s*(\d+)', re.IGNORECASE)
@@ -2408,7 +2439,7 @@ def get_unknown_items_correios(pdf_path, mappings):
 
 
 def split_ml_correios2_pdf(filenames, mappings, label_date=""):
-    """Process clean Correios PDFs — same return structure as split_ml_pdfs."""
+    """Process clean Correios PDFs â€” same return structure as split_ml_pdfs."""
     writers            = {}
     page_results       = []
     store_items        = {}
@@ -2572,7 +2603,7 @@ def ml_correios2_upload():
         for u in get_unknown_items_correios(pdf_path, mappings):
             all_unknown.setdefault(u["key"], u)
     if not saved:
-        return jsonify({"error": "Nenhum PDF válido encontrado"}), 400
+        return jsonify({"error": "Nenhum PDF vÃ¡lido encontrado"}), 400
     return jsonify({"filenames": saved, "unknown": list(all_unknown.values())})
 
 
@@ -2588,11 +2619,11 @@ def ml_correios2_process():
     for filename in filenames:
         pdf_path = UPLOAD_DIR / filename
         if not pdf_path.exists():
-            return jsonify({"error": f"Arquivo não encontrado: {filename}"}), 404
+            return jsonify({"error": f"Arquivo nÃ£o encontrado: {filename}"}), 404
         for u in get_unknown_items_correios(pdf_path, mappings):
             all_unknown.setdefault(u["key"], u)
     if all_unknown:
-        return jsonify({"error": "Ainda há produtos não classificados",
+        return jsonify({"error": "Ainda hÃ¡ produtos nÃ£o classificados",
                         "unknown": list(all_unknown.values())}), 400
     return jsonify(split_ml_correios2_pdf(filenames, mappings, label_date=label_date))
 
@@ -2673,9 +2704,9 @@ def order_locator_download():
 
 
 def _split_pdf_columns(src_bytes, num_cols=None, with_selo=False):
-    """Corta PDF com etiquetas lado a lado e retorna PDF com uma etiqueta por página.
-    Usa insert_pdf + manipulação do content stream para preservar texto extraível,
-    idêntico ao comportamento do sistema corta-etiqueta original (pdf-lib).
+    """Corta PDF com etiquetas lado a lado e retorna PDF com uma etiqueta por pÃ¡gina.
+    Usa insert_pdf + manipulaÃ§Ã£o do content stream para preservar texto extraÃ­vel,
+    idÃªntico ao comportamento do sistema corta-etiqueta original (pdf-lib).
     Constantes calibradas no sistema original: TOP_CROP=20 (PN), CONTENT_H=355 (TN)."""
     TARGET_W  = 283.46  # 100 mm
     TARGET_H  = 425.20  # 150 mm
@@ -2683,9 +2714,9 @@ def _split_pdf_columns(src_bytes, num_cols=None, with_selo=False):
     CONTENT_H = 355
     AJUSTE_X  = -5      # AJUSTE_X_GLOBAL do sistema original
 
-    # Carimbo "Conferido" — medidas do selo-config.ts (coords PDF: y=0 embaixo)
+    # Carimbo "Conferido" â€” medidas do selo-config.ts (coords PDF: y=0 embaixo)
     SELO_X      = 165
-    SELO_Y_PDF  = 205   # distância da borda inferior
+    SELO_Y_PDF  = 205   # distÃ¢ncia da borda inferior
     SELO_W      = 80
     SELO_H      = 80
 
@@ -2720,21 +2751,21 @@ def _split_pdf_columns(src_bytes, num_cols=None, with_selo=False):
             if not page.get_text("blocks", clip=fitz.Rect(col_x0, 0, col_x1, h)):
                 continue
 
-            # Copia página completa preservando fontes e recursos (texto extraível)
+            # Copia pÃ¡gina completa preservando fontes e recursos (texto extraÃ­vel)
             out_doc.insert_pdf(src_doc, from_page=page_num, to_page=page_num)
             out_page = out_doc[-1]
 
-            # Matriz de transformação: recorta coluna e escala para TARGET_W × TARGET_H
+            # Matriz de transformaÃ§Ã£o: recorta coluna e escala para TARGET_W Ã— TARGET_H
             # Em coordenadas PDF nativas (y=0 embaixo):
             # clip inferior: h - TOP_CROP - CONTENT_H  (ex.: 612-20-355=237)
-            scale_x = TARGET_W / col_w       # ~1.431 para 198→283.46
-            scale_y = TARGET_H / CONTENT_H   # ~1.197 para 355→425.2
+            scale_x = TARGET_W / col_w       # ~1.431 para 198â†’283.46
+            scale_y = TARGET_H / CONTENT_H   # ~1.197 para 355â†’425.2
             pdf_y_bot = h - TOP_CROP - CONTENT_H
             start_x = col_x0 + AJUSTE_X      # AJUSTE_X_GLOBAL do sistema original
             tx = -start_x * scale_x
             ty = -pdf_y_bot * scale_y
 
-            # Envolve o content stream original com a transformação
+            # Envolve o content stream original com a transformaÃ§Ã£o
             original = out_page.read_contents()
             new_content = (
                 f"q {scale_x:.6f} 0 0 {scale_y:.6f} {tx:.6f} {ty:.6f} cm\n"
@@ -2748,11 +2779,11 @@ def _split_pdf_columns(src_bytes, num_cols=None, with_selo=False):
             out_doc.update_stream(content_xrefs[0], new_content)
             out_page.set_contents(content_xrefs[0])
 
-            # Define tamanho da página de saída e remove CropBox residual
+            # Define tamanho da pÃ¡gina de saÃ­da e remove CropBox residual
             out_page.set_mediabox(fitz.Rect(0, 0, TARGET_W, TARGET_H))
             out_doc.xref_set_key(out_page.xref, "CropBox", "null")
 
-            # Overlay do carimbo "Conferido" (coords PDF y-up → fitz y-down)
+            # Overlay do carimbo "Conferido" (coords PDF y-up â†’ fitz y-down)
             if selo_bytes:
                 selo_y0 = TARGET_H - SELO_Y_PDF - SELO_H  # topo em fitz
                 out_page.insert_image(
@@ -2774,8 +2805,8 @@ def _split_pdf_columns(src_bytes, num_cols=None, with_selo=False):
 
 
 def _split_ml_full(src_bytes, labels_per_page=3, num_cols=4):
-    """Corta PDF de etiquetas Full do Mercado Livre (grade cols × linhas)
-    e agrupa labels_per_page etiquetas por página A4, empilhadas verticalmente."""
+    """Corta PDF de etiquetas Full do Mercado Livre (grade cols Ã— linhas)
+    e agrupa labels_per_page etiquetas por pÃ¡gina A4, empilhadas verticalmente."""
     OUT_W = 595.0   # A4 retrato
     OUT_H = 842.0
 
@@ -2797,7 +2828,7 @@ def _split_ml_full(src_bytes, labels_per_page=3, num_cols=4):
 
         y_bounds = sorted(y_lines)
 
-        # Fallback: clusteriza por posição Y dos blocos de texto
+        # Fallback: clusteriza por posiÃ§Ã£o Y dos blocos de texto
         if len(y_bounds) < 3:
             blocks = page.get_text("blocks")
             raw_ys = sorted(set(b[1] for b in blocks if b[4].strip()))
@@ -2846,7 +2877,7 @@ def _split_ml_full(src_bytes, labels_per_page=3, num_cols=4):
 def cortar_etiquetas():
     f = request.files.get("pdf")
     if not f or not f.filename.lower().endswith(".pdf"):
-        return jsonify({"error": "Envie um arquivo PDF válido"}), 400
+        return jsonify({"error": "Envie um arquivo PDF vÃ¡lido"}), 400
     cols_param = request.form.get("cols", "auto")
     num_cols   = None if cols_param == "auto" else int(cols_param)
     with_selo  = request.form.get("selo") == "1"
@@ -2888,25 +2919,25 @@ def caixas_gerar():
         box_num     = i + 1
         page        = doc.new_page(width=W, height=H)
 
-        # "N PEDIDOS" — negrito, muito grande
+        # "N PEDIDOS" â€” negrito, muito grande
         r = fitz.Rect(M, 70, W - M, 230)
         page.insert_textbox(r, f"{num_pedidos} PEDIDOS",
                             fontsize=80, fontname="hebo",
                             align=fitz.TEXT_ALIGN_CENTER, color=(0, 0, 0))
 
-        # "CAIXA X/Y" — negrito, muito grande
+        # "CAIXA X/Y" â€” negrito, muito grande
         r = fitz.Rect(M, 250, W - M, 430)
         page.insert_textbox(r, f"CAIXA {box_num}/{total}",
                             fontsize=80, fontname="hebo",
                             align=fitz.TEXT_ALIGN_CENTER, color=(0, 0, 0))
 
-        # Data — itálico, grande
+        # Data â€” itÃ¡lico, grande
         r = fitz.Rect(M, 445, W - M, 570)
         page.insert_textbox(r, date_display,
                             fontsize=54, fontname="heit",
                             align=fitz.TEXT_ALIGN_CENTER, color=(0, 0, 0))
 
-        # Endereço — itálico, menor, sublinhado manual
+        # EndereÃ§o â€” itÃ¡lico, menor, sublinhado manual
         if address:
             addr_size = 17
             r_addr = fitz.Rect(M, 640, W - M, 780)
@@ -2946,14 +2977,14 @@ def caixas_gerar():
                      as_attachment=True, download_name="caixas.pdf")
 
 
-# ── Estoque & Produtos ────────────────────────────────────────────────────────
+# â”€â”€ Estoque & Produtos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 ESTOQUE_FILE      = BASE_DIR / "estoque.json"
 HIST_ESTOQUE_FILE = BASE_DIR / "historico_estoque.json"
 
 _ESTOQUE_EXCLUDED = {"roupa", "roupas", "variacoes", "variaes"}
 
-# Produtos padrão que compõem o estoque físico
+# Produtos padrÃ£o que compÃµem o estoque fÃ­sico
 _ESTOQUE_DEFAULT = {
     "pura":  "Creatina Black Skull Pura",
     "turbo": "Creatina Black Skull Turbo",
@@ -3095,7 +3126,7 @@ def api_estoque_ativo():
     ativo  = bool(data.get("ativo", True))
     estoque = load_estoque()
     if grupo not in estoque:
-        return jsonify({"error": "Grupo não encontrado"}), 404
+        return jsonify({"error": "Grupo nÃ£o encontrado"}), 404
     estoque[grupo]["ativo"] = ativo
     save_estoque(estoque)
     status = "ativado" if ativo else "desativado"
@@ -3109,13 +3140,13 @@ def api_todos_grupos():
     estoque = load_estoque()
     seen    = set()
     result  = []
-    # Primeiro: grupos que já estão no estoque (pura/turbo/dux podem não estar em brands.json)
+    # Primeiro: grupos que jÃ¡ estÃ£o no estoque (pura/turbo/dux podem nÃ£o estar em brands.json)
     for slug, info in estoque.items():
         seen.add(slug)
         display = info.get("display") or brands.get(slug, slug)
         ativo   = info.get("ativo", True)
         result.append({"grupo": slug, "display": display, "ativo": ativo, "quantidade": info.get("quantidade", 0)})
-    # Depois: marcas em brands.json que ainda não estão no estoque
+    # Depois: marcas em brands.json que ainda nÃ£o estÃ£o no estoque
     for slug, display in brands.items():
         if slug not in seen:
             result.append({"grupo": slug, "display": display, "ativo": False, "quantidade": 0})
@@ -3128,7 +3159,7 @@ def api_grupos_editar():
     slug        = data.get("slug", "").strip()
     new_display = data.get("display", "").strip()
     if not slug or not new_display:
-        return jsonify({"error": "Dados inválidos"}), 400
+        return jsonify({"error": "Dados invÃ¡lidos"}), 400
     brands = load_brands()
     old_display = brands.get(slug, slug)
     brands[slug] = new_display
@@ -3138,14 +3169,14 @@ def api_grupos_editar():
         old_display = estoque[slug].get("display", old_display)
         estoque[slug]["display"] = new_display
         save_estoque(estoque)
-    registrar_aud("grupo_editar", f"Nome do grupo alterado: '{old_display}' → '{new_display}'")
+    registrar_aud("grupo_editar", f"Nome do grupo alterado: '{old_display}' â†’ '{new_display}'")
     return jsonify({"ok": True})
 
 
 @app.route("/api/estoque/entrada", methods=["POST"])
 def api_estoque_entrada():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data     = request.json
     itens    = data.get("itens", [])
     usuario  = session.get("user", "?")
@@ -3162,7 +3193,7 @@ def api_estoque_entrada():
         estoque[grupo]["quantidade"] += qtd
         movimentos.append({"grupo": grupo, "display": estoque[grupo]["display"], "quantidade": qtd})
     if not movimentos:
-        return jsonify({"error": "Nenhum item com quantidade válida"}), 400
+        return jsonify({"error": "Nenhum item com quantidade vÃ¡lida"}), 400
     hist.append({
         "id":            secrets.token_hex(8),
         "timestamp":     datetime.now().isoformat(timespec="seconds"),
@@ -3182,20 +3213,20 @@ def api_estoque_entrada():
 @app.route("/api/estoque/saida-manual", methods=["POST"])
 def api_estoque_saida_manual():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data          = request.json
     grupo         = (data.get("grupo") or "").strip()
     qtd           = int(data.get("quantidade", 0))
     justificativa = (data.get("justificativa") or "").strip()
     usuario       = session.get("user", "?")
     if not justificativa:
-        return jsonify({"error": "Justificativa obrigatória"}), 400
+        return jsonify({"error": "Justificativa obrigatÃ³ria"}), 400
     if qtd <= 0:
-        return jsonify({"error": "Quantidade inválida"}), 400
+        return jsonify({"error": "Quantidade invÃ¡lida"}), 400
     estoque = load_estoque()
     hist    = load_hist_estoque()
     if grupo not in estoque:
-        return jsonify({"error": f"Produto não encontrado: {grupo}"}), 400
+        return jsonify({"error": f"Produto nÃ£o encontrado: {grupo}"}), 400
     display = estoque[grupo]["display"]
     estoque[grupo]["quantidade"] -= qtd
     mov = {"grupo": grupo, "display": display, "quantidade": qtd}
@@ -3210,14 +3241,14 @@ def api_estoque_saida_manual():
     })
     save_estoque(estoque)
     save_hist_estoque(hist)
-    registrar_aud("estoque_saida_manual", f"Saída manual: {display} -{qtd} — {justificativa}")
+    registrar_aud("estoque_saida_manual", f"SaÃ­da manual: {display} -{qtd} â€” {justificativa}")
     return jsonify({"ok": True, "estoque": estoque})
 
 
 @app.route("/api/estoque/saida-expedicao", methods=["POST"])
 def api_estoque_saida_expedicao():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data     = request.json
     itens    = data.get("itens", [])
     contexto = data.get("contexto", "")
@@ -3239,7 +3270,7 @@ def api_estoque_saida_expedicao():
             "display_original": item.get("display_original"),
         })
     if not movimentos:
-        return jsonify({"error": "Nenhum item válido para descontar"}), 400
+        return jsonify({"error": "Nenhum item vÃ¡lido para descontar"}), 400
     hist.append({
         "id":            secrets.token_hex(8),
         "timestamp":     datetime.now().isoformat(timespec="seconds"),
@@ -3263,19 +3294,19 @@ def api_estoque_saida_expedicao():
 @app.route("/api/estoque/desfazer", methods=["POST"])
 def api_estoque_desfazer():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data     = request.json
     entry_id = data.get("id", "")
     hist     = load_hist_estoque()
     entry    = next((e for e in hist if e.get("id") == entry_id), None)
     if not entry:
-        return jsonify({"error": "Entrada não encontrada"}), 404
+        return jsonify({"error": "Entrada nÃ£o encontrada"}), 404
     tipo    = entry.get("tipo", "")
     itens   = entry.get("itens", [])
     estoque = load_estoque()
     movimentos = []
 
-    # Saída → devolver ao estoque; Entrada/estorno → remover do estoque
+    # SaÃ­da â†’ devolver ao estoque; Entrada/estorno â†’ remover do estoque
     if tipo in ("saida_manual", "saida_expedicao"):
         for item in itens:
             grupo = item.get("grupo", "")
@@ -3295,10 +3326,10 @@ def api_estoque_desfazer():
             movimentos.append({"grupo": grupo, "display": estoque[grupo].get("display", grupo), "quantidade": qtd, "sinal": "-"})
         novo_tipo = "estorno_entrada"
     else:
-        return jsonify({"error": f"Tipo '{tipo}' não suporta desfazer"}), 400
+        return jsonify({"error": f"Tipo '{tipo}' nÃ£o suporta desfazer"}), 400
 
     if not movimentos:
-        return jsonify({"error": "Nenhuma movimentação válida para desfazer"}), 400
+        return jsonify({"error": "Nenhuma movimentaÃ§Ã£o vÃ¡lida para desfazer"}), 400
 
     justificativa = f"Desfazer: {entry.get('justificativa') or entry.get('contexto') or tipo}"
     hist.append({
@@ -3313,7 +3344,7 @@ def api_estoque_desfazer():
     save_estoque(estoque)
     save_hist_estoque(hist)
     resumo = ", ".join(f"{m['display']} {m['sinal']}{m['quantidade']}" for m in movimentos)
-    registrar_aud("estoque_desfazer", f"Desfazer movimentação: {resumo}")
+    registrar_aud("estoque_desfazer", f"Desfazer movimentaÃ§Ã£o: {resumo}")
     return jsonify({"ok": True, "estoque": estoque})
 
 
@@ -3323,10 +3354,10 @@ def api_produtos_mover():
     key   = data.get("key")
     grupo = data.get("grupo")
     if not key or not grupo:
-        return jsonify({"error": "Dados inválidos"}), 400
+        return jsonify({"error": "Dados invÃ¡lidos"}), 400
     mappings = load_mappings()
     if key not in mappings:
-        return jsonify({"error": "Produto não encontrado"}), 404
+        return jsonify({"error": "Produto nÃ£o encontrado"}), 404
     titulo = mappings[key].get("titulo", key)
     origem = mappings[key].get("categoria", "?")
     mappings[key]["categoria"] = grupo
@@ -3338,35 +3369,35 @@ def api_produtos_mover():
 @app.route("/api/produtos/novo", methods=["POST"])
 def api_produtos_novo():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data     = request.json
     sku      = (data.get("sku") or "").strip()
     titulo   = (data.get("titulo") or "").strip()
     grupo    = (data.get("grupo") or "").strip()
     kit_size = int(data.get("kit_size", 1))
     if not sku or not titulo or not grupo:
-        return jsonify({"error": "SKU, título e grupo são obrigatórios"}), 400
+        return jsonify({"error": "SKU, tÃ­tulo e grupo sÃ£o obrigatÃ³rios"}), 400
     mappings = load_mappings()
     key      = mapping_key(titulo, sku)
     if key in mappings:
-        return jsonify({"error": "Produto já cadastrado com este SKU+título"}), 400
+        return jsonify({"error": "Produto jÃ¡ cadastrado com este SKU+tÃ­tulo"}), 400
     mappings[key] = {"categoria": grupo, "kit_size": kit_size, "titulo": titulo}
     save_mappings(mappings)
-    registrar_aud("prod_novo", f"Novo produto: {titulo} ({sku}) → {grupo}")
+    registrar_aud("prod_novo", f"Novo produto: {titulo} ({sku}) â†’ {grupo}")
     return jsonify({"ok": True, "key": key})
 
 
 @app.route("/api/produtos/deletar", methods=["POST"])
 def api_produtos_deletar():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data = request.json
     key  = data.get("key")
     if not key:
-        return jsonify({"error": "Key obrigatória"}), 400
+        return jsonify({"error": "Key obrigatÃ³ria"}), 400
     mappings = load_mappings()
     if key not in mappings:
-        return jsonify({"error": "Produto não encontrado"}), 404
+        return jsonify({"error": "Produto nÃ£o encontrado"}), 404
     titulo = mappings[key].get("titulo", key)
     del mappings[key]
     save_mappings(mappings)
@@ -3380,10 +3411,10 @@ def api_produtos_editar():
     key       = data.get("key")
     new_titulo = (data.get("titulo") or "").strip()
     if not key or not new_titulo:
-        return jsonify({"error": "Dados inválidos"}), 400
+        return jsonify({"error": "Dados invÃ¡lidos"}), 400
     mappings = load_mappings()
     if key not in mappings:
-        return jsonify({"error": "Produto não encontrado"}), 404
+        return jsonify({"error": "Produto nÃ£o encontrado"}), 404
     entry    = mappings.pop(key)
     old_titulo = entry.get("titulo", "")
     entry["titulo"] = new_titulo
@@ -3392,21 +3423,21 @@ def api_produtos_editar():
     new_key = mapping_key(new_titulo, sku)
     mappings[new_key] = entry
     save_mappings(mappings)
-    registrar_aud("prod_editar", f"Produto renomeado: '{old_titulo}' → '{new_titulo}'")
+    registrar_aud("prod_editar", f"Produto renomeado: '{old_titulo}' â†’ '{new_titulo}'")
     return jsonify({"ok": True, "new_key": new_key})
 
 
 @app.route("/api/grupos/novo", methods=["POST"])
 def api_grupos_novo():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data    = request.json
     slug    = (data.get("slug") or "").strip().lower()
     display = (data.get("display") or "").strip()
     if not slug or not display:
-        return jsonify({"error": "Slug e nome são obrigatórios"}), 400
+        return jsonify({"error": "Slug e nome sÃ£o obrigatÃ³rios"}), 400
     if not re.match(r'^[a-z0-9]+$', slug):
-        return jsonify({"error": "Slug: apenas letras minúsculas e números"}), 400
+        return jsonify({"error": "Slug: apenas letras minÃºsculas e nÃºmeros"}), 400
     brands  = load_brands()
     estoque = load_estoque()
     brands[slug] = display
@@ -3421,10 +3452,10 @@ def api_grupos_novo():
 @app.route("/api/grupos/excluir", methods=["POST"])
 def api_grupos_excluir():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     slug = (request.json.get("slug") or "").strip().lower()
     if not slug:
-        return jsonify({"error": "Slug é obrigatório"}), 400
+        return jsonify({"error": "Slug Ã© obrigatÃ³rio"}), 400
     mappings = load_mappings()
     if any(v.get("categoria") == slug for v in mappings.values()):
         return jsonify({"error": "Grupo tem produtos. Mova-os antes de excluir."}), 400
@@ -3436,11 +3467,11 @@ def api_grupos_excluir():
     save_brands(brands)
     estoque.pop(slug, None)
     save_estoque(estoque)
-    registrar_aud("grupo_excluir", f"Grupo excluído: '{display}' (slug: {slug})")
+    registrar_aud("grupo_excluir", f"Grupo excluÃ­do: '{display}' (slug: {slug})")
     return jsonify({"ok": True})
 
 
-# ── API TESTE — Mercado Livre Integration ─────────────────────────────────────
+# â”€â”€ API TESTE â€” Mercado Livre Integration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 import urllib.request as _urllib_req
 import urllib.parse   as _urllib_parse
@@ -3491,7 +3522,7 @@ def _ml_api(seller_id, path, params=None, retry=True):
     t = tokens.get(str(seller_id), {})
     access_token = t.get("access_token")
     if not access_token:
-        return None, "Conta não conectada"
+        return None, "Conta nÃ£o conectada"
     url = _ML_API_BASE + path
     if params:
         url += "?" + _urllib_parse.urlencode(params)
@@ -3616,7 +3647,7 @@ def api_teste_ml_data_items():
 @app.route("/api-teste/ml/data/billing")
 def api_teste_ml_data_billing():
     sid = request.args.get("seller_id")
-    # Pega últimos 50 pedidos e agrupa por mês
+    # Pega Ãºltimos 50 pedidos e agrupa por mÃªs
     d, e = _ml_api(sid, "/orders/search", {"seller": sid, "sort": "date_desc", "limit": 50})
     if e: return jsonify({"error": e}), 400
     orders = d.get("results", [])
@@ -3666,13 +3697,13 @@ def api_teste_ml_data_payments():
     return jsonify(d)
 
 
-# ── TikTok Shop ─────────────────────────────────────────────────────────────────
+# â”€â”€ TikTok Shop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _TT_HISTORY_FILE  = BASE_DIR / "tiktok_history.json"
 _TT_MAPPINGS_FILE = BASE_DIR / "tiktok_mappings.json"
 _TT_SIZES = ["GGG", "EGG", "GG", "EG", "XG", "PP", "G", "M", "P"]
 _TT_PRODUCT_LABELS = {
-    "top_calca":     "Top + Calça",
+    "top_calca":     "Top + CalÃ§a",
     "top_short":     "Top + Short",
     "bermuda":       "Bermuda Masculina",
     "kit_camisetas": "Kit Camisetas",
@@ -3706,13 +3737,13 @@ def _tt_auto_detect(name):
         return "kit_camisetas"
     if "short" in t:
         return "top_short"
-    if "calça" in t or "calca" in t:
+    if "calÃ§a" in t or "calca" in t:
         return "top_calca"
     return None
 
 def _tt_parse_label_page(page):
-    """Extrai a data de envio da página de etiqueta TikTok.
-    O formato no PDF é:  Data de envio:\n2026-04-24 15:49
+    """Extrai a data de envio da pÃ¡gina de etiqueta TikTok.
+    O formato no PDF Ã©:  Data de envio:\n2026-04-24 15:49
     A data fica na linha SEGUINTE ao label."""
     lines = [l.strip() for l in page.get_text().split('\n')]
     for i, line in enumerate(lines):
@@ -3722,7 +3753,7 @@ def _tt_parse_label_page(page):
             m = re.search(r'(\d{4}-\d{2}-\d{2})', after)
             if m:
                 return m.group(1)
-            # A data está na próxima linha
+            # A data estÃ¡ na prÃ³xima linha
             for j in range(i + 1, min(i + 4, len(lines))):
                 m = re.search(r'(\d{4}-\d{2}-\d{2})', lines[j])
                 if m:
@@ -3916,7 +3947,7 @@ def tiktok_upload():
         f.save(str(UPLOAD_DIR / fname))
         saved.append(fname)
     if not saved:
-        return jsonify({"error": "Nenhum PDF válido"}), 400
+        return jsonify({"error": "Nenhum PDF vÃ¡lido"}), 400
     orders   = _tt_parse_pdfs(saved)
     mappings = _tt_load_mappings()
     unknowns = _tt_get_unknowns(orders, mappings)
@@ -3946,7 +3977,7 @@ def tiktok_process():
     mappings = _tt_load_mappings()
     unknowns = _tt_get_unknowns(orders, mappings)
     if unknowns:
-        return jsonify({"error": "Produtos não classificados", "unknowns": unknowns}), 400
+        return jsonify({"error": "Produtos nÃ£o classificados", "unknowns": unknowns}), 400
     orders = _tt_apply_mappings(orders, mappings)
     by_product, by_color, by_size, by_ship_date = {}, {}, {}, {}
     ship_dates = []
@@ -3979,7 +4010,7 @@ def tiktok_process():
 @app.route("/tiktok/lacrar", methods=["POST"])
 def tiktok_lacrar():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     data       = request.json
     history    = _tt_load_history()
     entry_date = data.get("date") or date.today().isoformat()
@@ -4069,7 +4100,7 @@ def tiktok_history_list():
 @app.route("/tiktok/history/delete", methods=["POST"])
 def tiktok_history_delete():
     if not _valida_pin_session():
-        return jsonify({"error": "Confirmação de PIN necessária"}), 403
+        return jsonify({"error": "ConfirmaÃ§Ã£o de PIN necessÃ¡ria"}), 403
     eid     = request.json.get("id")
     history = _tt_load_history()
     history = [e for e in history if e.get("id") != eid]
@@ -4079,7 +4110,7 @@ def tiktok_history_delete():
 
 @app.route("/tiktok/debug-pdf", methods=["POST"])
 def tiktok_debug_pdf():
-    """Endpoint temporário para diagnosticar extração de texto do PDF."""
+    """Endpoint temporÃ¡rio para diagnosticar extraÃ§Ã£o de texto do PDF."""
     f = request.files.get("pdf")
     if not f:
         return jsonify({"error": "Nenhum arquivo"}), 400
@@ -4105,7 +4136,7 @@ def tiktok_debug_pdf():
     return jsonify(result)
 
 
-# ── Shopee API Integration ────────────────────────────────────────────────────
+# â”€â”€ Shopee API Integration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import hmac as _hmac
 
 _SHP_PARTNER_ID  = 1234628
@@ -4161,7 +4192,7 @@ def _shp_api(shop_id, path, params=None, retry=True):
     t = tokens.get(str(shop_id), {})
     access_token = t.get("access_token")
     if not access_token:
-        return None, "Loja não conectada"
+        return None, "Loja nÃ£o conectada"
     ts = int(_time.time())
     sign = _shp_sign(path, ts, access_token, str(shop_id))
     query = {
@@ -4317,6 +4348,263 @@ def api_teste_shopee_data_performance():
     return jsonify(d)
 
 
+# â”€â”€ Financeiro â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+import openpyxl as _openpyxl
+import csv as _csv
+
+_FIN_PRODUTOS_FILE  = BASE_DIR / "financeiro_produtos.json"
+_FIN_HISTORICO_FILE = BASE_DIR / "financeiro_historico.json"
+
+_FIN_LOJAS = {
+    "repzilla_shopee": "Repzilla (Shopee)",
+}
+
+def _fin_load_produtos():
+    if _FIN_PRODUTOS_FILE.exists():
+        return json.loads(_FIN_PRODUTOS_FILE.read_text(encoding="utf-8"))
+    return []
+
+def _fin_save_produtos(p):
+    _FIN_PRODUTOS_FILE.write_text(json.dumps(p, ensure_ascii=False, indent=2), encoding="utf-8")
+
+def _fin_load_historico():
+    if _FIN_HISTORICO_FILE.exists():
+        return json.loads(_FIN_HISTORICO_FILE.read_text(encoding="utf-8"))
+    return []
+
+def _fin_save_historico(h):
+    _FIN_HISTORICO_FILE.write_text(json.dumps(h, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _fin_parse_extrato(file_storage):
+    """LÃª o extrato de transaÃ§Ãµes da Shopee (.xlsx) e retorna resumo."""
+    wb = _openpyxl.load_workbook(file_storage, read_only=True, data_only=True)
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+
+    receita_bruta = 0.0
+    reembolsos    = 0.0
+    compensacoes  = 0.0
+    n_pedidos     = 0
+    n_reembolsos  = 0
+
+    header_found = False
+    for row in rows:
+        if not header_found:
+            if row and row[0] == "Data":
+                header_found = True
+            continue
+        tipo  = row[1] if len(row) > 1 else None
+        valor = row[5] if len(row) > 5 else None
+        if not tipo or not isinstance(valor, (int, float)):
+            continue
+        if tipo == "Renda do pedido":
+            if valor >= 0:
+                receita_bruta += valor
+                n_pedidos += 1
+            else:
+                reembolsos += valor   # jÃ¡ negativo
+                n_reembolsos += 1
+        elif tipo == "Ajuste":
+            compensacoes += valor
+
+    receita_liquida = receita_bruta + reembolsos + compensacoes
+    return {
+        "receita_bruta":   round(receita_bruta, 2),
+        "reembolsos":      round(reembolsos, 2),
+        "compensacoes":    round(compensacoes, 2),
+        "receita_liquida": round(receita_liquida, 2),
+        "n_pedidos":       n_pedidos,
+        "n_reembolsos":    n_reembolsos,
+    }
+
+
+def _fin_parse_ads_csv(file_storage):
+    """LÃª o CSV de anÃºncios CPC da Shopee e retorna gasto total e por produto."""
+    content = file_storage.read().decode("utf-8-sig", errors="replace")
+    lines   = content.splitlines()
+
+    # Encontra a linha de header (comeÃ§a com "#,")
+    header_idx = None
+    for i, line in enumerate(lines):
+        if line.startswith("#,"):
+            header_idx = i
+            break
+    if header_idx is None:
+        return {"total_ads": 0, "por_produto": []}
+
+    reader = _csv.DictReader(lines[header_idx:])
+    total_ads  = 0.0
+    por_produto = []
+    for row in reader:
+        nome     = row.get("Nome do AnÃºncio", "").strip()
+        despesas = row.get("Despesas", "0").strip().replace(",", ".")
+        itens    = row.get("Itens Vendidos", "0").strip()
+        gmv      = row.get("GMV", "0").strip().replace(",", ".")
+        if not nome:
+            continue
+        try:
+            desp = float(despesas)
+            total_ads += desp
+            por_produto.append({
+                "nome":    nome,
+                "ads":     round(desp, 2),
+                "itens":   int(float(itens)) if itens else 0,
+                "gmv_ads": round(float(gmv), 2) if gmv else 0,
+            })
+        except (ValueError, TypeError):
+            continue
+
+    return {"total_ads": round(total_ads, 2), "por_produto": por_produto}
+
+
+def _fin_parse_product_overview(file_storage):
+    """LÃª o productoverview xlsx e retorna quantidade vendida por produto."""
+    wb  = _openpyxl.load_workbook(file_storage, read_only=True, data_only=True)
+    ws  = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+
+    # Localiza header
+    header_idx = None
+    headers    = []
+    for i, row in enumerate(rows):
+        if row and any(str(c or "").strip().lower() in ("product name", "nome do produto", "nome do anÃºncio", "item name") for c in row):
+            header_idx = i
+            headers = [str(c or "").strip() for c in row]
+            break
+    if header_idx is None:
+        return []
+
+    # Identifica colunas
+    def col(names):
+        for n in names:
+            for h in headers:
+                if n.lower() in h.lower():
+                    return headers.index(h)
+        return None
+
+    idx_name = col(["product name", "nome do produto", "item name", "nome"])
+    idx_qty  = col(["units sold", "itens vendidos", "quantidade vendida", "qty sold", "vendidos"])
+    idx_rev  = col(["revenue", "receita", "gmv"])
+
+    if idx_name is None:
+        return []
+
+    produtos = []
+    for row in rows[header_idx + 1:]:
+        if not row or not row[idx_name]:
+            continue
+        nome = str(row[idx_name]).strip()
+        qty  = int(float(row[idx_qty])) if idx_qty is not None and isinstance(row[idx_qty], (int, float)) else 0
+        rev  = round(float(row[idx_rev]), 2) if idx_rev is not None and isinstance(row[idx_rev], (int, float)) else 0.0
+        if nome:
+            produtos.append({"nome": nome, "qty": qty, "receita": rev})
+
+    return produtos
+
+
+@app.route("/financeiro/produtos", methods=["GET"])
+def fin_get_produtos():
+    if not _valida_sessao():
+        return jsonify({"error": "NÃ£o autenticado"}), 401
+    return jsonify({"produtos": _fin_load_produtos()})
+
+
+@app.route("/financeiro/produtos", methods=["POST"])
+def fin_save_produtos():
+    if not _valida_sessao():
+        return jsonify({"error": "NÃ£o autenticado"}), 401
+    produtos = request.json.get("produtos", [])
+    _fin_save_produtos(produtos)
+    return jsonify({"ok": True})
+
+
+@app.route("/financeiro/lojas")
+def fin_lojas():
+    return jsonify({"lojas": [{"id": k, "nome": v} for k, v in _FIN_LOJAS.items()]})
+
+
+@app.route("/financeiro/processar", methods=["POST"])
+def fin_processar():
+    if not _valida_sessao():
+        return jsonify({"error": "NÃ£o autenticado"}), 401
+
+    extrato  = request.files.get("extrato")
+    ads_csv  = request.files.get("ads_csv")
+    overview = request.files.get("overview")
+
+    if not extrato or not ads_csv:
+        return jsonify({"error": "Envie o extrato e o CSV de anÃºncios"}), 400
+
+    try:
+        ext_data = _fin_parse_extrato(extrato)
+    except Exception as e:
+        return jsonify({"error": f"Erro ao ler extrato: {e}"}), 400
+
+    try:
+        ads_data = _fin_parse_ads_csv(ads_csv)
+    except Exception as e:
+        return jsonify({"error": f"Erro ao ler CSV de anÃºncios: {e}"}), 400
+
+    ov_data = []
+    if overview:
+        try:
+            ov_data = _fin_parse_product_overview(overview)
+        except Exception as e:
+            ov_data = []
+
+    return jsonify({
+        "extrato":   ext_data,
+        "ads":       ads_data,
+        "overview":  ov_data,
+        "produtos":  _fin_load_produtos(),
+    })
+
+
+@app.route("/financeiro/salvar", methods=["POST"])
+def fin_salvar():
+    if not _valida_sessao():
+        return jsonify({"error": "NÃ£o autenticado"}), 401
+    data     = request.json
+    historico = _fin_load_historico()
+    entry = {
+        "id":        datetime.now().strftime("%Y%m%d-%H%M%S"),
+        "timestamp": datetime.now().isoformat(),
+        "loja":      data.get("loja", ""),
+        "periodo_de": data.get("periodo_de", ""),
+        "periodo_ate": data.get("periodo_ate", ""),
+        "receita_liquida": data.get("receita_liquida", 0),
+        "total_ads":       data.get("total_ads", 0),
+        "custo_produtos":  data.get("custo_produtos", 0),
+        "custo_embalagem": data.get("custo_embalagem", 0),
+        "lucro":           data.get("lucro", 0),
+        "n_pedidos":       data.get("n_pedidos", 0),
+        "detalhes":        data.get("detalhes", {}),
+    }
+    historico.append(entry)
+    _fin_save_historico(historico)
+    return jsonify({"ok": True, "id": entry["id"]})
+
+
+@app.route("/financeiro/historico")
+def fin_historico():
+    if not _valida_sessao():
+        return jsonify({"error": "NÃ£o autenticado"}), 401
+    return jsonify({"historico": list(reversed(_fin_load_historico()))})
+
+
+@app.route("/financeiro/historico/delete", methods=["POST"])
+def fin_historico_delete():
+    if not _valida_sessao():
+        return jsonify({"error": "NÃ£o autenticado"}), 401
+    eid      = request.json.get("id")
+    historico = _fin_load_historico()
+    historico = [e for e in historico if e.get("id") != eid]
+    _fin_save_historico(historico)
+    return jsonify({"ok": True})
+
+
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if __name__ == "__main__":
     import webbrowser, threading, time
     threading.Thread(target=lambda: (time.sleep(1), webbrowser.open("http://localhost:5000")),
