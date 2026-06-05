@@ -3113,7 +3113,11 @@ document.getElementById("save-btn").addEventListener("click", async () => {
 });
 
 // ── Process ───────────────────────────────────────────────────────────────────
-document.getElementById("process-btn").addEventListener("click", async () => {
+document.getElementById("process-btn").addEventListener("click", () => runProcess({}));
+
+// Executa a separação. opts: { skip_brs, keep_both_brs, resolved, force }
+async function runProcess(opts) {
+  opts = opts || {};
   const btn = document.getElementById("process-btn");
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Processando...';
   showLoading(PROCESS_STEPS);
@@ -3123,7 +3127,11 @@ document.getElementById("process-btn").addEventListener("click", async () => {
       body: JSON.stringify({
         filenames:          currentFiles,
         retirada_filenames: retiradaFiles,
-        label_date:         document.getElementById("label-date").value || new Date().toISOString().split("T")[0]
+        label_date:         document.getElementById("label-date").value || new Date().toISOString().split("T")[0],
+        skip_brs:           opts.skip_brs || [],
+        keep_both_brs:      opts.keep_both_brs || [],
+        resolved:           !!opts.resolved,
+        force:              !!opts.force,
       })
     });
     const data = await res.json();
@@ -3132,6 +3140,12 @@ document.getElementById("process-btn").addEventListener("click", async () => {
       setStatus(data.error, "error");
       btn.disabled = false; btn.innerHTML = "Separar Etiquetas";
       if (data.unknown) showClassify(data.unknown, []);
+      return;
+    }
+    // ── Travamento: há conflitos para resolver antes de separar ──
+    if (data.needs_resolution) {
+      btn.disabled = false; btn.innerHTML = "Separar Etiquetas";
+      showResolutionGate(data.security_alerts || {});
       return;
     }
     document.getElementById("process-card").style.display = "none";
@@ -3146,7 +3160,241 @@ document.getElementById("process-btn").addEventListener("click", async () => {
     hideLoading(); setStatus("Erro: " + e.message, "error");
     btn.disabled = false; btn.innerHTML = "Separar Etiquetas";
   }
-});
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Gate de Resolução de Conflitos (antes de separar) ──────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+let _gate = null;
+function _ge(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+function _gateInjectStyles(){
+  if (document.getElementById("gate-styles")) return;
+  const st = document.createElement("style"); st.id = "gate-styles";
+  st.textContent = `
+  .gate-overlay{position:fixed;inset:0;background:rgba(26,26,46,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .gate-box{background:#ffffff;border-radius:18px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 70px rgba(26,26,46,.25);padding:28px;color:#1a1a2e;border:1px solid #e2e2ec;}
+  .gate-head{font-size:1.15rem;font-weight:900;color:#1a1a2e;display:flex;align-items:center;gap:8px;}
+  .gate-desc{font-size:.82rem;color:#8888a8;margin:6px 0 18px;}
+  .gate-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#f2f2f7;border:1px solid #e2e2ec;border-radius:12px;padding:14px 16px;margin-bottom:10px;}
+  .gate-row-info{display:flex;align-items:center;gap:12px;}
+  .gate-ico{font-size:1.4rem;}
+  .gate-row-title{font-size:.9rem;font-weight:700;color:#1a1a2e;}
+  .gate-row-sub{font-size:.76rem;color:#8888a8;margin-top:2px;}
+  .gate-resolve{background:#6c5fff;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:.82rem;font-weight:700;cursor:pointer;}
+  .gate-resolve:hover{background:#5546ee;}
+  .gate-check{font-size:.82rem;font-weight:700;color:#00b876;white-space:nowrap;}
+  .gate-sep-btn{width:100%;margin-top:14px;background:#00b876;color:#fff;border:none;border-radius:11px;padding:13px;font-size:.95rem;font-weight:800;cursor:pointer;}
+  .gate-sep-btn:disabled{background:#e2e2ec;color:#8888a8;cursor:not-allowed;}
+  .gate-force{text-align:center;font-size:.74rem;color:#8888a8;margin-top:12px;text-decoration:underline;cursor:pointer;}
+  .gate-force:hover{color:#e03e3e;}
+  .gate-back{background:none;border:none;color:#6c5fff;font-size:.82rem;font-weight:700;cursor:pointer;padding:0;margin-bottom:12px;display:block;}
+  .gate-item{background:#f2f2f7;border:1.5px solid #e2e2ec;border-radius:11px;padding:12px 14px;margin-bottom:9px;}
+  .gate-item.decided{border-color:#00b876;background:#e8faf3;}
+  .gate-item-head{font-size:.85rem;font-weight:700;color:#1a1a2e;font-family:monospace;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .gate-item-sub{font-size:.74rem;color:#8888a8;margin:4px 0 9px;}
+  .gate-opts{display:flex;gap:7px;flex-wrap:wrap;}
+  .gate-opt{flex:1;min-width:140px;background:#fff;border:1.5px solid #e2e2ec;border-radius:8px;padding:9px 10px;font-size:.78rem;font-weight:600;cursor:pointer;color:#1a1a2e;text-align:center;transition:all .12s;}
+  .gate-opt:hover{border-color:#6c5fff;color:#6c5fff;}
+  .gate-opt.sel{border-color:#6c5fff;background:#eeecff;color:#5546ee;}
+  .gate-opt.danger:hover{border-color:#e03e3e;color:#e03e3e;}
+  .gate-opt.danger.sel{border-color:#e03e3e;background:#fdeaea;color:#e03e3e;}
+  .gate-bulk{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;}
+  .gate-bulk button{background:#f2f2f7;border:1px solid #e2e2ec;border-radius:8px;padding:7px 12px;font-size:.76rem;font-weight:600;cursor:pointer;color:#1a1a2e;}
+  .gate-bulk button:hover{background:#e2e2ec;}
+  .gate-sel{background:#fff;border:1.5px solid #e2e2ec;border-radius:8px;padding:7px 10px;font-size:.8rem;color:#1a1a2e;width:100%;margin-top:6px;box-sizing:border-box;}
+  .gate-done-btn{width:100%;margin-top:8px;background:#6c5fff;color:#fff;border:none;border-radius:10px;padding:12px;font-size:.88rem;font-weight:800;cursor:pointer;}
+  .gate-done-btn:hover:not(:disabled){background:#5546ee;}
+  .gate-done-btn:disabled{background:#e2e2ec;color:#8888a8;cursor:not-allowed;}
+  .gate-warn{background:#fdeaea;border:1px solid #f5c2c2;border-radius:10px;padding:12px 14px;font-size:.8rem;color:#1a1a2e;margin:10px 0;line-height:1.55;}
+  `;
+  document.head.appendChild(st);
+}
+
+function showResolutionGate(alerts){
+  _gateInjectStyles();
+  _gate = {
+    tc: alerts.tracking_conflicts || [],
+    bd: alerts.batch_tracking_dups || [],
+    sc: alerts.sku_conflicts || [],
+    tcDec: {}, bdDec: {}, skuDec: {},
+    done: { tracking:false, batch:false, sku:false },
+  };
+  if (!_gate.tc.length) _gate.done.tracking = true;
+  if (!_gate.bd.length) _gate.done.batch = true;
+  if (!_gate.sc.length) _gate.done.sku = true;
+  renderGate();
+}
+function closeGate(){ const o=document.getElementById("gate-overlay"); if(o) o.remove(); }
+
+function renderGate(){
+  closeGate();
+  const g = _gate;
+  const nErr = (g.tc.length?1:0)+(g.bd.length?1:0)+(g.sc.length?1:0);
+  const allDone = g.done.tracking && g.done.batch && g.done.sku;
+  const row = (icon,label,count,key,done)=> count ? `
+    <div class="gate-row">
+      <div class="gate-row-info"><span class="gate-ico">${icon}</span>
+        <div><div class="gate-row-title">${label}</div>
+        <div class="gate-row-sub">${count} ${count>1?'ocorrências':'ocorrência'}</div></div></div>
+      ${done ? '<span class="gate-check">✅ Resolvido</span>'
+             : `<button class="gate-resolve" onclick="gateResolve('${key}')">Resolver</button>`}
+    </div>` : '';
+  const html = `<div class="gate-box">
+    <div class="gate-head">⚠️ ${nErr} problema${nErr>1?'s':''} encontrado${nErr>1?'s':''}</div>
+    <div class="gate-desc">Resolva tudo antes de separar — assim o resultado já sai correto.</div>
+    ${row('🖨️','Etiquetas já impressas antes',g.tc.length,'tracking',g.done.tracking)}
+    ${row('📑','BRs duplicados neste envio',g.bd.length,'batch',g.done.batch)}
+    ${row('🏷️','Conflitos de SKU',g.sc.length,'sku',g.done.sku)}
+    <button class="gate-sep-btn" ${allDone?'':'disabled'} onclick="gateSeparar()">Separar Etiquetas</button>
+    <div class="gate-force" onclick="gateForceWarn()">prosseguir mesmo com os erros (não recomendado)</div>
+  </div>`;
+  const ov = document.createElement("div");
+  ov.id = "gate-overlay"; ov.className = "gate-overlay"; ov.innerHTML = html;
+  document.body.appendChild(ov);
+}
+
+window.gateResolve = function(key){
+  if (key==="tracking") gatePanelTracking();
+  else if (key==="batch") gatePanelBatch();
+  else if (key==="sku") gatePanelSku();
+};
+
+function _gateBox(inner){
+  closeGate();
+  const ov = document.createElement("div");
+  ov.id = "gate-overlay"; ov.className = "gate-overlay";
+  ov.innerHTML = `<div class="gate-box">${inner}</div>`;
+  document.body.appendChild(ov);
+}
+
+// ── Etiquetas já impressas antes (tracking_conflicts) ──
+function gatePanelTracking(){
+  const g = _gate;
+  const items = g.tc.map(c=>{
+    const dec = g.tcDec[c.tracking];
+    return `<div class="gate-item ${dec?'decided':''}">
+      <div class="gate-item-head"><span>${_ge(c.tracking)}</span>${dec?'<span class="gate-check">✅</span>':''}</div>
+      <div class="gate-item-sub">Já separada em <b>${_ge(c.previous_date)}</b> · ${_ge(c.filename)}</div>
+      <div class="gate-opts">
+        <div class="gate-opt ${dec==='skip'?'sel':''}" onclick="gateTcSet('${_ge(c.tracking)}','skip')">✅ Ignorar — já foi separada</div>
+        <div class="gate-opt danger ${dec==='reprint'?'sel':''}" onclick="gateTcSet('${_ge(c.tracking)}','reprint')">⚠️ Separar de novo mesmo assim</div>
+      </div>
+    </div>`;
+  }).join("");
+  const allDecided = g.tc.every(c=>g.tcDec[c.tracking]);
+  _gateBox(`
+    <button class="gate-back" onclick="renderGate()">← Voltar</button>
+    <div class="gate-head" style="font-size:1rem;">🖨️ Etiquetas já impressas antes</div>
+    <div class="gate-desc">Esses pedidos já foram separados em expedições anteriores. Decida cada um.</div>
+    <div class="gate-bulk">
+      <button onclick="gateTcAll('skip')">✅ Ignorar todas</button>
+      <button onclick="gateTcAll('reprint')">⚠️ Separar todas de novo</button>
+    </div>
+    ${items}
+    <button class="gate-done-btn" ${allDecided?'':'disabled'} onclick="gateTcDone()">Concluir</button>
+  `);
+}
+window.gateTcSet = function(br,dec){ _gate.tcDec[br]=dec; gatePanelTracking(); };
+window.gateTcAll = function(dec){ _gate.tc.forEach(c=>_gate.tcDec[c.tracking]=dec); gatePanelTracking(); };
+window.gateTcDone = function(){ _gate.done.tracking=true; renderGate(); };
+
+// ── BRs duplicados no batch (batch_tracking_dups) ──
+function gatePanelBatch(){
+  const g = _gate;
+  const items = g.bd.map(c=>{
+    const dec = g.bdDec[c.tracking];
+    return `<div class="gate-item ${dec?'decided':''}">
+      <div class="gate-item-head"><span>${_ge(c.tracking)}</span>${dec?'<span class="gate-check">✅</span>':''}</div>
+      <div class="gate-item-sub">Aparece em <b>${_ge(c.file1)}</b> e <b>${_ge(c.file2)}</b></div>
+      <div class="gate-opts">
+        <div class="gate-opt ${dec==='one'?'sel':''}" onclick="gateBdSet('${_ge(c.tracking)}','one')">✅ Excluir duplicata — manter 1 cópia</div>
+        <div class="gate-opt danger ${dec==='both'?'sel':''}" onclick="gateBdSet('${_ge(c.tracking)}','both')">⚠️ Imprimir as 2 cópias</div>
+      </div>
+    </div>`;
+  }).join("");
+  const allDecided = g.bd.every(c=>g.bdDec[c.tracking]);
+  _gateBox(`
+    <button class="gate-back" onclick="renderGate()">← Voltar</button>
+    <div class="gate-head" style="font-size:1rem;">📑 BRs duplicados neste envio</div>
+    <div class="gate-desc">O mesmo pedido apareceu em 2 PDFs. Separar 1 cópia é o recomendado.</div>
+    <div class="gate-bulk">
+      <button onclick="gateBdAll('one')">✅ Excluir todas as duplicatas</button>
+      <button onclick="gateBdAll('both')">⚠️ Imprimir todas as cópias</button>
+    </div>
+    ${items}
+    <button class="gate-done-btn" ${allDecided?'':'disabled'} onclick="gateBdDone()">Concluir</button>
+  `);
+}
+window.gateBdSet = function(br,dec){
+  if (dec==='both'){
+    showConfirmAction("Manter etiqueta duplicada?",
+      "Manter ambas vai imprimir a etiqueta 2x — o cliente pode receber 2 pedidos, o painel vai mostrar pedido duplicado, vai contar a mais no fechamento e descontar do estoque em dobro. Tem certeza?",
+      ()=>{ _gate.bdDec[br]='both'; gatePanelBatch(); }, "Sim, manter ambas", "var(--red)");
+  } else { _gate.bdDec[br]=dec; gatePanelBatch(); }
+};
+window.gateBdAll = function(dec){
+  if (dec==='both'){
+    showConfirmAction("Manter todas duplicadas?","Isso vai imprimir cada duplicada 2x, com todas as consequências (pedido duplicado, estoque em dobro, fechamento errado). Confirma?",
+      ()=>{ _gate.bd.forEach(c=>_gate.bdDec[c.tracking]='both'); gatePanelBatch(); }, "Sim, manter todas", "var(--red)");
+  } else { _gate.bd.forEach(c=>_gate.bdDec[c.tracking]='one'); gatePanelBatch(); }
+};
+window.gateBdDone = function(){ _gate.done.batch=true; renderGate(); };
+
+// ── Conflitos de SKU ──
+function gatePanelSku(){
+  const g = _gate;
+  const CATS = [["pura","Black Skull Pura"],["turbo","Black Skull Turbo"],["dux","Creatina DUX"],["roupa","Roupa"]];
+  const items = g.sc.map((c,i)=>{
+    const d = g.skuDec[c.sku] || {};
+    const catOpts = CATS.map(([v,l])=>`<option value="${v}" ${d.categoria===v?'selected':''}>${l}</option>`).join("");
+    const kitOpts = [1,2,3,4].map(k=>`<option value="${k}" ${(d.kit_size||1)==k?'selected':''}>${k==1?'Unidade (1)':'Kit '+k}</option>`).join("");
+    return `<div class="gate-item ${d.categoria?'decided':''}">
+      <div class="gate-item-head"><span>SKU ${_ge(c.sku)}</span>${d.categoria?'<span class="gate-check">✅</span>':''}</div>
+      <div class="gate-item-sub">Título novo: <b>${_ge(c.titulo_encontrado)}</b><br>Já existe como: ${_ge(c.titulo_salvo)} (${_ge(c.categoria_atual)})</div>
+      <select class="gate-sel" onchange="gateSkuSet('${_ge(c.sku)}','cat',this.value)"><option value="">Escolha o produto...</option>${catOpts}</select>
+      <select class="gate-sel" onchange="gateSkuSet('${_ge(c.sku)}','kit',this.value)">${kitOpts}</select>
+    </div>`;
+  }).join("");
+  const allDecided = g.sc.every(c=>(g.skuDec[c.sku]||{}).categoria);
+  _gateBox(`
+    <button class="gate-back" onclick="renderGate()">← Voltar</button>
+    <div class="gate-head" style="font-size:1rem;">🏷️ Conflitos de SKU</div>
+    <div class="gate-desc">Mesmo SKU com título diferente. Diga a que produto cada um pertence.</div>
+    ${items}
+    <button class="gate-done-btn" ${allDecided?'':'disabled'} onclick="gateSkuDone()">Concluir</button>
+  `);
+}
+window.gateSkuSet = function(sku,field,val){
+  _gate.skuDec[sku] = _gate.skuDec[sku] || {kit_size:1};
+  if (field==='cat') _gate.skuDec[sku].categoria = val;
+  if (field==='kit') _gate.skuDec[sku].kit_size = parseInt(val)||1;
+  if (_gate.sc.every(c=>(_gate.skuDec[c.sku]||{}).categoria)) gatePanelSku();
+};
+window.gateSkuDone = async function(){
+  const actions = _gate.sc.map(c=>({
+    sku: c.sku, titulo_encontrado: c.titulo_encontrado,
+    categoria: _gate.skuDec[c.sku].categoria, kit_size: _gate.skuDec[c.sku].kit_size||1,
+  }));
+  await fetch("/security-resolve", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ tracking_actions:{}, sku_actions: actions }) });
+  _gate.done.sku = true; renderGate();
+};
+
+// ── Separar (tudo resolvido) ──
+window.gateSeparar = function(){
+  const skip = _gate.tc.filter(c=>_gate.tcDec[c.tracking]==='skip').map(c=>c.tracking);
+  const both = _gate.bd.filter(c=>_gate.bdDec[c.tracking]==='both').map(c=>c.tracking);
+  closeGate();
+  runProcess({ skip_brs: skip, keep_both_brs: both, resolved: true });
+};
+
+// ── Prosseguir mesmo com erros ──
+window.gateForceWarn = function(){
+  showConfirmAction("Prosseguir mesmo com os erros?",
+    "⚠️ Se prosseguir sem resolver:<br>• etiquetas repetidas serão impressas (cliente pode receber 2x)<br>• o painel mostrará pedidos duplicados<br>• o fechamento ficará com valores errados<br>• o estoque será descontado a mais<br><br>Recomendamos voltar e resolver.",
+    ()=>{ closeGate(); runProcess({ force:true }); }, "Prosseguir mesmo assim", "var(--red)");
+};
 
 // ── Lacrar Expedição ──────────────────────────────────────────────────────────
 document.getElementById("lacrar-btn").addEventListener("click", () => {

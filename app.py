@@ -718,12 +718,20 @@ def compute_brand_totals(breakdown):
     return brand_orders, brand_units
 
 
-def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=None):
+def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=None,
+                      skip_brs=None, keep_both_brs=None, detect_only=False):
     """
     Process multiple PDFs and merge pages with the same output key into one PDF each.
     Returns stats + output file list.
+
+    skip_brs       : conjunto de BRs cujas páginas NÃO devem entrar no output (resolvidos como "não separar")
+    keep_both_brs  : conjunto de BRs duplicados no batch que o usuário decidiu manter as 2 cópias
+    detect_only    : se True, não grava PDFs em disco (só roda a detecção)
     """
     retirada_set = set(retirada_filenames or [])
+    skip_brs      = set(skip_brs or [])
+    keep_both_brs = set(keep_both_brs or [])
+    seen_brs      = set()    # BRs já adicionados ao output neste batch (para dedupe)
     writers            = {}  # output_key -> PdfWriter
     page_results       = []
     store_names        = []
@@ -732,6 +740,7 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
     state_counts       = {}  # UF -> number of orders shipped there
     tracking_numbers     = {}  # tracking_number -> {filename, page}
     batch_tracking_dups  = {}  # tracking_number -> {file1, page1, file2, page2}
+    skipped_dups         = 0   # quantas páginas foram puladas por duplicidade/skip
     total_pages_all    = 0
     blank_pages_all    = 0
     sem_check_all      = 0
@@ -777,6 +786,38 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
             if output_key in ("pagina_em_branco", "__unknown__"):
                 continue
 
+            # ── Tracking numbers desta página (antes de adicionar ao output) ──
+            page_tns = extract_tracking_numbers(fitz_page) if items else []
+
+            # Detecção de duplicidade dentro do batch (sempre roda, pra alimentar o popup)
+            for tn in page_tns:
+                if tn in tracking_numbers:
+                    prev = tracking_numbers[tn]
+                    if prev["filename"] != filename and tn not in batch_tracking_dups:
+                        batch_tracking_dups[tn] = {
+                            "tracking": tn,
+                            "file1": prev["filename"], "page1": prev["page"],
+                            "file2": filename,         "page2": page_num + 1,
+                        }
+                elif page_tns:
+                    pass  # registrado abaixo
+
+            # ── Decide se pula esta página (skip explícito ou dedupe de batch) ──
+            skip_this = False
+            for tn in page_tns:
+                if tn in skip_brs:
+                    skip_this = True; break
+                if tn in seen_brs and tn not in keep_both_brs:
+                    skip_this = True; break   # 2ª cópia do mesmo BR no batch → mantém só 1
+            if skip_this:
+                skipped_dups += 1
+                page_results[-1]["output"] = "__skipped_dup__"
+                # registra o BR como visto (pra contabilizar conflito), mas não adiciona página
+                for tn in page_tns:
+                    tracking_numbers.setdefault(tn, {"filename": filename, "page": page_num + 1,
+                                                     "store": store, "items": []})
+                continue
+
             writers.setdefault(output_key, PdfWriter()).add_page(reader.pages[page_num])
             if output_key not in ("sem_checklist",):
                 breakdown_all[output_key] = breakdown_all.get(output_key, 0) + 1
@@ -787,7 +828,6 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
                 uf = extract_destination_state(fitz_page)
                 if uf:
                     state_counts[uf] = state_counts.get(uf, 0) + 1
-                page_tns = extract_tracking_numbers(fitz_page)
                 page_items_info = []
                 for item in items:
                     mk2 = mapping_key(item["produto"], item["sku"])
@@ -801,26 +841,14 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
                             "kit_size":  info2.get("kit_size", 1),
                         })
                 for tn in page_tns:
-                    if tn not in tracking_numbers:
+                    seen_brs.add(tn)
+                    if tn not in tracking_numbers or not tracking_numbers[tn].get("items"):
                         tracking_numbers[tn] = {
                             "filename": filename,
                             "page":     page_num + 1,
                             "store":    store,
                             "items":    page_items_info,
                         }
-                    else:
-                        # BR duplicado dentro do mesmo batch
-                        prev = tracking_numbers[tn]
-                        if prev["filename"] != filename:
-                            batch_dup_key = tn
-                            if batch_dup_key not in batch_tracking_dups:
-                                batch_tracking_dups[batch_dup_key] = {
-                                    "tracking": tn,
-                                    "file1": prev["filename"],
-                                    "page1": prev["page"],
-                                    "file2": filename,
-                                    "page2": page_num + 1,
-                                }
                 for item in items:
                     mk      = mapping_key(item["produto"], item["sku"])
                     sku_key = item["sku"].strip()
@@ -842,20 +870,23 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
 
         doc.close()
 
-    # Write output PDFs (with cover page prepended)
+    # Write output PDFs (with cover page prepended) — pulado no modo detect_only
     output_files       = []
     output_page_counts = {}
     for key, writer in writers.items():
-        _prepend_cover(writer, key, label_date=label_date)
-        out_path = OUTPUT_DIR / f"{key}.pdf"
-        with open(out_path, "wb") as f:
-            writer.write(f)
+        cover_offset = 0 if key in _SKIP_COVER else 1
+        if not detect_only:
+            _prepend_cover(writer, key, label_date=label_date)
+            out_path = OUTPUT_DIR / f"{key}.pdf"
+            with open(out_path, "wb") as f:
+                writer.write(f)
         output_files.append(f"{key}.pdf")
         # subtract cover page from counts used for verification
-        cover_offset = 0 if key in _SKIP_COVER else 1
-        output_page_counts[f"{key}.pdf"] = len(writer.pages) - cover_offset
+        npages = len(writer.pages) - (cover_offset if not detect_only else 0)
+        output_page_counts[f"{key}.pdf"] = npages
 
-    label_pages  = total_pages_all - blank_pages_all - sem_check_all
+    # label_pages efetivo desconta as páginas puladas por duplicidade/skip
+    label_pages  = total_pages_all - blank_pages_all - sem_check_all - skipped_dups
     output_total = sum(c for k, c in output_page_counts.items()
                        if not k.startswith("sem_checklist"))
     verified = output_total == label_pages
@@ -901,6 +932,7 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
         "brand_summary":      brand_summary,
         "tracking_numbers":   list(tracking_numbers.keys()),
         "tracking_data":      tracking_numbers,
+        "skipped_dups":       skipped_dups,
         "verification": {
             "ok":           verified,
             "label_pages":  label_pages,
@@ -1439,6 +1471,10 @@ def process():
     filenames          = data.get("filenames", [])
     retirada_filenames = data.get("retirada_filenames", [])
     label_date         = data.get("label_date", "")
+    skip_brs           = data.get("skip_brs", [])
+    keep_both_brs      = data.get("keep_both_brs", [])
+    resolved           = data.get("resolved", False)   # usuário já passou pela tela de problemas
+    force              = data.get("force", False)       # "prosseguir mesmo com erros"
     all_fnames         = filenames + retirada_filenames
     if not all_fnames:
         return jsonify({"error": "Nenhum arquivo especificado"}), 400
@@ -1458,8 +1494,26 @@ def process():
         return jsonify({"error": "Ainda hÃ¡ produtos nÃ£o classificados",
                         "unknown": list(all_unknown.values())}), 400
 
-    return jsonify(split_pdfs_merged(all_fnames, mappings, label_date=label_date,
-                                     retirada_filenames=retirada_filenames))
+    # Passada única: gera os PDFs aplicando skips/keep-both (vazios na 1ª chamada)
+    result = split_pdfs_merged(all_fnames, mappings, label_date=label_date,
+                               retirada_filenames=retirada_filenames,
+                               skip_brs=skip_brs, keep_both_brs=keep_both_brs)
+
+    # Trava: na 1ª chamada (sem resolução/force), se houver conflitos → exige resolução.
+    # Os PDFs gerados aqui são descartados e regerados corretos na chamada de resolução.
+    if not resolved and not force:
+        alerts = result.get("security_alerts", {})
+        has_conflicts = bool(alerts.get("tracking_conflicts") or
+                             alerts.get("batch_tracking_dups") or
+                             alerts.get("sku_conflicts"))
+        if has_conflicts:
+            return jsonify({
+                "needs_resolution": True,
+                "security_alerts":  alerts,
+                "stats":            {"label_pages": result["stats"]["label_pages"]},
+            })
+
+    return jsonify(result)
 
 
 @app.route("/download/<filename>")
@@ -1752,11 +1806,13 @@ def security_resolve():
     if sku_actions:
         mappings = load_mappings()
         for action in sku_actions:
-            sku = action.get("sku", "")
-            if sku in mappings:
-                mappings[sku]["categoria"] = action.get("categoria", mappings[sku]["categoria"])
-                mappings[sku]["kit_size"]  = action.get("kit_size", mappings[sku].get("kit_size", 1))
-                mappings[sku]["titulo"]    = action.get("titulo_encontrado", "")
+            sku    = action.get("sku", "")
+            titulo = action.get("titulo_encontrado", "") or action.get("titulo", "")
+            cat    = action.get("categoria")
+            kit    = action.get("kit_size", 1)
+            if sku and titulo and cat:
+                mk = mapping_key(titulo, sku)
+                mappings[mk] = {"categoria": cat, "kit_size": kit, "titulo": titulo}
         save_mappings(mappings)
 
     return jsonify({"ok": True})
