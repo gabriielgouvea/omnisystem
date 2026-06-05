@@ -194,9 +194,10 @@ def _normalize_titulo(t):
     return re.sub(r'\s+', ' ', t)
 
 
-def detect_sku_title_conflicts(filenames, mappings):
+def detect_sku_title_conflicts(filenames, mappings, retirada_filenames=None):
     """Return SKUs that appear in the PDFs under a title not present in mappings,
     but whose base SKU IS mapped under a different title."""
+    retirada_set = set(retirada_filenames or [])
     mapped_skus = {}  # base_sku -> list of (mk, info)
     for mk, info in mappings.items():
         if "|" in mk:
@@ -207,8 +208,9 @@ def detect_sku_title_conflicts(filenames, mappings):
     for filename in filenames:
         pdf_path = UPLOAD_DIR / filename
         doc = fitz.open(str(pdf_path))
+        _cl_fn = extract_checklist_combined if filename in retirada_set else extract_checklist
         for page_num in range(len(doc)):
-            for item in extract_checklist(doc[page_num]):
+            for item in _cl_fn(doc[page_num]):
                 sku   = item["sku"].strip()
                 mk    = mapping_key(item["produto"], item["sku"])
                 titulo = re.sub(r"\s+", " ", item["produto"]).strip()
@@ -916,7 +918,7 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
             })
 
     # Security: detect SKU+title mismatches
-    sku_conflicts = detect_sku_title_conflicts(filenames, mappings)
+    sku_conflicts = detect_sku_title_conflicts(filenames, mappings, retirada_filenames)
 
     stats = {
         "total_pages":        total_pages_all,
