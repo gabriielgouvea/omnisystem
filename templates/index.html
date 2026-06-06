@@ -8333,12 +8333,17 @@ function copiarResumoExpedicao() {
   const subText = subEl ? subEl.textContent.trim() : "";
   const lojas = Array.from(document.querySelectorAll("#dash-stores .store-tag")).map(t => t.textContent.trim());
   const cards = Array.from(document.querySelectorAll("#brand-grid .brand-card"));
-  const linhas = cards.map(c => ({
-    nome:     c.querySelector(".bc-name")?.textContent.trim() || "",
-    pedidos:  parseInt(c.querySelector(".bc-orders-num")?.textContent.trim()) || 0,
-    unidades: parseInt(c.querySelector(".bc-units-num")?.textContent.trim()) || 0,
-    unLbl:    c.querySelector(".bc-units-lbl")?.textContent.replace(/[^\w\s]/g,"").trim() || "",
-  }));
+  const linhas = cards.map(c => {
+    const nums = c.querySelectorAll(".bc-box-num");
+    const lbls = c.querySelectorAll(".bc-box-lbl");
+    const unLbl = (lbls[1]?.textContent || "").replace(/🧪/g, "").trim();
+    return {
+      nome:     c.querySelector(".bc-name")?.textContent.trim() || "",
+      pedidos:  parseInt(nums[0]?.textContent.trim()) || 0,
+      unidades: parseInt(nums[1]?.textContent.trim()) || 0,
+      unLbl:    unLbl || "potes",
+    };
+  });
   const hoje = new Date().toLocaleDateString("pt-BR");
   const hora  = new Date().toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"});
   const lojaStr = lojas.length ? lojas.join(", ") : "—";
@@ -8355,7 +8360,7 @@ function copiarResumoExpedicao() {
   const totalUnidades = linhas.reduce((s,l) => s + l.unidades, 0);
   txt += "━━━━━━━━━━━━━━━━━━━\n";
   txt += "📦 *Total pedidos: " + totalPedidos + "*\n";
-  txt += "🧪 *Total potes: " + totalUnidades + "*\n";
+  txt += "🧪 *Total unidades: " + totalUnidades + "*\n";
   if (subText) txt += "\n_" + subText + "_";
   navigator.clipboard.writeText(txt).then(() => {
     showToast("✓ Texto copiado!", "var(--green)");
