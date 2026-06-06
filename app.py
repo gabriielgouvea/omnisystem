@@ -4563,15 +4563,11 @@ def _fin_parse_product_overview(file_storage):
 
 @app.route("/financeiro/produtos", methods=["GET"])
 def fin_get_produtos():
-    if not _valida_sessao():
-        return jsonify({"error": "NÃ£o autenticado"}), 401
     return jsonify({"produtos": _fin_load_produtos()})
 
 
 @app.route("/financeiro/produtos", methods=["POST"])
 def fin_save_produtos():
-    if not _valida_sessao():
-        return jsonify({"error": "NÃ£o autenticado"}), 401
     produtos = request.json.get("produtos", [])
     _fin_save_produtos(produtos)
     return jsonify({"ok": True})
@@ -4584,8 +4580,6 @@ def fin_lojas():
 
 @app.route("/financeiro/processar", methods=["POST"])
 def fin_processar():
-    if not _valida_sessao():
-        return jsonify({"error": "NÃ£o autenticado"}), 401
 
     extrato  = request.files.get("extrato")
     ads_csv  = request.files.get("ads_csv")
@@ -4621,8 +4615,6 @@ def fin_processar():
 
 @app.route("/financeiro/salvar", methods=["POST"])
 def fin_salvar():
-    if not _valida_sessao():
-        return jsonify({"error": "NÃ£o autenticado"}), 401
     data     = request.json
     historico = _fin_load_historico()
     entry = {
@@ -4646,15 +4638,11 @@ def fin_salvar():
 
 @app.route("/financeiro/historico")
 def fin_historico():
-    if not _valida_sessao():
-        return jsonify({"error": "NÃ£o autenticado"}), 401
     return jsonify({"historico": list(reversed(_fin_load_historico()))})
 
 
 @app.route("/financeiro/historico/delete", methods=["POST"])
 def fin_historico_delete():
-    if not _valida_sessao():
-        return jsonify({"error": "NÃ£o autenticado"}), 401
     eid      = request.json.get("id")
     historico = _fin_load_historico()
     historico = [e for e in historico if e.get("id") != eid]
