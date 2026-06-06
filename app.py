@@ -747,7 +747,9 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
     blank_pages_all    = 0
     sem_check_all      = 0
     breakdown_all      = {}
+    seen_sku_titles    = {}    # sku -> [titulos] (coletado no parse principal p/ detectar conflito sem re-parse)
 
+    _t_start = _time.time()
     for filename in filenames:
         pdf_path = UPLOAD_DIR / filename
         doc      = fitz.open(str(pdf_path))
@@ -763,6 +765,12 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
         for page_num in range(n_pages):
             fitz_page = doc[page_num]
             items     = _cl_fn(fitz_page)
+
+            # Coleta sku+titulo p/ detecção de conflito (sem precisar re-parsear depois)
+            for _it in items:
+                _sk = _it["sku"].strip()
+                if _sk:
+                    seen_sku_titles.setdefault(_sk, []).append(_it["produto"])
 
             if not items:
                 text = fitz_page.get_text("text").strip()
@@ -872,6 +880,9 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
 
         doc.close()
 
+    _t_parse = _time.time()
+    print(f"[PERF] parse de {len(filenames)} PDF(s) / {total_pages_all} pags: {_t_parse-_t_start:.1f}s", flush=True)
+
     # Write output PDFs (with cover page prepended) — pulado no modo detect_only
     output_files       = []
     output_page_counts = {}
@@ -886,6 +897,8 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
         # subtract cover page from counts used for verification
         npages = len(writer.pages) - (cover_offset if not detect_only else 0)
         output_page_counts[f"{key}.pdf"] = npages
+    _t_write = _time.time()
+    print(f"[PERF] escrita de {len(writers)} PDF(s) de saida: {_t_write-_t_parse:.1f}s (detect_only={detect_only})", flush=True)
 
     # label_pages efetivo desconta as páginas puladas por duplicidade/skip
     label_pages  = total_pages_all - blank_pages_all - sem_check_all - skipped_dups
@@ -917,8 +930,29 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
                 "page": info["page"],
             })
 
-    # Security: detect SKU+title mismatches
-    sku_conflicts = detect_sku_title_conflicts(filenames, mappings, retirada_filenames)
+    # Security: detect SKU+title mismatches (usa títulos já coletados no parse — sem re-parsear)
+    _mapped_skus = {}
+    for _mk, _info in mappings.items():
+        if "|" in _mk:
+            _mapped_skus.setdefault(_mk.split("|", 1)[0], []).append((_mk, _info))
+    _conf = {}
+    for _sku, _titles in seen_sku_titles.items():
+        if _sku not in _mapped_skus:
+            continue
+        for _titulo in _titles:
+            _mk = _sku + "|" + _normalize_titulo(_titulo)
+            if _mk in mappings or _sku in _conf:
+                continue
+            _ex = _mapped_skus[_sku]
+            _conf[_sku] = {
+                "sku": _sku,
+                "titulo_encontrado": re.sub(r"\s+", " ", _titulo).strip(),
+                "titulo_salvo": _ex[0][1].get("titulo", _ex[0][0].split("|", 1)[-1]),
+                "categoria_atual": _ex[0][1].get("categoria", "?"),
+                "kit_size": _ex[0][1].get("kit_size", 1),
+            }
+    sku_conflicts = list(_conf.values())
+    print(f"[PERF] deteccao conflito: {_time.time()-_t_write:.2f}s | TOTAL split: {_time.time()-_t_start:.1f}s", flush=True)
 
     stats = {
         "total_pages":        total_pages_all,
