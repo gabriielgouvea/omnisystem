@@ -2895,42 +2895,36 @@ async function uploadFiles(fileList) {
   renderFileList(fileList);
   showLoading(UPLOAD_STEPS);
 
-  // Envia um PDF por vez — evita limite de tamanho do servidor
-  let allUnknown = [], allStoreNames = [], allSkuStores = {}, allFormatWarnings = {};
-  let hasBatchSkuDups = false;
+  // Upload único — todos os PDFs numa requisição (parse em uma passada, muito mais rápido)
+  const form = new FormData();
+  Array.from(fileList).forEach(f => form.append("pdfs", f));
+  try {
+    const res  = await fetch("/upload", { method: "POST", body: form });
+    const data = await res.json();
+    hideLoading();
+    if (data.error) { setStatus(data.error, "error"); return; }
 
-  for (const f of Array.from(fileList)) {
-    updateFileBadge(f.name, "pending", "Enviando…");
-    const form = new FormData();
-    form.append("pdfs", f);
-    try {
-      const res  = await fetch("/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (data.error) { updateFileBadge(f.name, "error", "Erro: " + data.error); continue; }
-      currentFiles.push(...(data.filenames || []));
-      allUnknown.push(...(data.unknown || []));
-      allStoreNames.push(...(data.store_names || []));
-      if (data.has_batch_sku_dups) { hasBatchSkuDups = true; Object.assign(allSkuStores, data.sku_stores || {}); }
-      Object.assign(allFormatWarnings, data.format_warnings || {});
-      updateFileBadge(f.name, "ok", "✓ Enviado");
-    } catch(e) {
-      updateFileBadge(f.name, "error", "Erro");
-    }
+    currentFiles = data.filenames || [];
+    Array.from(fileList).forEach(f => {
+      updateFileBadge(f.name, currentFiles.includes(f.name) ? "ok" : "error",
+                              currentFiles.includes(f.name) ? "✓ Enviado" : "Ignorado");
+    });
+    const n = currentFiles.length;
+    if (!n) { setStatus("Nenhum PDF válido enviado.", "error"); return; }
+    setStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
+
+    const nextStep = () => {
+      if (data.has_batch_sku_dups) loadSkuDuplicates(data.sku_stores || {});
+      else document.getElementById("sku-dup-card").style.display = "none";
+      if ((data.unknown || []).length > 0) showClassify(data.unknown, data.store_names || []);
+      else document.getElementById("process-card").style.display = "block";
+    };
+    if (Object.keys(data.format_warnings || {}).length > 0) showFormatWarningModal(data.format_warnings, nextStep);
+    else nextStep();
+  } catch (e) {
+    hideLoading();
+    setStatus("Erro ao enviar: " + e.message, "error");
   }
-
-  hideLoading();
-  const n = currentFiles.length;
-  if (!n) { setStatus("Nenhum PDF válido enviado.", "error"); return; }
-  setStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
-
-  const nextStep = () => {
-    if (hasBatchSkuDups) loadSkuDuplicates(allSkuStores);
-    else document.getElementById("sku-dup-card").style.display = "none";
-    if (allUnknown.length > 0) showClassify(allUnknown, allStoreNames);
-    else document.getElementById("process-card").style.display = "block";
-  };
-  if (Object.keys(allFormatWarnings).length > 0) showFormatWarningModal(allFormatWarnings, nextStep);
-  else nextStep();
 }
 
 async function uploadRetiradaFiles(fileList) {
@@ -5240,30 +5234,28 @@ async function mlUploadFiles(fileList) {
   mlRenderFileList(fileList);
   showLoading(UPLOAD_STEPS);
 
-  // Envia um PDF por vez — evita limite de tamanho do servidor
-  let allUnknown = [];
-  for (const f of Array.from(fileList)) {
-    mlUpdateFileBadge(f.name, "pending", "Enviando…");
-    const form = new FormData();
-    form.append("pdfs", f);
-    try {
-      const res  = await fetch("/ml/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (data.error) { mlUpdateFileBadge(f.name, "error", "Erro"); continue; }
-      mlCurrentFiles.push(...(data.filenames || []));
-      allUnknown.push(...(data.unknown || []));
-      mlUpdateFileBadge(f.name, "ok", "✓ Enviado");
-    } catch(e) {
-      mlUpdateFileBadge(f.name, "error", "Erro");
-    }
+  // Upload único — todos os PDFs numa requisição
+  const form = new FormData();
+  Array.from(fileList).forEach(f => form.append("pdfs", f));
+  try {
+    const res  = await fetch("/ml/upload", { method: "POST", body: form });
+    const data = await res.json();
+    hideLoading();
+    if (data.error) { mlSetStatus(data.error, "error"); return; }
+    mlCurrentFiles = data.filenames || [];
+    Array.from(fileList).forEach(f => {
+      mlUpdateFileBadge(f.name, mlCurrentFiles.includes(f.name) ? "ok" : "error",
+                                mlCurrentFiles.includes(f.name) ? "✓ Enviado" : "Ignorado");
+    });
+    const n = mlCurrentFiles.length;
+    if (!n) { mlSetStatus("Nenhum PDF válido enviado.", "error"); return; }
+    mlSetStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
+    if ((data.unknown || []).length > 0) mlShowClassify(data.unknown);
+    else document.getElementById("ml-process-card").style.display = "block";
+  } catch (e) {
+    hideLoading();
+    mlSetStatus("Erro ao enviar: " + e.message, "error");
   }
-
-  hideLoading();
-  const n = mlCurrentFiles.length;
-  if (!n) { mlSetStatus("Nenhum PDF válido enviado.", "error"); return; }
-  mlSetStatus(`✓ ${n} PDF${n > 1 ? "s" : ""} enviado${n > 1 ? "s" : ""}`, "ok");
-  if (allUnknown.length > 0) mlShowClassify(allUnknown);
-  else document.getElementById("ml-process-card").style.display = "block";
 }
 
 // ── ML Classify ───────────────────────────────────────────────────────────────
