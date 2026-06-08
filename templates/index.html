@@ -1364,6 +1364,21 @@
         <input type="file" id="retirada-file-input" accept=".pdf" multiple style="display:none;" />
         <div id="retirada-file-list" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;"></div>
       </div>
+
+      <!-- Upload separado para PDFs com Declaração de Conteúdo -->
+      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;">
+        <div style="font-size:.75rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">
+          PDFs com Declaração de Conteúdo
+          <span style="font-weight:500;font-size:.72rem;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:6px;">— ímpar = etiqueta, par = declaração (produto)</span>
+        </div>
+        <div id="declaracao-drop-zone" style="border:2px dashed var(--border2);border-radius:10px;padding:18px 16px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--bg);">
+          <div style="font-size:1.2rem;margin-bottom:4px;">📄</div>
+          <p style="font-size:.8rem;color:var(--muted);font-weight:600;margin:0;">Arraste PDFs com declaração aqui ou clique para selecionar</p>
+          <p style="font-size:.72rem;color:var(--muted);margin:2px 0 0;" id="declaracao-file-count">Nenhum arquivo selecionado</p>
+        </div>
+        <input type="file" id="declaracao-file-input" accept=".pdf" multiple style="display:none;" />
+        <div id="declaracao-file-list" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
     </div>
 
     <!-- 2. Classificar -->
@@ -2052,6 +2067,15 @@
         </div>
         ML/CORREIOS
       </button>
+      <button class="sep-tab" id="cortar-tab-temp">
+        <div class="sep-tab-logo">
+          <svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
+            <rect width="28" height="28" rx="7" fill="#8b5cf6"/>
+            <path d="M9 8l10 12M19 8L9 20" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        Temporário
+      </button>
     </div>
 
     <!-- ─── Shopee ─── -->
@@ -2120,6 +2144,24 @@
         </div>
       </div>
     </div><!-- /cortar-mlc -->
+
+    <!-- ─── Temporário (layout Dex Fit) ─── -->
+    <div id="cortar-temp" style="width:100%;display:none;justify-content:center;">
+      <div class="card" style="max-width:620px;">
+        <div class="card-title">Cortar Etiquetas — Temporário</div>
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:20px;">
+          Corte para o layout especial (4 etiquetas lado a lado, agrupadas 2+2). Gera uma etiqueta por página, empilhadas. Prioriza capturar o QR code — o nome pode ser cortado levemente.
+        </p>
+        <div id="ctemp-drop-zone" style="border:2px dashed var(--border2);border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:border-color .15s;background:var(--bg);margin-bottom:16px;">
+          <div style="font-size:2rem;margin-bottom:8px;">✂️</div>
+          <p style="font-size:.88rem;font-weight:700;color:var(--text);margin:0 0 4px;">Arraste o PDF aqui ou clique para selecionar</p>
+          <p style="font-size:.75rem;color:var(--muted);margin:0;" id="ctemp-file-name">Nenhum arquivo selecionado</p>
+        </div>
+        <input type="file" id="ctemp-file-input" accept=".pdf" style="display:none;" />
+        <button class="btn btn-primary" id="ctemp-btn" disabled>✂ Cortar e Baixar PDF</button>
+        <div id="ctemp-status" style="margin-top:12px;font-size:.82rem;display:none;"></div>
+      </div>
+    </div><!-- /cortar-temp -->
 
   </div><!-- /page-cortar -->
 
@@ -2609,6 +2651,7 @@ const CAT_CHART_COLORS = { pura:"#00a86b", turbo:"#d63a3a", dux:"#2b7ed4", roupa
 // ── State ─────────────────────────────────────────────────────────────────────
 let currentFiles     = [];
 let retiradaFiles    = [];
+let declaracaoFiles  = [];
 let pendingKeys      = {};
 let selectedCats     = {};
 let selectedKits     = {};
@@ -2858,6 +2901,18 @@ retiradaDropZone.addEventListener("drop", e => {
 });
 retiradaFileInput.addEventListener("change", () => { if (retiradaFileInput.files.length) uploadRetiradaFiles(retiradaFileInput.files); });
 
+// ── Declaração drop zone ───────────────────────────────────────────────────────
+const declaracaoDropZone  = document.getElementById("declaracao-drop-zone");
+const declaracaoFileInput = document.getElementById("declaracao-file-input");
+declaracaoDropZone.addEventListener("click",     () => declaracaoFileInput.click());
+declaracaoDropZone.addEventListener("dragover",  e  => { e.preventDefault(); declaracaoDropZone.classList.add("drag-over"); });
+declaracaoDropZone.addEventListener("dragleave", () => declaracaoDropZone.classList.remove("drag-over"));
+declaracaoDropZone.addEventListener("drop", e => {
+  e.preventDefault(); declaracaoDropZone.classList.remove("drag-over");
+  if (e.dataTransfer.files.length) uploadDeclaracaoFiles(e.dataTransfer.files);
+});
+declaracaoFileInput.addEventListener("change", () => { if (declaracaoFileInput.files.length) uploadDeclaracaoFiles(declaracaoFileInput.files); });
+
 // ── Upload ────────────────────────────────────────────────────────────────────
 function renderFileList(files) {
   const list = document.getElementById("file-list");
@@ -2962,6 +3017,46 @@ async function uploadRetiradaFiles(fileList) {
     });
     if (n > 0) {
       // Avança o fluxo — format_warnings ignorados aqui (layout diferente é esperado)
+      if (data.has_batch_sku_dups) loadSkuDuplicates(data.sku_stores || {});
+      else document.getElementById("sku-dup-card").style.display = "none";
+      if ((data.unknown || []).length > 0) showClassify(data.unknown, data.store_names || []);
+      else document.getElementById("process-card").style.display = "block";
+    }
+  } catch (e) { countEl.textContent = "Erro: " + e.message; }
+}
+
+async function uploadDeclaracaoFiles(fileList) {
+  declaracaoFiles = []; setStatus("");
+  const countEl = document.getElementById("declaracao-file-count");
+  const listEl  = document.getElementById("declaracao-file-list");
+  listEl.innerHTML = "";
+  countEl.textContent = "Enviando...";
+  Array.from(fileList).forEach(f => {
+    if (!f.name.toLowerCase().endsWith(".pdf")) return;
+    const row = document.createElement("div");
+    row.className = "file-row"; row.id = "dfr-" + safeId(f.name);
+    row.innerHTML = `<span>📄</span><span class="fr-name">${esc(f.name)}</span><span class="fr-badge pending">Enviando…</span>`;
+    listEl.appendChild(row);
+  });
+  const form = new FormData();
+  Array.from(fileList).forEach(f => form.append("pdfs", f));
+  try {
+    const res  = await fetch("/upload?declaracao=1", { method: "POST", body: form });
+    const data = await res.json();
+    if (data.error) { countEl.textContent = "Erro: " + data.error; listEl.innerHTML = ""; return; }
+    declaracaoFiles = data.filenames || [];
+    const n = declaracaoFiles.length;
+    countEl.textContent = n > 0
+      ? `✓ ${n} PDF${n > 1 ? "s" : ""} com declaração enviado${n > 1 ? "s" : ""}`
+      : "Nenhum arquivo reconhecido";
+    Array.from(fileList).forEach(f => {
+      const row = document.getElementById("dfr-" + safeId(f.name));
+      if (!row) return;
+      const b = row.querySelector(".fr-badge");
+      if (declaracaoFiles.includes(f.name)) { b.className = "fr-badge ok"; b.textContent = "✓ Enviado"; }
+      else { b.className = "fr-badge error"; b.textContent = "Ignorado"; }
+    });
+    if (n > 0) {
       if (data.has_batch_sku_dups) loadSkuDuplicates(data.sku_stores || {});
       else document.getElementById("sku-dup-card").style.display = "none";
       if ((data.unknown || []).length > 0) showClassify(data.unknown, data.store_names || []);
@@ -3129,13 +3224,14 @@ async function runProcess(opts) {
     const res  = await fetch("/process", {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({
-        filenames:          currentFiles,
-        retirada_filenames: retiradaFiles,
-        label_date:         document.getElementById("label-date").value || new Date().toISOString().split("T")[0],
-        skip_brs:           opts.skip_brs || [],
-        keep_both_brs:      opts.keep_both_brs || [],
-        resolved:           !!opts.resolved,
-        force:              !!opts.force,
+        filenames:            currentFiles,
+        retirada_filenames:   retiradaFiles,
+        declaracao_filenames: declaracaoFiles,
+        label_date:           document.getElementById("label-date").value || new Date().toISOString().split("T")[0],
+        skip_brs:             opts.skip_brs || [],
+        keep_both_brs:        opts.keep_both_brs || [],
+        resolved:             !!opts.resolved,
+        force:                !!opts.force,
       })
     });
     const data = await res.json();
@@ -4831,12 +4927,16 @@ function resetUI() {
   lb.disabled = false; lb.innerHTML = "⚡ Lacrar Expedição"; lb.style.display = "";
   allOutputFiles   = [];
   retiradaFiles    = [];
+  declaracaoFiles  = [];
   selectedNewBrand = {};
   currentProcessData = null;
   currentHistoryIdx  = null;
   document.getElementById("retirada-file-count").textContent = "Nenhum arquivo selecionado";
   document.getElementById("retirada-file-list").innerHTML = "";
   retiradaFileInput.value = "";
+  document.getElementById("declaracao-file-count").textContent = "Nenhum arquivo selecionado";
+  document.getElementById("declaracao-file-list").innerHTML = "";
+  declaracaoFileInput.value = "";
   const dlBtn = document.getElementById("download-all-btn");
   dlBtn.disabled = false; dlBtn.textContent = "⬇ Baixar Tudo";
   dlBtn.classList.add("btn-outline");
@@ -4869,18 +4969,74 @@ function unitLabel(cat) { return cat === "roupa" ? "peças" : "potes"; }
 
 // ── Cortar Etiquetas — tabs ───────────────────────────────────────────────────
 (function () {
-  const tabShopee = document.getElementById("cortar-tab-shopee");
-  const tabMl     = document.getElementById("cortar-tab-ml");
-  const paneShopee = document.getElementById("cortar-shopee");
-  const paneMl     = document.getElementById("cortar-mlc");
-
-  tabShopee.addEventListener("click", () => {
-    tabShopee.classList.add("active"); tabMl.classList.remove("active");
-    paneShopee.style.display = "flex";  paneMl.style.display = "none";
+  const tabs = {
+    shopee: [document.getElementById("cortar-tab-shopee"), document.getElementById("cortar-shopee")],
+    ml:     [document.getElementById("cortar-tab-ml"),     document.getElementById("cortar-mlc")],
+    temp:   [document.getElementById("cortar-tab-temp"),   document.getElementById("cortar-temp")],
+  };
+  Object.entries(tabs).forEach(([key, [tab]]) => {
+    tab.addEventListener("click", () => {
+      Object.values(tabs).forEach(([t, pane]) => {
+        const on = t === tab;
+        t.classList.toggle("active", on);
+        pane.style.display = on ? "flex" : "none";
+      });
+    });
   });
-  tabMl.addEventListener("click", () => {
-    tabMl.classList.add("active"); tabShopee.classList.remove("active");
-    paneMl.style.display = "flex";  paneShopee.style.display = "none";
+})();
+
+// ── Cortar Etiquetas — Temporário ─────────────────────────────────────────────
+(function () {
+  let tempFile = null;
+  const dropZone  = document.getElementById("ctemp-drop-zone");
+  const fileInput = document.getElementById("ctemp-file-input");
+  const fileLabel = document.getElementById("ctemp-file-name");
+  const btn       = document.getElementById("ctemp-btn");
+  const statusEl  = document.getElementById("ctemp-status");
+
+  function setFile(file) {
+    if (!file || !file.name.toLowerCase().endsWith(".pdf")) {
+      statusEl.style.display = "block"; statusEl.style.color = "var(--red)";
+      statusEl.textContent = "Envie apenas arquivos PDF."; return;
+    }
+    tempFile = file;
+    fileLabel.textContent = `${file.name}  (${(file.size/1024/1024).toFixed(2)} MB)`;
+    btn.disabled = false;
+    statusEl.style.display = "none";
+    dropZone.style.borderColor = "var(--accent)";
+  }
+
+  dropZone.addEventListener("click",     () => fileInput.click());
+  dropZone.addEventListener("dragover",  e  => { e.preventDefault(); dropZone.style.borderColor = "var(--accent)"; });
+  dropZone.addEventListener("dragleave", () => { if (!tempFile) dropZone.style.borderColor = ""; });
+  dropZone.addEventListener("drop", e => {
+    e.preventDefault();
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+  btn.addEventListener("click", async () => {
+    if (!tempFile) return;
+    btn.disabled = true; btn.textContent = "Processando...";
+    statusEl.style.display = "none";
+    const form = new FormData();
+    form.append("pdf", tempFile);
+    try {
+      const res = await fetch("/cortar/temp", { method: "POST", body: form });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || "Erro"); }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url; a.download = "cortado_temp_" + tempFile.name;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      statusEl.style.display = "block"; statusEl.style.color = "var(--green)";
+      statusEl.textContent = "✓ PDF cortado e baixado!";
+    } catch (e) {
+      statusEl.style.display = "block"; statusEl.style.color = "var(--red)";
+      statusEl.textContent = "Erro: " + e.message;
+    }
+    btn.disabled = false; btn.textContent = "✂ Cortar e Baixar PDF";
   });
 })();
 

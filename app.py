@@ -419,6 +419,99 @@ def get_unknown_items_combined(pdf_path, mappings):
     return list(seen.values())
 
 
+def extract_declaration_items(page):
+    """Extrai os itens da tabela 'IDENTIFICAÇÃO DOS BENS' de uma página de
+    Declaração de Conteúdo (formato Shopee/Correios). Colunas:
+    Nº | CÓDIGO (SKU) | DESCRIÇÃO DO PRODUTO | VARIAÇÃO | QTD | VALOR.
+    Retorna [{produto, sku, quantidade}]."""
+    words = page.get_text("words")
+    ident_y = next((w[1] for w in words if "IDENTIFICA" in w[4].upper()), None)
+    if ident_y is None:
+        return []
+    # Detecta posições X das colunas pelo cabeçalho (logo abaixo de "IDENTIFICAÇÃO")
+    cols = {}
+    header_y = None
+    for w in words:
+        if not (ident_y < w[1] < ident_y + 22):
+            continue
+        t = w[4].strip().upper()
+        if "DIGO" in t:        cols["sku"] = w[0]; header_y = w[1]
+        elif "DESCRI" in t:    cols["produto"] = w[0]
+        elif "VARIA" in t:     cols["variacao"] = w[0]
+        elif t == "QTD":       cols["qtd"] = w[0]
+        elif "VALOR" in t:     cols["valor"] = w[0]
+    if "produto" not in cols or "qtd" not in cols or header_y is None:
+        return []
+    sku_x   = cols.get("sku", 35)
+    prod_x  = cols["produto"]
+    qtd_x   = cols["qtd"]
+    var_x   = cols.get("variacao", qtd_x - 90)
+    valor_x = cols.get("valor", qtd_x + 25)
+
+    def col_of(x):
+        if x < sku_x - 3:   return "num"
+        if x < prod_x - 3:  return "sku"
+        if x < var_x - 3:   return "produto"
+        if x < qtd_x - 3:   return "variacao"
+        if x < valor_x - 3: return "qtd"
+        return "valor"
+
+    # Onde a tabela termina (Totais / Peso / DECLARAÇÃO)
+    stop_y = None
+    for w in words:
+        if w[1] <= header_y + 3:
+            continue
+        tu = w[4].strip().upper()
+        if tu in ("TOTAIS", "TOTAL") or tu.startswith("PESO") or "DECLARA" in tu:
+            stop_y = w[1]; break
+
+    rows = [w for w in words
+            if w[1] > header_y + 3 and (stop_y is None or w[1] < stop_y - 2)]
+    y_groups = {}
+    for w in rows:
+        y_groups.setdefault(round(w[1] / 3) * 3, []).append(w)
+
+    items, current = [], None
+    for yk in sorted(y_groups):
+        by_col = {}
+        for w in sorted(y_groups[yk], key=lambda w: w[0]):
+            by_col.setdefault(col_of(w[0]), []).append(w[4])
+        num = by_col.get("num", [])
+        if num and num[0].strip().isdigit():
+            if current:
+                items.append(current)
+            qv = by_col.get("qtd", [])
+            q  = int(qv[0]) if qv and qv[0].strip().isdigit() else 1
+            current = {
+                "sku":        " ".join(by_col.get("sku", [])).strip(),
+                "produto":    " ".join(by_col.get("produto", [])).strip(),
+                "quantidade": q,
+            }
+        elif current and "produto" in by_col:
+            current["produto"] += " " + " ".join(by_col["produto"])
+    if current:
+        items.append(current)
+    for it in items:
+        it["produto"] = re.sub(r"\s+", " ", it["produto"]).strip()
+    return items
+
+
+def get_unknown_items_declaracao(pdf_path, mappings):
+    """Declaração: páginas ímpares (0,2,..)=etiqueta, pares (1,3,..)=declaração."""
+    doc = fitz.open(str(pdf_path))
+    seen = {}
+    for i in range(1, len(doc), 2):     # páginas de declaração
+        for item in extract_declaration_items(doc[i]):
+            key = mapping_key(item["produto"], item["sku"])
+            if key not in mappings and key not in seen:
+                seen[key] = {
+                    "produto": item["produto"], "sku": item["sku"], "key": key,
+                    "file": pdf_path.name, "page": i + 1,
+                }
+    doc.close()
+    return list(seen.values())
+
+
 _CEP_RE = re.compile(r'^\d{5}-\d{3}$')
 
 def extract_destination_state(page):
@@ -721,7 +814,8 @@ def compute_brand_totals(breakdown):
 
 
 def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=None,
-                      skip_brs=None, keep_both_brs=None, detect_only=False):
+                      skip_brs=None, keep_both_brs=None, detect_only=False,
+                      declaracao_filenames=None):
     """
     Process multiple PDFs and merge pages with the same output key into one PDF each.
     Returns stats + output file list.
@@ -729,8 +823,10 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
     skip_brs       : conjunto de BRs cujas páginas NÃO devem entrar no output (resolvidos como "não separar")
     keep_both_brs  : conjunto de BRs duplicados no batch que o usuário decidiu manter as 2 cópias
     detect_only    : se True, não grava PDFs em disco (só roda a detecção)
+    declaracao_filenames : PDFs no formato Declaração de Conteúdo (ímpar=etiqueta, par=declaração)
     """
-    retirada_set = set(retirada_filenames or [])
+    retirada_set   = set(retirada_filenames or [])
+    declaracao_set = set(declaracao_filenames or [])
     skip_brs      = set(skip_brs or [])
     keep_both_brs = set(keep_both_brs or [])
     seen_brs      = set()    # BRs já adicionados ao output neste batch (para dedupe)
@@ -746,6 +842,7 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
     total_pages_all    = 0
     blank_pages_all    = 0
     sem_check_all      = 0
+    declaration_only_pages = 0  # páginas de declaração (não vão pro output)
     breakdown_all      = {}
     seen_sku_titles    = {}    # sku -> [titulos] (coletado no parse principal p/ detectar conflito sem re-parse)
 
@@ -760,6 +857,93 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
         store = extract_store_name(pdf_path)
         if store not in store_names:
             store_names.append(store)
+
+        # ── Declaração de Conteúdo: ímpar=etiqueta, par=declaração (produto) ──
+        if filename in declaracao_set:
+            for i in range(0, n_pages - 1, 2):
+                label_pg = doc[i]
+                decl_pg  = doc[i + 1]
+                declaration_only_pages += 1   # página de declaração não vai pro output
+                items = extract_declaration_items(decl_pg)
+                for _it in items:
+                    _sk = _it["sku"].strip()
+                    if _sk:
+                        seen_sku_titles.setdefault(_sk, []).append(_it["produto"])
+                if not items:
+                    sem_check_all += 1
+                    page_results.append({"file": filename, "page": i + 1,
+                                          "items": [], "output": "sem_checklist"})
+                    writers.setdefault("sem_checklist", PdfWriter()).add_page(reader.pages[i])
+                    continue
+                output_key = determine_output_pdf(items, mappings) or "__unknown__"
+                page_results.append({
+                    "file": filename, "page": i + 1, "output": output_key,
+                    "items": [{"produto": x["produto"][:50], "sku": x["sku"],
+                               "quantidade": x["quantidade"]} for x in items],
+                })
+                if output_key == "__unknown__":
+                    continue
+                page_tns = extract_tracking_numbers(label_pg)
+                for tn in page_tns:
+                    if tn in tracking_numbers:
+                        prev = tracking_numbers[tn]
+                        if prev["filename"] != filename and tn not in batch_tracking_dups:
+                            batch_tracking_dups[tn] = {
+                                "tracking": tn,
+                                "file1": prev["filename"], "page1": prev["page"],
+                                "file2": filename,         "page2": i + 1,
+                            }
+                skip_this = False
+                for tn in page_tns:
+                    if tn in skip_brs:
+                        skip_this = True; break
+                    if tn in seen_brs and tn not in keep_both_brs:
+                        skip_this = True; break
+                if skip_this:
+                    skipped_dups += 1
+                    page_results[-1]["output"] = "__skipped_dup__"
+                    for tn in page_tns:
+                        tracking_numbers.setdefault(tn, {"filename": filename, "page": i + 1,
+                                                         "store": store, "items": []})
+                    continue
+                # adiciona SÓ a etiqueta (página i); a declaração nunca vai pro output
+                writers.setdefault(output_key, PdfWriter()).add_page(reader.pages[i])
+                breakdown_all[output_key] = breakdown_all.get(output_key, 0) + 1
+                store_label_counts[store] = store_label_counts.get(store, 0) + 1
+                uf = extract_destination_state(label_pg)
+                if uf:
+                    state_counts[uf] = state_counts.get(uf, 0) + 1
+                page_items_info = []
+                for item in items:
+                    mk2 = mapping_key(item["produto"], item["sku"])
+                    if mk2 in mappings:
+                        info2 = mappings[mk2]
+                        page_items_info.append({
+                            "produto": item["produto"], "sku": item["sku"],
+                            "quantidade": item["quantidade"],
+                            "categoria": info2.get("categoria", "?"),
+                            "kit_size": info2.get("kit_size", 1),
+                        })
+                for tn in page_tns:
+                    seen_brs.add(tn)
+                    if tn not in tracking_numbers or not tracking_numbers[tn].get("items"):
+                        tracking_numbers[tn] = {"filename": filename, "page": i + 1,
+                                                "store": store, "items": page_items_info}
+                for item in items:
+                    mk = mapping_key(item["produto"], item["sku"])
+                    sku_key = item["sku"].strip()
+                    if mk not in mappings:
+                        continue
+                    info = mappings[mk]; kit = info.get("kit_size", 1); qty = item["quantidade"]
+                    store_items.setdefault(store, {})
+                    if sku_key not in store_items[store]:
+                        store_items[store][sku_key] = {
+                            "sku": item["sku"], "produto": item["produto"],
+                            "categoria": info["categoria"], "kit_size": kit, "units": 0,
+                        }
+                    store_items[store][sku_key]["units"] += kit * qty
+            doc.close()
+            continue
 
         _cl_fn = extract_checklist_combined if filename in retirada_set else extract_checklist
         for page_num in range(n_pages):
@@ -900,8 +1084,8 @@ def split_pdfs_merged(filenames, mappings, label_date="", retirada_filenames=Non
     _t_write = _time.time()
     print(f"[PERF] escrita de {len(writers)} PDF(s) de saida: {_t_write-_t_parse:.1f}s (detect_only={detect_only})", flush=True)
 
-    # label_pages efetivo desconta as páginas puladas por duplicidade/skip
-    label_pages  = total_pages_all - blank_pages_all - sem_check_all - skipped_dups
+    # label_pages efetivo desconta páginas puladas por duplicidade/skip e as de declaração
+    label_pages  = total_pages_all - blank_pages_all - sem_check_all - skipped_dups - declaration_only_pages
     output_total = sum(c for k, c in output_page_counts.items()
                        if not k.startswith("sem_checklist"))
     verified = output_total == label_pages
@@ -1429,8 +1613,9 @@ def index():
 
 @app.route("/upload", methods=["POST"])
 def upload():
-    files    = request.files.getlist("pdfs")
-    retirada = request.args.get("retirada") == "1"
+    files      = request.files.getlist("pdfs")
+    retirada   = request.args.get("retirada") == "1"
+    declaracao = request.args.get("declaracao") == "1"
     if not files or all(f.filename == "" for f in files):
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
 
@@ -1440,8 +1625,12 @@ def upload():
     store_names = []
     batch_skus  = {}
     sku_stores  = {}
-    _extract_fn = extract_checklist_combined if retirada else extract_checklist
-    _unknown_fn = get_unknown_items_combined if retirada else get_unknown_items
+    if declaracao:
+        _unknown_fn = get_unknown_items_declaracao
+    elif retirada:
+        _unknown_fn = get_unknown_items_combined
+    else:
+        _unknown_fn = get_unknown_items
 
     for file in files:
         if not file.filename.lower().endswith(".pdf"):
@@ -1455,12 +1644,20 @@ def upload():
         for u in _unknown_fn(pdf_path, mappings):
             all_unknown.setdefault(u["key"], u)
         doc = fitz.open(str(pdf_path))
-        for page_num in range(len(doc)):
-            for item in _extract_fn(doc[page_num]):
-                base = item["sku"].strip()
-                norm = _normalize_titulo(item["produto"])
-                batch_skus.setdefault(base, set()).add(norm)
-                sku_stores.setdefault(base, set()).add(s)
+        if declaracao:
+            for page_num in range(1, len(doc), 2):   # páginas de declaração
+                for item in extract_declaration_items(doc[page_num]):
+                    base = item["sku"].strip()
+                    batch_skus.setdefault(base, set()).add(_normalize_titulo(item["produto"]))
+                    sku_stores.setdefault(base, set()).add(s)
+        else:
+            _extract_fn = extract_checklist_combined if retirada else extract_checklist
+            for page_num in range(len(doc)):
+                for item in _extract_fn(doc[page_num]):
+                    base = item["sku"].strip()
+                    norm = _normalize_titulo(item["produto"])
+                    batch_skus.setdefault(base, set()).add(norm)
+                    sku_stores.setdefault(base, set()).add(s)
         doc.close()
 
     if not saved:
@@ -1477,10 +1674,11 @@ def upload():
     sku_stores_out = {base: sorted(sku_stores[base]) for base in dup_skus}
 
     format_warnings = {}
-    for fname in saved:
-        issues = check_label_format(UPLOAD_DIR / fname)
-        if issues:
-            format_warnings[fname] = issues
+    if not declaracao:
+        for fname in saved:
+            issues = check_label_format(UPLOAD_DIR / fname)
+            if issues:
+                format_warnings[fname] = issues
 
     return jsonify({
         "filenames":           saved,
@@ -1506,23 +1704,30 @@ def process():
     data               = request.json
     filenames          = data.get("filenames", [])
     retirada_filenames = data.get("retirada_filenames", [])
+    declaracao_filenames = data.get("declaracao_filenames", [])
     label_date         = data.get("label_date", "")
     skip_brs           = data.get("skip_brs", [])
     keep_both_brs      = data.get("keep_both_brs", [])
     resolved           = data.get("resolved", False)   # usuário já passou pela tela de problemas
     force              = data.get("force", False)       # "prosseguir mesmo com erros"
-    all_fnames         = filenames + retirada_filenames
+    all_fnames         = filenames + retirada_filenames + declaracao_filenames
     if not all_fnames:
         return jsonify({"error": "Nenhum arquivo especificado"}), 400
 
     mappings    = load_mappings()
     all_unknown = {}
-    retirada_set = set(retirada_filenames)
+    retirada_set   = set(retirada_filenames)
+    declaracao_set = set(declaracao_filenames)
     for filename in all_fnames:
         pdf_path = UPLOAD_DIR / filename
         if not pdf_path.exists():
             return jsonify({"error": f"Arquivo nÃ£o encontrado: {filename}"}), 404
-        _fn = get_unknown_items_combined if filename in retirada_set else get_unknown_items
+        if filename in declaracao_set:
+            _fn = get_unknown_items_declaracao
+        elif filename in retirada_set:
+            _fn = get_unknown_items_combined
+        else:
+            _fn = get_unknown_items
         for u in _fn(pdf_path, mappings):
             all_unknown.setdefault(u["key"], u)
 
@@ -1533,6 +1738,7 @@ def process():
     # Passada única: gera os PDFs aplicando skips/keep-both (vazios na 1ª chamada)
     result = split_pdfs_merged(all_fnames, mappings, label_date=label_date,
                                retirada_filenames=retirada_filenames,
+                               declaracao_filenames=declaracao_filenames,
                                skip_brs=skip_brs, keep_both_brs=keep_both_brs)
 
     # Trava: na 1ª chamada (sem resolução/force), se houver conflitos → exige resolução.
@@ -2963,6 +3169,88 @@ def _split_ml_full(src_bytes, labels_per_page=3, num_cols=4):
     out_doc.close()
     src_doc.close()
     return result
+
+
+def _split_pdf_columns_temp(src_bytes):
+    """Cortador TEMPORÁRIO para layout Dex Fit (landscape 842x595, 4 colunas
+    agrupadas 2+2 com gap maior no meio). Recorta cada coluna e ESTICA para
+    preencher uma etiqueta térmica 100x150mm (283x425), uma por página."""
+    # X inicial de cada coluna + largura (calibrado p/ bater com OFICIAL DEX:
+    # #=21, Produto=73, SKU=124, Var=176, Qtd=227 — alinhado aos limites do parser)
+    COL_STARTS = [40, 232, 432, 624]
+    COL_W      = 192          # largura do slot da etiqueta
+    TARGET_W   = 283.46       # 100 mm
+    TARGET_H   = 425.20       # 150 mm
+    TOP_CROP   = 16           # corte do topo (fitz top-down)
+    CONTENT_H  = 342          # altura real do conteúdo da etiqueta (y 16 → 358)
+
+    src_doc = fitz.open(stream=src_bytes, filetype="pdf")
+    out_doc = fitz.open()
+    scale_y = TARGET_H / CONTENT_H
+
+    for page_num in range(len(src_doc)):
+        page = src_doc[page_num]
+        h = page.rect.height
+        for col_x0 in COL_STARTS:
+            col_x1 = col_x0 + COL_W
+            clip = fitz.Rect(col_x0, TOP_CROP, col_x1, TOP_CROP + CONTENT_H)
+            if not page.get_text("blocks", clip=clip):
+                continue
+            scale_x = TARGET_W / COL_W
+            pdf_y_bot = h - TOP_CROP - CONTENT_H   # borda inferior do recorte (coords PDF y-up)
+            tx = -col_x0 * scale_x
+            ty = -pdf_y_bot * scale_y
+
+            out_doc.insert_pdf(src_doc, from_page=page_num, to_page=page_num)
+            out_page = out_doc[-1]
+            original = out_page.read_contents()
+            new_content = (
+                f"q {scale_x:.6f} 0 0 {scale_y:.6f} {tx:.6f} {ty:.6f} cm\n".encode()
+                + original + b"\nQ\n"
+            )
+            content_xrefs = out_page.get_contents()
+            out_doc.update_stream(content_xrefs[0], new_content)
+            out_page.set_contents(content_xrefs[0])
+            out_page.set_mediabox(fitz.Rect(0, 0, TARGET_W, TARGET_H))
+            out_doc.xref_set_key(out_page.xref, "CropBox", "null")
+
+            # Algumas etiquetas deste layout não trazem a coluna "#" do checklist
+            # (necessária pro separador delimitar o item). Se faltar, injeta um "1"
+            # na posição da coluna # alinhado à linha do produto.
+            words = out_page.get_text("words")
+            if not any(w[4].strip() == "#" for w in words):
+                prod_hdr = next((w for w in words if w[4].strip() == "Produto"), None)
+                if prod_hdr:
+                    hy = prod_hdr[1]
+                    data_ys = [w[1] for w in words if w[1] > hy + 1 and 55 < w[0] < 120]
+                    if data_ys:
+                        dy = min(data_ys)
+                        out_page.insert_text(fitz.Point(20, dy + 6.5), "1",
+                                             fontsize=7, color=(0, 0, 0))
+
+    try:
+        out_doc.xref_set_key(out_doc.pdf_catalog(), "ViewerPreferences", "<</PrintScaling /None>>")
+    except Exception:
+        pass
+    result = out_doc.tobytes(garbage=4, deflate=True)
+    out_doc.close()
+    src_doc.close()
+    return result
+
+
+@app.route("/cortar/temp", methods=["POST"])
+def cortar_temp():
+    f = request.files.get("pdf")
+    if not f or not f.filename.lower().endswith(".pdf"):
+        return jsonify({"error": "Envie um arquivo PDF válido"}), 400
+    try:
+        result = _split_pdf_columns_temp(f.read())
+    except Exception as e:
+        return jsonify({"error": f"Erro ao processar PDF: {e}"}), 500
+    buf = io.BytesIO(result); buf.seek(0)
+    safe_name = re.sub(r"[^\w.\-]", "_", f.filename.rsplit(".", 1)[0])
+    return send_file(buf, mimetype="application/pdf", as_attachment=True,
+                     download_name=f"cortado_temp_{safe_name}.pdf")
 
 
 @app.route("/cortar", methods=["POST"])
