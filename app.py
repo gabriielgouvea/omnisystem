@@ -37,7 +37,7 @@ else:
     SECRET_KEY_FILE.write_text(_key)
     app.secret_key = _key
 
-app.config["MAX_CONTENT_LENGTH"] = 200 * 1024 * 1024  # 200 MB
+app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024 * 1024  # 1 GB
 
 @app.errorhandler(413)
 def too_large(e):
