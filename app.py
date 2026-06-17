@@ -1176,7 +1176,17 @@ ML_STORE_NAME = "REPZILLA ML"
 
 
 def is_ml_label_page(page):
-    return "Cidade de destino" in page.get_text("text")
+    t = page.get_text("text")
+    # Página de RESUMO de produtos (não é etiqueta): tem SKU + footer "Despachem"
+    if "Despachem" in t and "SKU:" in t:
+        return False
+    # Etiqueta de envio ML. A fonte às vezes corrompe inserindo 'f' antes de 'i'
+    # ("Cfidade de destfino", "Pfiezas"), então a checagem precisa ser tolerante.
+    if re.search(r'C\w{0,2}idade\s+de\s+dest\w{0,2}ino', t):
+        return True
+    if re.search(r'\bDespachar\b', t):
+        return True
+    return False
 
 
 def extract_ml_label_ids(page):
@@ -1219,7 +1229,8 @@ def extract_ml_label_state(page):
 _ML_PACKID_RE = re.compile(r'^Pack\s+ID:\s*(\d+)', re.IGNORECASE)
 _ML_VENDA_RE  = re.compile(r'^Venda:\s*(\d+)', re.IGNORECASE)
 _ML_SKU_RE    = re.compile(r'^SKU:\s*(\S+)', re.IGNORECASE)
-_ML_QTY_RE    = re.compile(r'^Quantidade:\s*(\d+)', re.IGNORECASE)
+# A fonte do ML às vezes insere 'f' antes de 'i' ("Quantfidade"), por isso \w{0,2}
+_ML_QTY_RE    = re.compile(r'^Quant\w{0,2}dade:\s*(\d+)', re.IGNORECASE)
 
 
 def parse_ml_product_pages(doc):
