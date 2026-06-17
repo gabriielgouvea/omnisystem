@@ -1534,6 +1534,46 @@ def save_users(users):
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, ensure_ascii=False, indent=2)
 
+# ── Permissões / Administração ────────────────────────────────────────────────
+# Chave de permissão = id da página sem "page-". Rótulo para a UI do admin.
+PERM_PAGES = [
+    ("dashboard",         "Dashboard"),
+    ("tiktok-dashboard",  "Dashboard TikTok"),
+    ("financeiro",        "Financeiro"),
+    ("estoque",           "Estoque"),
+    ("produtos",          "Produtos"),
+    ("cortar",            "Cortar Etiquetas"),
+    ("separacao",         "Separação de Etiquetas"),
+    ("caixas",            "Caixas"),
+    ("localizador",       "Localizador"),
+    ("historico",         "Histórico"),
+    ("movimentacoes",     "Movimentações"),
+    ("api-teste",         "API TESTE"),
+]
+_PERM_KEYS = [k for k, _ in PERM_PAGES]
+_ADMIN_DEFAULTS = {"GABRIEL", "LUCAS", "LUIZ"}
+
+def _user_role(username):
+    u = load_users().get(username, {})
+    if u.get("role") in ("admin", "user"):
+        return u["role"]
+    return "admin" if username in _ADMIN_DEFAULTS else "user"
+
+def _is_admin(username=None):
+    username = username or session.get("user", "")
+    return _user_role(username) == "admin"
+
+def _user_perms(username):
+    """Permissões efetivas. Admin = tudo. Usuário sem 'perms' configurado = tudo
+    liberado (compatibilidade). Com 'perms' configurado = exatamente o salvo."""
+    if _is_admin(username):
+        return {k: True for k in _PERM_KEYS}
+    u = load_users().get(username, {})
+    if "perms" not in u or u.get("perms") is None:
+        return {k: True for k in _PERM_KEYS}
+    saved = u.get("perms") or {}
+    return {k: bool(saved.get(k, False)) for k in _PERM_KEYS}
+
 @app.before_request
 def require_login():
     public = {"login", "setup_pin", "logout", "static"}
@@ -1541,6 +1581,9 @@ def require_login():
         return
     if "user" not in session:
         return redirect(url_for("login"))
+
+def _require_admin():
+    return _is_admin(session.get("user", ""))
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -1608,14 +1651,101 @@ def api_auditoria():
     limit = int(request.args.get("limit", 200))
     return jsonify(load_auditoria()[:limit])
 
+# ── Administração de usuários ─────────────────────────────────────────────────
+@app.route("/admin/users", methods=["GET"])
+def admin_list_users():
+    if not _require_admin():
+        return jsonify({"error": "Acesso negado"}), 403
+    users = load_users()
+    out = []
+    for name in sorted(users.keys()):
+        out.append({
+            "username":  name,
+            "role":      _user_role(name),
+            "perms":     _user_perms(name),
+            "has_pin":   bool(users[name].get("pin")),
+            "is_self":   name == session.get("user", ""),
+        })
+    return jsonify({"users": out, "perm_pages": PERM_PAGES})
+
+@app.route("/admin/users/create", methods=["POST"])
+def admin_create_user():
+    if not _require_admin():
+        return jsonify({"error": "Acesso negado"}), 403
+    data = request.json or {}
+    name = (data.get("username") or "").upper().strip()
+    if not name or not re.fullmatch(r"[A-Z0-9_ ]{2,20}", name):
+        return jsonify({"error": "Nome inválido (2-20 letras/números)"}), 400
+    users = load_users()
+    if name in users:
+        return jsonify({"error": "Usuário já existe"}), 400
+    role  = "admin" if data.get("role") == "admin" else "user"
+    perms = {k: bool((data.get("perms") or {}).get(k, False)) for k in _PERM_KEYS}
+    users[name] = {"pin": None, "role": role, "perms": perms}
+    save_users(users)
+    registrar_aud("usuario_criado", f"Usuário {name} criado ({role})")
+    return jsonify({"ok": True})
+
+@app.route("/admin/users/update", methods=["POST"])
+def admin_update_user():
+    if not _require_admin():
+        return jsonify({"error": "Acesso negado"}), 403
+    data = request.json or {}
+    name = (data.get("username") or "").upper().strip()
+    users = load_users()
+    if name not in users:
+        return jsonify({"error": "Usuário não encontrado"}), 404
+    if "role" in data:
+        users[name]["role"] = "admin" if data["role"] == "admin" else "user"
+    if "perms" in data:
+        users[name]["perms"] = {k: bool((data.get("perms") or {}).get(k, False)) for k in _PERM_KEYS}
+    save_users(users)
+    registrar_aud("usuario_alterado", f"Permissões de {name} atualizadas")
+    return jsonify({"ok": True})
+
+@app.route("/admin/users/delete", methods=["POST"])
+def admin_delete_user():
+    if not _require_admin():
+        return jsonify({"error": "Acesso negado"}), 403
+    name = (request.json or {}).get("username", "").upper().strip()
+    if name == session.get("user", ""):
+        return jsonify({"error": "Você não pode excluir o próprio usuário"}), 400
+    users = load_users()
+    if name not in users:
+        return jsonify({"error": "Usuário não encontrado"}), 404
+    # Não deixar remover o último admin
+    admins = [u for u in users if _user_role(u) == "admin"]
+    if name in admins and len(admins) <= 1:
+        return jsonify({"error": "Não é possível excluir o último administrador"}), 400
+    del users[name]
+    save_users(users)
+    registrar_aud("usuario_excluido", f"Usuário {name} excluído")
+    return jsonify({"ok": True})
+
+@app.route("/admin/users/reset-pin", methods=["POST"])
+def admin_reset_pin():
+    if not _require_admin():
+        return jsonify({"error": "Acesso negado"}), 403
+    name = (request.json or {}).get("username", "").upper().strip()
+    users = load_users()
+    if name not in users:
+        return jsonify({"error": "Usuário não encontrado"}), 404
+    users[name]["pin"] = None
+    save_users(users)
+    registrar_aud("pin_resetado", f"PIN de {name} resetado")
+    return jsonify({"ok": True})
+
 # â”€â”€ Routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @app.route("/")
 def index():
     users = load_users()
+    _cur  = session.get("user", "")
     resp = make_response(render_template("index.html",
-        current_user=session.get("user", ""),
-        all_users=list(users.keys())
+        current_user=_cur,
+        all_users=list(users.keys()),
+        current_is_admin=_is_admin(_cur),
+        current_perms=_user_perms(_cur),
     ))
     resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     resp.headers["Pragma"] = "no-cache"
