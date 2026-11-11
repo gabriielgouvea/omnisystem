@@ -2136,10 +2136,10 @@
         </p>
         <div id="mlc-drop-zone" style="border:2px dashed var(--border2);border-radius:10px;padding:36px 24px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;">
           <div style="font-size:2rem;margin-bottom:10px;">📦</div>
-          <p style="font-size:.95rem;font-weight:600;color:var(--text);">Arraste o PDF aqui ou clique para selecionar</p>
-          <p style="font-size:.78rem;color:var(--muted);margin-top:4px;">Um arquivo PDF no formato Padrão Correios (.pdf)</p>
+          <p style="font-size:.95rem;font-weight:600;color:var(--text);">Arraste os PDFs aqui ou clique para selecionar</p>
+          <p style="font-size:.78rem;color:var(--muted);margin-top:4px;">Um ou vários arquivos PDF (.pdf) — saem juntos em um único PDF</p>
         </div>
-        <input type="file" id="mlc-file-input" accept=".pdf" style="display:none;" />
+        <input type="file" id="mlc-file-input" accept=".pdf" multiple style="display:none;" />
         <div id="mlc-status" style="font-size:.82rem;margin-top:10px;min-height:18px;"></div>
         <div id="mlc-result" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border-radius:8px;border:1.5px solid var(--border2);">
           <div id="mlc-result-msg" style="font-weight:700;font-size:.88rem;color:var(--green);margin-bottom:10px;"></div>
@@ -6024,24 +6024,26 @@ document.getElementById("ml-download-all-btn").addEventListener("click", async (
     e.preventDefault();
     dropZone.style.borderColor = "";
     dropZone.style.background  = "";
-    if (e.dataTransfer.files[0]) process(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files.length) process(Array.from(e.dataTransfer.files));
   });
   fileInput.addEventListener("change", () => {
-    if (fileInput.files[0]) process(fileInput.files[0]);
+    if (fileInput.files.length) process(Array.from(fileInput.files));
+    fileInput.value = "";
   });
 
-  async function process(file) {
+  async function process(files) {
     _filename = null;
     resultDiv.style.display = "none";
-    setStatus("Processando…");
+    setStatus(files.length > 1 ? `Processando ${files.length} arquivos…` : "Processando…");
     const form = new FormData();
-    form.append("file", file);
+    files.forEach(f => form.append("file", f));
     try {
       const res  = await fetch("/ml/correios", { method: "POST", body: form });
       const data = await res.json();
       if (data.error) { setStatus(data.error, "var(--red)"); return; }
       _filename = data.filename;
-      resultMsg.textContent = `✓ ${data.labels} etiqueta${data.labels !== 1 ? "s" : ""} + ${data.total - data.labels} folha${(data.total - data.labels) !== 1 ? "s" : ""} de checklist prontas.`;
+      const nArq = data.files > 1 ? ` (de ${data.files} arquivos)` : "";
+      resultMsg.textContent = `✓ ${data.labels} etiqueta${data.labels !== 1 ? "s" : ""} + ${data.total - data.labels} folha${(data.total - data.labels) !== 1 ? "s" : ""} de checklist prontas${nArq}.`;
       resultDiv.style.display = "";
       setStatus("");
     } catch(e) { setStatus("Erro: " + e.message, "var(--red)"); }

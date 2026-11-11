@@ -2943,32 +2943,41 @@ def _add_label_page(out, src, page_no, rect):
 def ml_correios():
     """Extract label + product-checklist pages from a Correios-format ML PDF.
     Skips DANFE pages; keeps everything else in original order."""
-    f = request.files.get("file")
-    if not f or not f.filename.lower().endswith(".pdf"):
+    # one or several PDFs ("file" may be repeated in the form)
+    files = [f for f in request.files.getlist("file") if f and f.filename]
+    if not files or not all(f.filename.lower().endswith(".pdf") for f in files):
         return jsonify({"error": "Envie um arquivo PDF"}), 400
 
-    raw  = f.read()
-    src  = fitz.open(stream=raw, filetype="pdf")
-    out  = fitz.open()
+    out_labels = fitz.open()   # every label, one per page
+    out_checks = fitz.open()   # every checklist page, goes after all the labels
     labels = 0
 
-    for page in src:
-        text = page.get_text("text")
-        if "DANFE" in text:
-            continue
-        multi = _multi_label_rects(page, text)
-        if multi:
-            # several labels side by side -> one label per page
-            for r in multi:
-                _add_label_page(out, src, page.number, r)
+    for f in files:
+        src = fitz.open(stream=f.read(), filetype="pdf")
+        for page in src:
+            text = page.get_text("text")
+            if "DANFE" in text:
+                continue
+            multi = _multi_label_rects(page, text)
+            if multi:
+                # several labels side by side -> one label per page
+                for r in multi:
+                    _add_label_page(out_labels, src, page.number, r)
+                    labels += 1
+            elif "SHP:" in text:
+                out_labels.insert_pdf(src, from_page=page.number, to_page=page.number)
                 labels += 1
-            continue
-        out.insert_pdf(src, from_page=page.number, to_page=page.number)
-        if "SHP:" in text:
-            labels += 1
+            else:
+                out_checks.insert_pdf(src, from_page=page.number, to_page=page.number)
+        src.close()
+
+    out = out_labels
+    if len(out_checks):
+        out.insert_pdf(out_checks)
+    out_checks.close()
 
     if len(out) == 0:
-        src.close(); out.close()
+        out.close()
         return jsonify({"error": "Nenhuma pÃ¡gina vÃ¡lida encontrada. Verifique o arquivo."}), 400
 
     today    = date.today().strftime("%d.%m.%y")
@@ -2976,9 +2985,9 @@ def ml_correios():
     out_path = OUTPUT_DIR / fname
     out.save(str(out_path))
     total = len(out)
-    out.close(); src.close()
+    out.close()
 
-    return jsonify({"filename": fname, "labels": labels, "total": total})
+    return jsonify({"filename": fname, "labels": labels, "total": total, "files": len(files)})
 
 
 # â”€â”€ ML Correios 2 â€” SeparaÃ§Ã£o â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
