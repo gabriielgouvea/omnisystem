@@ -8875,10 +8875,13 @@ function copiarResumoExpedicao() {
   txt += "━━━━━━━━━━━━━━━━━━━\n";
   txt += "📊 *TOTAL: " + totalPedidos + " PEDIDOS*\n";
   txt += "━━━━━━━━━━━━━━━━━━━\n\n";
+  // singular quando for 1 ("1 pedido", "1 peça", "1 pote")
+  const _sing = { "potes": "pote", "peças": "peça", "unidades": "unidade" };
   linhas.forEach(l => {
+    const un = l.unidades === 1 ? (_sing[l.unLbl] || l.unLbl) : l.unLbl;
     txt += "▸ *" + l.nome + "*\n";
-    txt += "   📦 " + l.pedidos + " pedidos\n";
-    txt += "   🧪 " + l.unidades + " " + l.unLbl + "\n\n";
+    txt += "   📦 " + l.pedidos + (l.pedidos === 1 ? " pedido" : " pedidos") + "\n";
+    txt += "   🧪 " + l.unidades + " " + un + "\n\n";
   });
   const totalUnidades = linhas.reduce((s,l) => s + l.unidades, 0);
   txt += "━━━━━━━━━━━━━━━━━━━\n";
