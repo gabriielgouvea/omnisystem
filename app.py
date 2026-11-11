@@ -1239,6 +1239,34 @@ def extract_ml_label_ids(page):
     return pack_id, venda_id
 
 
+ML_STORES_FILE = BASE_DIR / "ml_lojas.json"
+# "NUTRIVA SUPLEMENTOS NUTRI #3717592977" (seller name + seller id, top of the label)
+_ML_SELLER_RE = re.compile(r'^(?P<nome>[^\n#]{3,}?)\s*#(?P<id>\d{5,})\s*$', re.M)
+
+
+def _ml_store_aliases():
+    """Optional friendly store names: ml_lojas.json = {"<seller id or label name>": "Name"}.
+    It is a data file kept on the server (not in git); missing/invalid -> no aliases."""
+    try:
+        with open(ML_STORES_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def extract_ml_label_store(page):
+    """Store (seller) printed at the top of a Mercado Livre label ("NAME #ID").
+    Falls back to ML_STORE_NAME when the label has no seller line."""
+    for m in _ML_SELLER_RE.finditer(page.get_text("text")):
+        nome = m.group("nome").strip()
+        if re.match(r'^(Venda|Pack\s*ID|NF)\b', nome, re.IGNORECASE):
+            continue
+        aliases = _ml_store_aliases()
+        return str(aliases.get(m.group("id")) or aliases.get(nome) or nome).strip()
+    return ML_STORE_NAME
+
+
 def extract_ml_label_state(page):
     """Extract destination state from 'Cidade de destino' line."""
     m = re.search(r'Cidade\s+de\s+destino\s*[:\-]?\s*([^\n]+)',
@@ -1492,7 +1520,7 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
     unmatched_all        = 0
     breakdown_all        = {}
     sem_sku_products     = {}   # title -> {"pedidos", "unidades"} for products without SKU
-    store                = ML_STORE_NAME
+    store_names          = []   # sellers (stores) found on the labels, in order of appearance
 
     for filename in filenames:
         pdf_path = UPLOAD_DIR / filename
@@ -1525,6 +1553,11 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
                 {"produto": it["produto"], "sku": it["sku"], "quantidade": it["quantidade"]}
                 for it in items
             ]
+            # Store (seller) of THIS label: several Mercado Livre stores can come in the
+            # same batch, so it is read from every label (like the Shopee REMETENTE).
+            store = extract_ml_label_store(fp)
+            if store not in store_names:
+                store_names.append(store)
             # Any product WITHOUT SKU -> the whole order goes to the "sem SKU" group.
             # It needs no classification and always counts as an order.
             has_no_sku = any(not it["sku"].strip() for it in items)
@@ -1553,7 +1586,7 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
                 state_counts[uf] = state_counts.get(uf, 0) + 1
             for tn in extract_tracking_numbers(fp):
                 if tn not in tracking_numbers:
-                    tracking_numbers[tn] = {"filename": filename, "page": page_num + 1}
+                    tracking_numbers[tn] = {"filename": filename, "page": page_num + 1, "store": store}
                 else:
                     prev = tracking_numbers[tn]
                     if prev["filename"] != filename and tn not in batch_tracking_dups:
@@ -1563,7 +1596,7 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
                             "file2": filename,         "page2": page_num + 1,
                         }
             page_results.append({
-                "file": filename, "page": page_num + 1, "output": ml_key,
+                "file": filename, "page": page_num + 1, "output": ml_key, "store": store,
                 "items": [{"produto": it["produto"][:50], "sku": it["sku"],
                             "quantidade": it["quantidade"]} for it in items],
             })
@@ -1599,7 +1632,7 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
         cover_offset = 0 if key in _SKIP_COVER else 1
         output_page_counts[f"{key}.pdf"] = len(writer.pages) - cover_offset
 
-    label_pages  = store_label_counts.get(store, 0)
+    label_pages  = sum(store_label_counts.values())
     output_total = sum(c for k, c in output_page_counts.items()
                        if k != "ml_sem_produto.pdf")
     verified     = (output_total == label_pages)
@@ -1640,7 +1673,7 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
         "sem_sku_items":      sorted(
             [{"produto": p, **v} for p, v in sem_sku_products.items()],
             key=lambda x: -x["pedidos"]),
-        "store_names":        [store],
+        "store_names":        store_names or [ML_STORE_NAME],
         "store_items":        store_items,
         "store_label_counts": store_label_counts,
         "state_counts":       state_counts,

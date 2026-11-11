@@ -5968,9 +5968,15 @@ function mlRenderDashboard(data) {
   document.getElementById("ml-dashboard").style.display = "block";
   const storesEl = document.getElementById("ml-dash-stores");
   storesEl.innerHTML = "";
-  (s.store_names || []).forEach(name => {
+  const _lojas = s.store_names || [];
+  _lojas.forEach(name => {
     const tag = document.createElement("div");
-    tag.className = "store-tag"; tag.textContent = name;
+    tag.className = "store-tag";
+    // com mais de uma loja, mostra pedidos e unidades de cada uma
+    const _ped = (s.store_label_counts || {})[name];
+    const _un  = Object.values((s.store_items || {})[name] || {}).reduce((a, i) => a + (i.units || 0), 0);
+    tag.textContent = (_lojas.length > 1 && _ped != null)
+      ? `${name} · ${_ped} pedido${_ped !== 1 ? "s" : ""} · ${_un} un.` : name;
     storesEl.appendChild(tag);
   });
   const n = mlCurrentFiles.length;
