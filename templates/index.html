@@ -5938,7 +5938,7 @@ function mlRenderResults(data) {
     rowEl.className = "brand-row";
     const labelEl = document.createElement("div");
     labelEl.className = `brand-row-label ${cfg.cls}`;
-    labelEl.textContent = cfg.label;
+    labelEl.textContent = (BRAND_ROWS.some(r => r.key === gk) ? cfg.label : (s.group_display || {})[gk]) || cfg.label;
     rowEl.appendChild(labelEl);
     const grid = document.createElement("div");
     grid.className = "dl-grid";
@@ -5954,7 +5954,7 @@ function mlRenderResults(data) {
         mlDownloadedSet.add(filename);
         setTimeout(() => { dlBtn.classList.add("downloaded"); dlBtn.textContent = "Baixado"; }, 300);
       });
-      card.innerHTML = `<div class="dc-name">${esc(filename)}</div><div class="dc-pages">${pages} página${pages!==1?"s":""}</div>`;
+      card.innerHTML = `<div class="dc-name">${esc((s.file_titles || {})[filename] || filename)}</div><div class="dc-pages">${pages} página${pages!==1?"s":""}</div>`;
       card.appendChild(dlBtn);
       grid.appendChild(card);
     });

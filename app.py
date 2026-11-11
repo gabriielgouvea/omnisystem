@@ -721,13 +721,48 @@ _SKIP_COVER = {"sem_produto", "sem_checklist", "pagina_em_branco",
                "ml_sem_produto", "ml_sem_checklist", "mlc2_sem_produto",
                "ml_sem_sku"}
 
+def _group_label(slug):
+    """Easy-to-read group name: standard groups keep their short name (PURA, TURBO,
+    DUX); the others use the name registered in brands.json (e.g. 'CHALEIRA ELETRICA
+    220V') instead of the internal slug."""
+    if slug in STANDARD_ORDER:
+        return slug.upper()
+    return str(get_brand_display().get(slug) or slug).upper()
+
+
 def _cover_title(key):
     k = re.sub(r'^(?:mlc2_|ml_)', '', key)
-    m = re.match(r'^([a-z]+)_(\d+)$', k)
+    m = re.match(r'^(.+)_(\d+)$', k)
     if m:
-        return f"{m.group(1).upper()} {m.group(2)}"
-    labels = {"roupas": "ROUPAS", "variacoes": "VARIAÃ‡Ã•ES"}
-    return labels.get(k, k.upper())
+        # group name + quantity per order, e.g. "DUX CREAPURE 2"
+        return f"{_group_label(m.group(1))} {m.group(2)}"
+    labels = {"roupas": "ROUPAS", "variacoes": "VARIAÇÕES"}
+    return labels.get(k, k.upper().replace("_", " "))
+
+
+def _pretty_stem(fname, keep_source=True):
+    """'ml_duxcreapure_2.pdf' -> 'ML DUX CREAPURE 2' (readable download name)."""
+    base = fname[:-4] if fname.lower().endswith(".pdf") else fname
+    src = ""
+    for p, lab in (("mlc2_", "MLC2 "), ("ml_", "ML ")):
+        if base.startswith(p):
+            base = base[len(p):]
+            src = lab if keep_source else ""
+            break
+    return src + _cover_title(base)
+
+
+def _group_names(keys, prefix=""):
+    """For the result screen: {group slug: readable name} and {file: readable title}."""
+    group_display, file_titles = {}, {}
+    for k in keys:
+        base = k[len(prefix):] if prefix and k.startswith(prefix) else k
+        m = re.match(r'^(.+)_(\d+)$', base)
+        if m:
+            group_display[m.group(1)] = _group_label(m.group(1))
+        file_titles[f"{k}.pdf"] = _pretty_stem(f"{k}.pdf", keep_source=False)
+    return group_display, file_titles
+
 
 def create_cover_page_bytes(title, pedidos, unidades, source="", label_date=""):
     """Portrait 4Ã—6 in cover page for thermal/Zebra label printer (black only)."""
@@ -783,7 +818,7 @@ def _prepend_cover(writer, key, label_date=""):
     pedidos = len(writer.pages)
     if pedidos == 0:
         return
-    m      = re.match(r'^(?:mlc2_|ml_)?([a-z]+)_(\d+)$', key)
+    m      = re.match(r'^(?:mlc2_|ml_)?(.+)_(\d+)$', key)
     upo    = int(m.group(2)) if m else 1
     source = "MERCADO LIVRE" if key.startswith("ml_") or key.startswith("mlc2_") else ""
     cover_bytes = create_cover_page_bytes(_cover_title(key), pedidos, pedidos * upo,
@@ -1599,6 +1634,8 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
         "label_pages":        label_pages,
         "blank_pages":        0,
         "sem_checklist":      unmatched_all,
+        "group_display":      _group_names(writers.keys(), "ml_")[0],
+        "file_titles":        _group_names(writers.keys(), "ml_")[1],
         "sem_sku":            breakdown_all.get("ml_sem_sku", 0),
         "sem_sku_items":      sorted(
             [{"produto": p, **v} for p, v in sem_sku_products.items()],
@@ -2040,7 +2077,7 @@ def process():
 @app.route("/download/<filename>")
 def download(filename):
     today = date.today().strftime("%d.%m.%y")
-    stem  = filename.replace(".pdf", "").replace("_", " ")
+    stem  = _pretty_stem(filename)
     return send_from_directory(str(OUTPUT_DIR), filename, as_attachment=True,
                                download_name=f"{stem} {today}.pdf")
 
@@ -2051,7 +2088,7 @@ def _pdf_with_cover(pdf_path, key, label_date, saved_opc, breakdown):
         with open(pdf_path, "rb") as f:
             return io.BytesIO(f.read())
     pedidos = saved_opc.get(key + ".pdf", breakdown.get(key, 0))
-    m       = re.match(r'^(?:ml_)?([a-z]+)_(\d+)$', key)
+    m       = re.match(r'^(?:ml_)?(.+)_(\d+)$', key)
     upo     = int(m.group(2)) if m else 1
     source  = "MERCADO LIVRE" if key.startswith("ml_") else ""
     cover_bytes  = create_cover_page_bytes(_cover_title(key), pedidos, pedidos * upo,
@@ -2102,7 +2139,7 @@ def history_download(idx, filename):
         date_str = d.strftime("%d.%m.%y")
     except Exception:
         date_str = date.today().strftime("%d.%m.%y")
-    stem = filename.replace(".pdf", "").replace("_", " ")
+    stem = _pretty_stem(filename)
     return send_file(buf, as_attachment=True,
                      download_name=f"{stem} {date_str}.pdf",
                      mimetype="application/pdf")
@@ -2130,7 +2167,7 @@ def history_download_all(idx):
             if not path.exists():
                 continue
             key  = fname.replace(".pdf", "")
-            stem = fname.replace(".pdf", "").replace("_", " ")
+            stem = _pretty_stem(fname)
             pdf_buf = _pdf_with_cover(path, key, label_date, saved_opc, breakdown)
             zf.writestr(f"{stem} {date_str}.pdf", pdf_buf.read())
     buf.seek(0)
@@ -2149,7 +2186,7 @@ def download_all():
         for fname in filenames:
             path = OUTPUT_DIR / fname
             if path.exists():
-                stem = fname.replace(".pdf", "").replace("_", " ")
+                stem = _pretty_stem(fname)
                 zf.write(str(path), f"{stem} {today}.pdf")
     buf.seek(0)
     return send_file(buf, as_attachment=True,
@@ -2903,7 +2940,7 @@ def ml_download_all():
         for fname in filenames:
             path = OUTPUT_DIR / fname
             if path.exists():
-                stem = fname.replace(".pdf", "").replace("ml_", "").replace("_", " ")
+                stem = _pretty_stem(fname, keep_source=False)
                 zf.write(str(path), f"ML {stem} {today}.pdf")
     buf.seek(0)
     return send_file(buf, as_attachment=True,
@@ -3283,7 +3320,7 @@ def ml_correios2_download_all():
         for fname in filenames:
             path = OUTPUT_DIR / fname
             if path.exists():
-                stem = fname.replace(".pdf", "").replace("mlc2_", "").replace("_", " ")
+                stem = _pretty_stem(fname, keep_source=False)
                 zf.write(str(path), f"ML Correios {stem} {today}.pdf")
     buf.seek(0)
     return send_file(buf, as_attachment=True,
