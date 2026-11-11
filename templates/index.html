@@ -4187,7 +4187,7 @@ function renderDashboard(data) {
     const card = document.createElement("div");
     card.className = `brand-card ${b.brand}`;
     const brandEmoji = ({pura:"\u{1F947}", turbo:"⚡", dux:"\u{1F48E}", roupa:"\u{1F457}"})[b.brand] || "\u{1F4E6}";
-    const unitsLabel = b.brand === "roupa" ? "peças" : "potes";
+    const unitsLabel = unitLabel(b.brand);
     card.innerHTML = `
       <div class="bc-name">${brandEmoji} ${esc(b.display)}</div>
       <div class="bc-boxes">
@@ -5318,7 +5318,13 @@ document.getElementById("pdf-page-modal").addEventListener("click", (e) => {
   }
 });
 function safeId(s) { return s.replace(/[^a-zA-Z0-9]/g, "_"); }
-function unitLabel(cat) { return cat === "roupa" ? "peças" : "potes"; }
+// Unidade de cada grupo: roupa = peças; panela/chaleira = unidades; o resto (creatina, ômega…) = potes
+function unitLabel(cat) {
+  const c = (cat || "").toString().toLowerCase();
+  if (/^(roupa|regata|vestido|camiseta|conjunto|bermuda|legging|short)/.test(c)) return "peças";
+  if (/^(panela|chaleira|churrasqueira|liquidificador)/.test(c)) return "unidades";
+  return "potes";
+}
 
 // ── Cortar Etiquetas — tabs ───────────────────────────────────────────────────
 (function () {
@@ -6013,7 +6019,7 @@ function mlRenderDashboard(data) {
       <div class="bc-name">${esc(b.display)}</div>
       <div class="bc-boxes">
         <div class="bc-box"><div class="bc-box-num">${b.orders}</div><div class="bc-box-lbl">\u{1F4E6} Pedidos</div></div>
-        <div class="bc-box"><div class="bc-box-num">${b.units}</div><div class="bc-box-lbl">\u{1F9EA} ${b.brand==="roupa"?"peças":"potes"}</div></div>
+        <div class="bc-box"><div class="bc-box-num">${b.units}</div><div class="bc-box-lbl">\u{1F9EA} ${unitLabel(b.brand)}</div></div>
       </div>`;
     brandGrid.appendChild(card);
   });
@@ -6559,7 +6565,7 @@ function mlc2RenderDashboard(data) {
       <div class="bc-name">${esc(b.display)}</div>
       <div class="bc-boxes">
         <div class="bc-box"><div class="bc-box-num">${b.orders}</div><div class="bc-box-lbl">\u{1F4E6} Pedidos</div></div>
-        <div class="bc-box"><div class="bc-box-num">${b.units}</div><div class="bc-box-lbl">\u{1F9EA} ${b.brand==="roupa"?"peças":"potes"}</div></div>
+        <div class="bc-box"><div class="bc-box-num">${b.units}</div><div class="bc-box-lbl">\u{1F9EA} ${unitLabel(b.brand)}</div></div>
       </div>`;
     brandGrid.appendChild(card);
   });
