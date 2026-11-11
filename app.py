@@ -1231,19 +1231,24 @@ _ML_VENDA_RE  = re.compile(r'^Venda:\s*(\d+)', re.IGNORECASE)
 _ML_SKU_RE    = re.compile(r'^SKU:\s*(\S+)', re.IGNORECASE)
 # A fonte do ML às vezes insere 'f' antes de 'i' ("Quantfidade"), por isso \w{0,2}
 _ML_QTY_RE    = re.compile(r'^Quant\w{0,2}dade:\s*(\d+)', re.IGNORECASE)
+# attribute line of a product ("Cor: Inox", "Voltagem: 127V", "Sabor: Sem sabor")
+_ML_ATTR_RE   = re.compile(r'^\w[\w /]{1,25}:\s*\S')
 
 
-def _ml_geo_titles(page):
-    """Read the product title of every entry of an ML checklist page by POSITION.
+def _ml_geo_entries(page):
+    """Read the entries of an ML checklist page by POSITION on the page.
 
     The checklist is a table: left column = identification (code, Pack ID/Venda,
-    buyer), right column = product (title, SKU, Quantidade, attributes). Titles
-    can wrap onto 2 lines and some entries have no SKU, so pairing titles by their
-    order in the text stream shifts every following entry. Here each entry takes
-    the title lines that sit on its own row (between its code line and the next
-    entry's code line).
+    buyer), right column = products (title, SKU, Quantidade, attributes). Titles
+    can wrap onto 2 lines, some products have no SKU and one order can hold
+    several products, so pairing titles/SKUs by their order in the text stream
+    shifts everything after the first irregular entry. Here each entry takes the
+    right-column lines that sit on its own row (between its code line and the
+    next entry's code line).
 
-    Returns a list of {"pack_id", "venda_id", "titulo"} in page order.
+    Returns a list of
+      {"pack_id", "venda_id", "products": [{"titulo", "sku", "quantidade"}]}
+    in page order.
     """
     lines = []
     for b in page.get_text("dict").get("blocks", []):
@@ -1285,14 +1290,39 @@ def _ml_geo_titles(page):
     for k, (y0, pack, venda) in enumerate(starts):
         y_lo = y0 - 2
         y_hi = (starts[k + 1][0] - 2) if k + 1 < len(starts) else 10 ** 6
-        title = []
+        # An order can hold SEVERAL products (same buyer / Pack ID): the right
+        # column then repeats  title, SKU, Quantidade, attributes  once per product.
+        products = []
+        cur = None
+        state = "title"
         for y, x, t in right:
             if y < y_lo or y >= y_hi:
                 continue
-            if _ML_SKU_RE.match(t) or _ML_QTY_RE.match(t):
-                break
-            title.append(t)
-        out.append({"pack_id": pack, "venda_id": venda, "titulo": " ".join(title).strip()})
+            ms  = _ML_SKU_RE.match(t)
+            mq  = _ML_QTY_RE.match(t)
+            if ms or mq:
+                if cur is None:
+                    cur = {"titulo": "", "sku": "", "quantidade": 1, "_t": []}
+                    products.append(cur)
+                if ms:
+                    cur["sku"] = ms.group(1).strip()
+                else:
+                    try: cur["quantidade"] = int(mq.group(1))
+                    except ValueError: pass
+                state = "body"
+                continue
+            if state == "body" and _ML_ATTR_RE.match(t):
+                continue                      # Cor: / Voltagem: / Sabor: ...
+            if state == "body":               # a new product starts here
+                cur = None
+                state = "title"
+            if cur is None:
+                cur = {"titulo": "", "sku": "", "quantidade": 1, "_t": []}
+                products.append(cur)
+            cur["_t"].append(t)
+        for p in products:
+            p["titulo"] = " ".join(p.pop("_t")).strip()
+        out.append({"pack_id": pack, "venda_id": venda, "products": products})
     return out
 
 
@@ -1316,6 +1346,27 @@ def parse_ml_product_pages(doc):
             continue
         if "SKU:" not in text:
             continue
+
+        # Preferred path: read entries by position on the page (handles orders with
+        # several products, 2-line titles and products without SKU).
+        try:
+            geo = _ml_geo_entries(page)
+        except Exception:
+            geo = []
+        if geo and any(p["sku"] for g in geo for p in g["products"]):
+            for g in geo:
+                for p in g["products"]:
+                    if not p["sku"]:
+                        continue            # same rule as before: no SKU -> ignored
+                    item = {"sku": p["sku"], "produto": p["titulo"] or p["sku"],
+                            "quantidade": p["quantidade"], "page": page_num + 1}
+                    if g["pack_id"]:
+                        product_map.setdefault(g["pack_id"], []).append(item)
+                    if g["venda_id"]:
+                        product_map.setdefault(g["venda_id"], []).append(item)
+            continue
+
+        # Fallback (legacy): pair by order in the text stream
         lines = [l.strip() for l in text.split('\n') if l.strip()]
 
         # Split at "Despachem" footer: titles live after it
@@ -1361,18 +1412,9 @@ def parse_ml_product_pages(doc):
                                  "sku": sku, "quantidade": quantidade})
             i = j
 
-        # Titles by position on the page (robust to 2-line titles and entries
-        # without SKU); falls back to the old order-in-text pairing.
-        try:
-            geo = _ml_geo_titles(page)
-        except Exception:
-            geo = []
-        geo_by_venda = {g["venda_id"]: g["titulo"] for g in geo if g["venda_id"] and g["titulo"]}
-
+        # Pair each entry with its positional title from the footer section
         for idx, e in enumerate(entries):
-            titulo = geo_by_venda.get(e["venda_id"]) if e["venda_id"] else None
-            if not titulo:
-                titulo = page_titles[idx] if idx < len(page_titles) else e["sku"]
+            titulo = page_titles[idx] if idx < len(page_titles) else e["sku"]
             item = {"sku": e["sku"], "produto": titulo, "quantidade": e["quantidade"], "page": page_num + 1}
             if e["pack_id"]:
                 product_map.setdefault(e["pack_id"], []).append(item)
