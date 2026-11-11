@@ -2695,6 +2695,7 @@ const BRAND_ROWS = [
   { key: "dux",       label: "DUX",       cls: "lbl-dux"   },
   { key: "roupas",    label: "ROUPAS",    cls: "lbl-roupa" },
   { key: "variacoes", label: "VARIAÇÕES", cls: "lbl-var"   },
+  { key: "sem_sku",   label: "SEM SKU",   cls: "lbl-var"   },
 ];
 const CAT_COLOR = { pura:"pura", turbo:"turbo", dux:"dux", roupa:"roupa", variacoes:"variacoes" };
 const CHART_PALETTE = ["#6c5fff","#00a86b","#2b7ed4","#d63a3a","#9b44d4","#d47a00","#00b876","#f59e0b","#06b6d4","#ec4899"];
@@ -5841,6 +5842,7 @@ function mlRenderDashboard(data) {
       <span>${s.total_pages} páginas</span>
       <span>·</span>
       <span>${s.sem_checklist} sem produto</span>
+      ${s.sem_sku ? `<span>·</span><span>${s.sem_sku} sem SKU</span>` : ""}
     </div>`;
   const brandGrid = document.getElementById("ml-brand-grid");
   brandGrid.innerHTML = "";
@@ -5865,6 +5867,16 @@ function mlRenderDashboard(data) {
     note.style.cssText = "margin-top:8px;padding:6px 12px;background:rgba(212,122,0,.06);border-left:3px solid var(--var);border-radius:4px;font-size:.73rem;color:#a06000;";
     note.textContent = `⚠ ${mlVarOrders} pedido${mlVarOrders!==1?"s":""} com variação de categoria — verifique os arquivos gerados.`;
     brandGrid.after(note);
+  }
+  const mlExistingNoSku = brandGrid.parentNode.querySelector(".semsku-alert");
+  if (mlExistingNoSku) mlExistingNoSku.remove();
+  if (s.sem_sku_items && s.sem_sku_items.length) {
+    const nsk = document.createElement("div");
+    nsk.className = "semsku-alert";
+    nsk.style.cssText = "margin-top:8px;padding:6px 12px;background:rgba(212,122,0,.06);border-left:3px solid var(--var);border-radius:4px;font-size:.73rem;color:#a06000;";
+    nsk.innerHTML = `⚠ Produtos sem SKU no Mercado Livre (pedidos no grupo SEM SKU):<br>` +
+      s.sem_sku_items.map(i => `• ${esc(i.produto)} — ${i.pedidos} pedido${i.pedidos!==1?"s":""}, ${i.unidades} un.`).join("<br>");
+    brandGrid.after(nsk);
   }
 
   const brRows   = document.getElementById("ml-breakdown-rows");
@@ -5910,12 +5922,13 @@ function mlRenderResults(data) {
     const [cat, units] = mlParsePdfKey(key);
     const gk = (cat === "roupa" || key === "ml_roupas") ? "roupas"
              : (cat === "variacoes" || key === "ml_variacoes") ? "variacoes"
+             : (key === "ml_sem_sku") ? "sem_sku"
              : (key === "ml_sem_produto") ? "sem_checklist"
              : cat;
     groups[gk] = groups[gk] || [];
     groups[gk].push({ filename: f, pages, unitCount: units || 0 });
   });
-  const rowOrder = ["pura","turbo","dux","roupas","variacoes","sem_checklist"];
+  const rowOrder = ["pura","turbo","dux","roupas","variacoes","sem_sku","sem_checklist"];
   Object.keys(groups).forEach(k => { if (!rowOrder.includes(k)) rowOrder.push(k); });
   rowOrder.forEach(gk => {
     const files = groups[gk]; if (!files?.length) return;

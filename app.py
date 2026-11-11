@@ -718,7 +718,8 @@ def _date_range(period, filtered, from_date=None, to_date=None):
 # â”€â”€ Cover page generator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _SKIP_COVER = {"sem_produto", "sem_checklist", "pagina_em_branco",
-               "ml_sem_produto", "ml_sem_checklist", "mlc2_sem_produto"}
+               "ml_sem_produto", "ml_sem_checklist", "mlc2_sem_produto",
+               "ml_sem_sku"}
 
 def _cover_title(key):
     k = re.sub(r'^(?:mlc2_|ml_)', '', key)
@@ -1344,20 +1345,21 @@ def parse_ml_product_pages(doc):
             continue
         if is_ml_label_page(page):
             continue
-        if "SKU:" not in text:
+        if "SKU:" not in text and not re.search(r'Quant\w{0,2}dade:', text):
             continue
 
         # Preferred path: read entries by position on the page (handles orders with
-        # several products, 2-line titles and products without SKU).
+        # several products, 2-line titles and products WITHOUT SKU: those come with
+        # sku == "" and are sent to the "sem SKU" group by split_ml_pdfs).
         try:
             geo = _ml_geo_entries(page)
         except Exception:
             geo = []
-        if geo and any(p["sku"] for g in geo for p in g["products"]):
+        if geo and any(g["products"] for g in geo):
             for g in geo:
                 for p in g["products"]:
-                    if not p["sku"]:
-                        continue            # same rule as before: no SKU -> ignored
+                    if not p["titulo"] and not p["sku"]:
+                        continue
                     item = {"sku": p["sku"], "produto": p["titulo"] or p["sku"],
                             "quantidade": p["quantidade"], "page": page_num + 1}
                     if g["pack_id"]:
@@ -1431,6 +1433,8 @@ def get_unknown_items_ml(pdf_path, mappings):
     seen: dict = {}
     for items in product_map.values():
         for item in items:
+            if not item["sku"].strip():
+                continue   # products without SKU go to the "sem SKU" group, no classification
             k = mapping_key(item["produto"], item["sku"])
             if k not in mappings and k not in seen:
                 seen[k] = {
@@ -1452,6 +1456,7 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
     total_pages_all      = 0
     unmatched_all        = 0
     breakdown_all        = {}
+    sem_sku_products     = {}   # title -> {"pedidos", "unidades"} for products without SKU
     store                = ML_STORE_NAME
 
     for filename in filenames:
@@ -1485,14 +1490,26 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
                 {"produto": it["produto"], "sku": it["sku"], "quantidade": it["quantidade"]}
                 for it in items
             ]
-            raw_key = determine_output_pdf(checklist_items, mappings)
-            if raw_key is None:
-                page_results.append({
-                    "file": filename, "page": page_num + 1,
-                    "output": "__unknown__", "items": checklist_items,
-                })
-                continue
-            ml_key = "ml_" + raw_key
+            # Any product WITHOUT SKU -> the whole order goes to the "sem SKU" group.
+            # It needs no classification and always counts as an order.
+            has_no_sku = any(not it["sku"].strip() for it in items)
+            if has_no_sku:
+                ml_key = "ml_sem_sku"
+                for it in items:
+                    if it["sku"].strip():
+                        continue
+                    ss = sem_sku_products.setdefault(it["produto"], {"pedidos": 0, "unidades": 0})
+                    ss["pedidos"]  += 1
+                    ss["unidades"] += it["quantidade"]
+            else:
+                raw_key = determine_output_pdf(checklist_items, mappings)
+                if raw_key is None:
+                    page_results.append({
+                        "file": filename, "page": page_num + 1,
+                        "output": "__unknown__", "items": checklist_items,
+                    })
+                    continue
+                ml_key = "ml_" + raw_key
             writers.setdefault(ml_key, PdfWriter()).add_page(reader.pages[page_num])
             breakdown_all[ml_key] = breakdown_all.get(ml_key, 0) + 1
             store_label_counts[store] = store_label_counts.get(store, 0) + 1
@@ -1515,6 +1532,8 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
                 "items": [{"produto": it["produto"][:50], "sku": it["sku"],
                             "quantidade": it["quantidade"]} for it in items],
             })
+            if has_no_sku:
+                continue   # no SKU -> not part of the per-SKU stock/unit totals
             for item in checklist_items:
                 mk      = mapping_key(item["produto"], item["sku"])
                 sku_key = item["sku"].strip()
@@ -1550,7 +1569,8 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
                        if k != "ml_sem_produto.pdf")
     verified     = (output_total == label_pages)
 
-    stripped = {k.replace("ml_", "", 1): v for k, v in breakdown_all.items()}
+    stripped = {k.replace("ml_", "", 1): v for k, v in breakdown_all.items()
+                if k != "ml_sem_sku"}
     brand_orders, brand_units = compute_brand_totals(stripped)
     brand_display = get_brand_display()
     brand_summary = sorted(
@@ -1579,6 +1599,10 @@ def split_ml_pdfs(filenames, mappings, label_date=""):
         "label_pages":        label_pages,
         "blank_pages":        0,
         "sem_checklist":      unmatched_all,
+        "sem_sku":            breakdown_all.get("ml_sem_sku", 0),
+        "sem_sku_items":      sorted(
+            [{"produto": p, **v} for p, v in sem_sku_products.items()],
+            key=lambda x: -x["pedidos"]),
         "store_names":        [store],
         "store_items":        store_items,
         "store_label_counts": store_label_counts,
