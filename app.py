@@ -2773,6 +2773,58 @@ def ml_download_all():
                      mimetype="application/zip")
 
 
+_LABEL_PAGE_W = 283.46   # 10 cm
+_LABEL_PAGE_H = 425.20   # 15 cm
+
+
+def _multi_label_rects(page, text):
+    """Detect ML Flex/Envios labels laid out side by side (2, 3, 4...) on one page.
+    Returns the list of label rectangles in reading order, or [] when the page
+    is not a multi-label page (checklist, DANFE, Correios SHP label...)."""
+    if "SHP:" in text or "Quantidade:" in text or "DANFE" in text:
+        return []
+    anchors = page.search_for("Despachar:")
+    if not anchors:
+        return []
+
+    frames = []
+    for dr in page.get_drawings():
+        r = dr["rect"]
+        if 150 < r.width < 450 and 250 < r.height < 650:
+            frames.append(r)
+
+    rects = []
+    for a in anchors:
+        cx, cy = (a.x0 + a.x1) / 2, (a.y0 + a.y1) / 2
+        inside = [r for r in frames if r.x0 <= cx <= r.x1 and r.y0 <= cy <= r.y1]
+        if inside:
+            # the smallest frame that still contains the anchor is the label itself
+            rects.append(min(inside, key=lambda r: r.width * r.height))
+        else:
+            # fallback: equal columns across the page
+            n = len(anchors)
+            w = page.rect.width / n
+            i = min(int(cx // w), n - 1)
+            rects.append(fitz.Rect(i * w, 0, (i + 1) * w, page.rect.height))
+
+    uniq = []
+    for r in rects:
+        if not any(abs(r.x0 - u.x0) < 2 and abs(r.y0 - u.y0) < 2 for u in uniq):
+            uniq.append(r)
+    uniq.sort(key=lambda r: (round(r.y0 / 20), r.x0))
+    return uniq
+
+
+def _add_label_page(out, src, page_no, rect):
+    """Put one label (clip of src page) alone on a 10x15 cm page, centered."""
+    new = out.new_page(width=_LABEL_PAGE_W, height=_LABEL_PAGE_H)
+    scale = min(_LABEL_PAGE_W / rect.width, _LABEL_PAGE_H / rect.height)
+    w, h  = rect.width * scale, rect.height * scale
+    x0    = (_LABEL_PAGE_W - w) / 2
+    y0    = (_LABEL_PAGE_H - h) / 2
+    new.show_pdf_page(fitz.Rect(x0, y0, x0 + w, y0 + h), src, page_no, clip=rect)
+
+
 @app.route("/ml/correios", methods=["POST"])
 def ml_correios():
     """Extract label + product-checklist pages from a Correios-format ML PDF.
@@ -2789,6 +2841,13 @@ def ml_correios():
     for page in src:
         text = page.get_text("text")
         if "DANFE" in text:
+            continue
+        multi = _multi_label_rects(page, text)
+        if multi:
+            # several labels side by side -> one label per page
+            for r in multi:
+                _add_label_page(out, src, page.number, r)
+                labels += 1
             continue
         out.insert_pdf(src, from_page=page.number, to_page=page.number)
         if "SHP:" in text:
