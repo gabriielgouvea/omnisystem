@@ -449,6 +449,17 @@
     .cat-btn.sel-dux   { border-color: var(--dux);   color: var(--dux);   background: rgba(43,126,212,.07); }
     .cat-btn.sel-roupa { border-color: var(--roupa); color: var(--roupa); background: rgba(155,68,212,.07); }
     .cat-btn.sel-new   { border-color: var(--accent); color: var(--accent); background: rgba(108,95,255,.07); }
+    .cat-btn.sel-any   { border-color: var(--accent); color: var(--accent); background: rgba(108,95,255,.07); }
+    .cat-btn.sugg      { border-style: dashed; }
+    .cat-btn.more      { background: var(--bg); color: var(--accent); border-color: var(--accent); }
+    .gp-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; text-align: left; width: 100%;
+              padding: 10px 12px; border: 1.5px solid var(--border2); border-radius: 10px;
+              background: var(--bg); cursor: pointer; font-family: inherit; }
+    .gp-row:hover { border-color: var(--accent); }
+    .gp-row.sugg { border-style: dashed; }
+    .gp-name   { font-weight: 800; font-size: .86rem; color: var(--text); }
+    .gp-count  { font-size: .72rem; color: var(--muted); font-weight: 700; align-self: center; }
+    .gp-sample { grid-column: 1 / 3; font-size: .72rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kit-row { display: flex; align-items: center; gap: 8px; }
     .kit-row label { font-size: .78rem; color: var(--muted); }
     .kit-row select {
@@ -3264,6 +3275,151 @@ async function uploadDeclaracaoFiles(fileList) {
   } catch (e) { countEl.textContent = "Erro: " + e.message; }
 }
 
+// ── Seletor de grupo (classificação de produtos novos) ────────────────────────
+// Mostra TODOS os grupos cadastrados: sugestões (por semelhança com o título) e os
+// maiores grupos em botões, e um popup com busca para o resto. Mantém
+// "+ Novo Produto" para criar um grupo novo. Usado por Shopee, ML e ML Correios.
+let _gruposCache = null;
+async function loadGrupos(force) {
+  if (_gruposCache && !force) return _gruposCache;
+  try {
+    const r = await fetch("/api/produtos");
+    const g = await r.json();
+    if (Array.isArray(g)) _gruposCache = g;
+  } catch (e) { /* usa o que já tem */ }
+  return _gruposCache || [];
+}
+function _norm(s) { return (s || "").toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
+const _STOPWORDS = new Set(["de","da","do","das","dos","para","com","sem","em","e","a","o","um","uma","por","pra","kit","un","und","unidade","unidades","pote","potes","cada","original","novo","nova"]);
+function _tok(s) {
+  return new Set(_norm(s).split(/[^a-z0-9]+/).filter(t => t.length >= 2 && !_STOPWORDS.has(t) && !/^\d{1,3}$/.test(t)));
+}
+function _volt(t) { const m = _norm(t).match(/(?:^|[^a-z0-9])(127|110|220)\s*v(?![a-z0-9])/); return m ? m[1] : ""; }
+function _marca(t) {
+  const toks = new Set(_norm(t).split(/[^a-z0-9]+/));
+  for (const b of ["dux", "evo"]) if (toks.has(b)) return b;
+  return toks.has("black") && toks.has("skull") ? "black skull" : "";
+}
+// Grupos mais parecidos com o produto (título/SKU), no máximo 3.
+function suggestGrupos(u, grupos) {
+  const w = _tok(u && u.produto), sku = ((u && u.sku) || "").trim().toUpperCase();
+  const scored = grupos.map(g => {
+    let best = 0;
+    // voltagem e marca também podem vir do NOME do grupo ("CHALEIRA ELETRICA 220V", "EVO")
+    const vu = _volt(u && u.produto), bu = _marca(u && u.produto);
+    const vg = _volt(g.display), bg = _marca(g.display);
+    (g.itens || []).forEach(it => {
+      const t = _tok(it.titulo); let inter = 0;
+      w.forEach(x => { if (t.has(x)) inter++; });
+      const uni = w.size + t.size - inter; let j = uni ? inter / uni : 0;
+      // voltagem e marca diferentes = produtos diferentes (127v x 220v, DUX x EVO)
+      const vi = _volt(it.titulo) || vg, bi = _marca(it.titulo) || bg;
+      if (vu && vi) j = vu === vi ? j + 0.15 : j * 0.25;
+      if (bu && bi && bu !== bi) j *= 0.2;
+      if (j > best) best = j;
+      const okVolt = !(vu && vg && vu !== vg), okMarca = !(bu && bg && bu !== bg);
+      if (sku && (it.sku || "").toUpperCase() === sku && okVolt && okMarca) best = Math.max(best, 0.35);
+    });
+    return { g, best };
+  });
+  return scored.filter(x => x.best >= 0.2).sort((a, b) => b.best - a.best).slice(0, 3).map(x => x.g);
+}
+// Kit sugerido pelo título: "Kit 2", "Kit com 3", "2 Un", "2 Kits"... (1 se não achar)
+function guessKit(title) {
+  const t = _norm(title);
+  const m = t.match(/\bkit\s*(?:com|c\/|de|x)?\s*(\d)\s*x?\b/) || t.match(/\b(\d)\s*(?:un|und|unid|unidades|potes|kits)\b/);
+  const n = m ? parseInt(m[1]) : 1;
+  return n >= 2 && n <= 6 ? n : 1;
+}
+function _ensureGrupoPicker() {
+  let m = document.getElementById("modal-grupo-picker");
+  if (m) return m;
+  m = document.createElement("div");
+  m.id = "modal-grupo-picker"; m.className = "modal-bg";
+  m.innerHTML = `<div class="modal-box" style="max-width:620px;">
+      <button class="modal-close" type="button" data-close="1">✕</button>
+      <div class="modal-title">Escolher grupo</div>
+      <div id="gp-prod" style="font-size:.78rem;color:var(--muted);margin:-12px 0 12px;word-break:break-word;"></div>
+      <input class="modal-input" id="gp-search" placeholder="Buscar grupo ou produto…" autocomplete="off" />
+      <div id="gp-list" style="max-height:52vh;overflow:auto;display:flex;flex-direction:column;gap:7px;"></div>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener("click", e => {
+    if (e.target === m || (e.target.dataset && e.target.dataset.close)) m.classList.remove("open");
+  });
+  return m;
+}
+function openGrupoPicker(u, suggestedCats, onChoose) {
+  const m = _ensureGrupoPicker(), grupos = _gruposCache || [];
+  m.querySelector("#gp-prod").textContent = (u && u.produto) || "";
+  const search = m.querySelector("#gp-search"), listEl = m.querySelector("#gp-list");
+  const render = () => {
+    const q = _norm(search.value).trim();
+    const rows = grupos.filter(g => !q || _norm(g.display).includes(q) || _norm(g.cat).includes(q) ||
+      (g.itens || []).some(i => _norm(i.titulo).includes(q) || _norm(i.sku).includes(q)));
+    // sugeridos primeiro, depois grupos com produtos (A-Z) e, no fim, os ainda vazios
+    rows.sort((a, b) => (suggestedCats.includes(b.cat) - suggestedCats.includes(a.cat)) ||
+                        (((b.itens || []).length > 0) - ((a.itens || []).length > 0)) ||
+                        a.display.localeCompare(b.display, "pt-BR"));
+    listEl.innerHTML = "";
+    rows.forEach(g => {
+      const n = (g.itens || []).length, isS = suggestedCats.includes(g.cat);
+      const sample = (g.itens || []).slice(0, 2).map(i => i.titulo).join(" · ");
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "gp-row" + (isS ? " sugg" : "");
+      b.innerHTML = `<span class="gp-name">${isS ? "★ " : ""}${esc(g.display)}</span>
+        <span class="gp-count">${n ? n + " produto" + (n !== 1 ? "s" : "") : "vazio"}</span>
+        <span class="gp-sample">${esc(sample)}</span>`;
+      b.addEventListener("click", () => { m.classList.remove("open"); onChoose(g.cat, g.display); });
+      listEl.appendChild(b);
+    });
+    if (!rows.length) listEl.innerHTML = `<div style="color:var(--muted);font-size:.82rem;padding:8px;">Nenhum grupo encontrado.</div>`;
+  };
+  search.value = ""; search.oninput = render; render();
+  m.classList.add("open"); setTimeout(() => search.focus(), 30);
+}
+// Monta a linha de botões de um produto. onPick(cat) roda a lógica de cada fluxo
+// (cat = slug do grupo, ou "__new__" para criar um grupo novo).
+function fillCatRow(row, key, u, onPick) {
+  let grupos = (_gruposCache || []).filter(g => g.cat !== "variacoes");
+  if (!grupos.length) grupos = [["pura","Pura"],["turbo","Turbo"],["dux","DUX"],["roupa","Roupa"]]
+                                .map(([cat, display]) => ({ cat, display, itens: [] }));
+  const sugg = suggestGrupos(u, grupos);
+  const inline = [...sugg];
+  [...grupos].filter(g => (g.itens || []).length).sort((a, b) => b.itens.length - a.itens.length)
+    .forEach(g => { if (inline.length < 5 && !inline.includes(g)) inline.push(g); });
+  if (!inline.length) grupos.slice(0, 5).forEach(g => inline.push(g));
+  const suggCats = sugg.map(g => g.cat);
+  row.innerHTML = "";
+  const mk = (label, cat, cls) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "cat-btn " + (cls || "");
+    b.dataset.key = key; b.dataset.cat = cat; b.textContent = label;
+    row.appendChild(b); return b;
+  };
+  inline.forEach(g => mk((suggCats.includes(g.cat) ? "★ " : "") + g.display, g.cat, suggCats.includes(g.cat) ? "sugg" : ""));
+  const moreBtn = mk(`Todos os grupos (${grupos.length}) ▾`, "__more__", "more");
+  const newBtn  = mk("+ Novo Produto", "__new__", "");
+  const choose = (cat, display) => {
+    row.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("sel-any", "sel-new", "sel-pura", "sel-turbo", "sel-dux", "sel-roupa"));
+    let btn = row.querySelector(`.cat-btn[data-cat="${CSS.escape(cat)}"]`);
+    if (!btn && cat !== "__new__") {           // grupo escolhido no popup: vira um botão
+      btn = document.createElement("button");
+      btn.type = "button"; btn.className = "cat-btn"; btn.dataset.key = key; btn.dataset.cat = cat;
+      btn.textContent = display || cat;
+      btn.addEventListener("click", () => choose(cat, display));
+      row.insertBefore(btn, row.firstChild);
+    }
+    btn.classList.add(cat === "__new__" ? "sel-new" : "sel-any");
+    if (cat !== "__new__") btn.classList.add(`sel-${cat}`);
+    onPick(cat);
+  };
+  row.querySelectorAll(".cat-btn").forEach(b => {
+    if (b === moreBtn) b.addEventListener("click", () => openGrupoPicker(u, suggCats, choose));
+    else b.addEventListener("click", () => choose(b.dataset.cat, b.textContent.replace(/^★ /, "")));
+  });
+}
+
 // ── Classify ──────────────────────────────────────────────────────────────────
 function isAllClassified() {
   return Object.keys(pendingKeys).every(k => {
@@ -3274,8 +3430,9 @@ function isAllClassified() {
   });
 }
 
-function showClassify(unknowns, storeNames) {
+async function showClassify(unknowns, storeNames) {
   document.getElementById("classify-card").style.display = "block";
+  await loadGrupos(true);
   const list = document.getElementById("unknown-list");
   list.innerHTML = "";
   selectedCats = {}; selectedKits = {}; selectedNewBrand = {}; pendingKeys = {};
@@ -3313,13 +3470,7 @@ function showClassify(unknowns, storeNames) {
         ${u.file ? `<button class="pdf-view-btn" title="Ver no PDF" onclick="showPdfPage('${esc(u.file)}',${u.page||1})">👁 ver</button>` : ""}
       </div>
       <div class="u-sku">SKU: <span>${esc(u.sku)}</span></div>
-      <div class="cat-row" id="cats-${sid}">
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="pura">Pura</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="turbo">Turbo</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="dux">DUX</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="roupa">Roupa</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="__new__">+ Novo Produto</button>
-      </div>
+      <div class="cat-row" id="cats-${sid}" data-key="${esc(key)}"></div>
       <div class="new-prod-wrap" id="newprod-${sid}" style="display:none;">
         <div class="new-prod-label">Nome do novo produto</div>
         <div class="new-prod-row">
@@ -3341,27 +3492,30 @@ function showClassify(unknowns, storeNames) {
     list.appendChild(div);
   });
 
-  list.querySelectorAll(".cat-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const key = btn.dataset.key, cat = btn.dataset.cat;
+  list.querySelectorAll(".cat-row").forEach(row => {
+    const key = row.dataset.key;
+    fillCatRow(row, key, pendingKeys[key], (cat) => {
       selectedCats[key] = cat;
-      document.querySelectorAll(`.cat-btn[data-key="${CSS.escape(key)}"]`)
-        .forEach(b => b.className = "cat-btn");
       const sid2    = safeId(key);
       const kitRow  = document.getElementById(`kit-${sid2}`);
       const newWrap = document.getElementById(`newprod-${sid2}`);
       if (cat === "__new__") {
-        btn.classList.add("sel-new");
         if (newWrap) newWrap.style.display = "block";
         kitRow.style.display = "flex";
       } else {
-        btn.classList.add(`sel-${cat}`);
         if (newWrap) newWrap.style.display = "none";
         kitRow.style.display = cat === "roupa" ? "none" : "flex";
         if (cat === "roupa") selectedKits[key] = 1;
       }
       document.getElementById("save-btn").disabled = !isAllClassified();
     });
+    // kit sugerido pelo título ("Kit 2", "2 Un"...); pode ser trocado no seletor
+    const gk = guessKit((pendingKeys[key] || {}).produto);
+    if (gk > 1) {
+      selectedKits[key] = gk;
+      const ks = document.getElementById(`ksel-${safeId(key)}`);
+      if (ks) ks.value = String(gk);
+    }
   });
   list.querySelectorAll("select[id^='ksel-']").forEach(sel => {
     sel.addEventListener("change", () => { selectedKits[sel.dataset.key] = parseInt(sel.value); });
@@ -5622,8 +5776,9 @@ function mlIsAllClassified() {
     return true;
   });
 }
-function mlShowClassify(unknowns) {
+async function mlShowClassify(unknowns) {
   document.getElementById("ml-classify-card").style.display = "block";
+  await loadGrupos(true);
   const list = document.getElementById("ml-unknown-list");
   list.innerHTML = "";
   mlSelectedCats = {}; mlSelectedKits = {}; mlSelectedNewBrand = {}; mlPendingKeys = {};
@@ -5644,13 +5799,7 @@ function mlShowClassify(unknowns) {
         ${u.file ? `<button class="pdf-view-btn" title="Ver no PDF" onclick="showPdfPage('${esc(u.file)}',${u.page||1})">👁 ver</button>` : ""}
       </div>
       <div class="u-sku">SKU: <span>${esc(u.sku)}</span></div>
-      <div class="cat-row" id="ml-cats-${sid}">
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="pura">Pura</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="turbo">Turbo</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="dux">DUX</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="roupa">Roupa</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="__new__">+ Novo Produto</button>
-      </div>
+      <div class="cat-row" id="ml-cats-${sid}" data-key="${esc(key)}"></div>
       <div class="new-prod-wrap" id="ml-newprod-${sid}" style="display:none;">
         <div class="new-prod-label">Nome do novo produto</div>
         <div class="new-prod-row">
@@ -5671,27 +5820,30 @@ function mlShowClassify(unknowns) {
       </div>`;
     list.appendChild(div);
   });
-  list.querySelectorAll(".cat-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const key = btn.dataset.key, cat = btn.dataset.cat;
+  list.querySelectorAll(".cat-row").forEach(row => {
+    const key = row.dataset.key;
+    fillCatRow(row, key, mlPendingKeys[key], (cat) => {
       mlSelectedCats[key] = cat;
-      list.querySelectorAll(`.cat-btn[data-key="${CSS.escape(key)}"]`)
-          .forEach(b => b.className = "cat-btn");
       const sid2    = safeId(key);
       const kitRow  = document.getElementById(`ml-kit-${sid2}`);
       const newWrap = document.getElementById(`ml-newprod-${sid2}`);
       if (cat === "__new__") {
-        btn.classList.add("sel-new");
         if (newWrap) newWrap.style.display = "block";
         kitRow.style.display = "flex";
       } else {
-        btn.classList.add(`sel-${cat}`);
         if (newWrap) newWrap.style.display = "none";
         kitRow.style.display = cat === "roupa" ? "none" : "flex";
         if (cat === "roupa") mlSelectedKits[key] = 1;
       }
       document.getElementById("ml-save-btn").disabled = !mlIsAllClassified();
     });
+    // kit sugerido pelo título ("Kit 2", "2 Un"...); pode ser trocado no seletor
+    const gk = guessKit((mlPendingKeys[key] || {}).produto);
+    if (gk > 1) {
+      mlSelectedKits[key] = gk;
+      const ks = document.getElementById(`ml-ksel-${safeId(key)}`);
+      if (ks) ks.value = String(gk);
+    }
   });
   list.querySelectorAll("select[id^='ml-ksel-']").forEach(sel => {
     sel.addEventListener("change", () => { mlSelectedKits[sel.dataset.key] = parseInt(sel.value); });
@@ -6185,8 +6337,9 @@ function mlc2IsAllClassified() {
     return true;
   });
 }
-function mlc2ShowClassify(unknowns) {
+async function mlc2ShowClassify(unknowns) {
   document.getElementById("mlc2-classify-card").style.display = "block";
+  await loadGrupos(true);
   const list = document.getElementById("mlc2-unknown-list");
   list.innerHTML = "";
   mlc2SelectedCats = {}; mlc2SelectedKits = {}; mlc2SelectedNewBrand = {}; mlc2PendingKeys = {};
@@ -6198,13 +6351,7 @@ function mlc2ShowClassify(unknowns) {
     div.innerHTML = `
       <div class="u-name">${esc(u.produto)}</div>
       <div class="u-sku">SKU: <span>${esc(u.sku || "—")}</span></div>
-      <div class="cat-row" id="mlc2-cats-${sid}">
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="pura">Pura</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="turbo">Turbo</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="dux">DUX</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="roupa">Roupa</button>
-        <button class="cat-btn" data-key="${esc(key)}" data-cat="__new__">+ Novo Produto</button>
-      </div>
+      <div class="cat-row" id="mlc2-cats-${sid}" data-key="${esc(key)}"></div>
       <div class="new-prod-wrap" id="mlc2-newprod-${sid}" style="display:none;">
         <div class="new-prod-label">Nome do novo produto</div>
         <div class="new-prod-row">
@@ -6225,27 +6372,30 @@ function mlc2ShowClassify(unknowns) {
       </div>`;
     list.appendChild(div);
   });
-  list.querySelectorAll(".cat-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const key = btn.dataset.key, cat = btn.dataset.cat;
+  list.querySelectorAll(".cat-row").forEach(row => {
+    const key = row.dataset.key;
+    fillCatRow(row, key, mlc2PendingKeys[key], (cat) => {
       mlc2SelectedCats[key] = cat;
-      list.querySelectorAll(`.cat-btn[data-key="${CSS.escape(key)}"]`)
-          .forEach(b => b.className = "cat-btn");
       const sid2    = safeId(key);
       const kitRow  = document.getElementById(`mlc2-kit-${sid2}`);
       const newWrap = document.getElementById(`mlc2-newprod-${sid2}`);
       if (cat === "__new__") {
-        btn.classList.add("sel-new");
         if (newWrap) newWrap.style.display = "block";
         kitRow.style.display = "flex";
       } else {
-        btn.classList.add(`sel-${cat}`);
         if (newWrap) newWrap.style.display = "none";
         kitRow.style.display = cat === "roupa" ? "none" : "flex";
         if (cat === "roupa") mlc2SelectedKits[key] = 1;
       }
       document.getElementById("mlc2-save-btn").disabled = !mlc2IsAllClassified();
     });
+    // kit sugerido pelo título ("Kit 2", "2 Un"...); pode ser trocado no seletor
+    const gk = guessKit((mlc2PendingKeys[key] || {}).produto);
+    if (gk > 1) {
+      mlc2SelectedKits[key] = gk;
+      const ks = document.getElementById(`mlc2-ksel-${safeId(key)}`);
+      if (ks) ks.value = String(gk);
+    }
   });
   list.querySelectorAll("select[id^='mlc2-ksel-']").forEach(sel => {
     sel.addEventListener("change", () => { mlc2SelectedKits[sel.dataset.key] = parseInt(sel.value); });
